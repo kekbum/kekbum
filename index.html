@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=29">
+  <link rel="stylesheet" href="styles.css?v=30">
 
 </head>
 <body>
@@ -535,7 +535,7 @@
         <div class="page-heading">
           <div>
             <h2>오늘의 균열</h2>
-            <p>매일 테마가 바뀌는 5연전 던전입니다. 하루 3번 도전할 수 있고, 1번 클리어하면 종료됩니다.</p>
+            <p>매일 테마가 바뀌는 5연전 핵심 던전입니다. 웨이브별 전투 기록을 확인하며 하루 3번 도전할 수 있고, 1번 클리어하면 종료됩니다.</p>
           </div>
           <div class="toolbar">
             <span class="badge" id="dailyTicketBadge">도전 3 / 3</span>
@@ -545,6 +545,21 @@
         </div>
         <div class="daily-theme" id="dailyTheme"></div>
         <div class="daily-grid" id="dailyGrid"></div>
+
+        <section class="daily-run-panel" id="dailyRunPanel">
+          <div class="daily-run-heading">
+            <div>
+              <span>RIFT EXPEDITION</span>
+              <h3>균열 공략 기록</h3>
+            </div>
+            <strong id="dailyRunStatus">공략 대기</strong>
+          </div>
+          <div class="daily-run-progress" id="dailyRunProgress"></div>
+          <div class="daily-run-log" id="dailyRunLog">
+            <div class="daily-run-empty">난이도를 고르고 도전하면 5연전 전투 기록이 이곳에 남습니다.</div>
+          </div>
+        </section>
+
         <div class="daily-history" id="dailyHistory"></div>
       </div>
     </section>
@@ -934,7 +949,7 @@
     </div>
   </div>
 
-  <script src="game.js?v=29"></script>
+  <script src="game.js?v=30"></script>
 
 </body>
 </html>

@@ -1,4 +1,4 @@
-const VERSION = 29;
+const VERSION = 30;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -716,7 +716,17 @@ const VERSION = 29;
       feverBattles: 0,
       bounties: { createdAt:0, missions:[] },
       quests: { claimed:{} },
-      dailyDungeon: { date:"", attempts:3, cleared:false, best:null, history:[] },
+      dailyDungeon: {
+        date:"",
+        attempts:3,
+        cleared:false,
+        best:null,
+        history:[],
+        runLog:[],
+        running:false,
+        currentWave:0,
+        lastResult:""
+      },
       arena: { date:"", tickets:5, rating:1000, wins:0, losses:0, opponents:[], history:[] },
       market: {
         tokens: 0,
@@ -994,6 +1004,10 @@ const VERSION = 29;
       dailyResetBtn: document.getElementById("dailyResetBtn"),
       dailyTheme: document.getElementById("dailyTheme"),
       dailyGrid: document.getElementById("dailyGrid"),
+      dailyRunPanel: document.getElementById("dailyRunPanel"),
+      dailyRunStatus: document.getElementById("dailyRunStatus"),
+      dailyRunProgress: document.getElementById("dailyRunProgress"),
+      dailyRunLog: document.getElementById("dailyRunLog"),
       dailyHistory: document.getElementById("dailyHistory"),
       dailyBossNavMark: document.getElementById("dailyBossNavMark"),
       dailyBossNavBadge: document.getElementById("dailyBossNavBadge"),
@@ -1121,7 +1135,13 @@ const VERSION = 29;
           feverBattles: Number.isFinite(loaded.feverBattles) ? loaded.feverBattles : 0,
           bounties: loaded.bounties && Array.isArray(loaded.bounties.missions) ? loaded.bounties : fresh.bounties,
           quests: { claimed:{ ...fresh.quests.claimed, ...((loaded.quests && loaded.quests.claimed) || {}) } },
-          dailyDungeon: { ...fresh.dailyDungeon, ...(loaded.dailyDungeon || {}), history:[...((loaded.dailyDungeon && loaded.dailyDungeon.history) || [])] },
+          dailyDungeon: {
+            ...fresh.dailyDungeon,
+            ...(loaded.dailyDungeon || {}),
+            history:[...((loaded.dailyDungeon && loaded.dailyDungeon.history) || [])],
+            runLog:[...((loaded.dailyDungeon && loaded.dailyDungeon.runLog) || [])],
+            running:false
+          },
           arena: { ...fresh.arena, ...(loaded.arena || {}), opponents:[...((loaded.arena && loaded.arena.opponents) || [])], history:[...((loaded.arena && loaded.arena.history) || [])] },
           stamina: Number.isFinite(loaded.stamina) ? loaded.stamina : Math.min(STAMINA_MAX, Number.isFinite(loaded.focus) ? loaded.focus : STAMINA_MAX),
           staminaUpdatedAt: loaded.staminaUpdatedAt || loaded.focusUpdatedAt || Date.now(),
@@ -4041,7 +4061,17 @@ const VERSION = 29;
     function ensureDailyDungeon() {
       const today = localDateKey();
       if (state.dailyDungeon.date !== today) {
-        state.dailyDungeon = { date:today, attempts:3, cleared:false, best:null, history:[] };
+        state.dailyDungeon = {
+          date:today,
+          attempts:3,
+          cleared:false,
+          best:null,
+          history:[],
+          runLog:[],
+          running:false,
+          currentWave:0,
+          lastResult:""
+        };
       }
     }
 
@@ -4067,99 +4097,302 @@ const VERSION = 29;
       };
     }
 
+    function dailyDungeonPause(ms=260) {
+      return new Promise(resolve => setTimeout(resolve,ms));
+    }
+
+    function pushDailyRunLog(text,cls="neutral",wave=0) {
+      state.dailyDungeon.runLog = state.dailyDungeon.runLog || [];
+      state.dailyDungeon.runLog.push({
+        text,
+        cls,
+        wave,
+        order:state.dailyDungeon.runLog.length+1
+      });
+      state.dailyDungeon.runLog = state.dailyDungeon.runLog.slice(-90);
+      renderDailyRunLog();
+    }
+
+    function dailyBattleHighlights(events) {
+      if (!Array.isArray(events) || !events.length) return [];
+      const chosen = [];
+      const used = new Set();
+
+      const add = event => {
+        if (!event || used.has(event.text) || chosen.length >= 10) return;
+        used.add(event.text);
+        chosen.push(event);
+      };
+
+      add(events[0]);
+      events.slice(1,5).forEach(add);
+
+      events
+        .filter(event =>
+          /rarity-unique|rarity-legendary|battle-heal|battle-effect|positive/.test(event.cls || "")
+        )
+        .slice(0,3)
+        .forEach(add);
+
+      events.slice(-3).forEach(add);
+      return chosen;
+    }
+
+    function renderDailyRunLog() {
+      const dungeon = state.dailyDungeon;
+      if (!els.dailyRunLog || !els.dailyRunProgress || !els.dailyRunStatus) return;
+
+      let status = "공략 대기";
+      if (dungeon.running) status = `${Math.max(1,dungeon.currentWave || 1)}/5 웨이브 진행 중`;
+      else if (dungeon.lastResult === "cleared") status = "균열 정복 완료";
+      else if (dungeon.lastResult === "failed") status = `${dungeon.currentWave || 1}웨이브에서 실패`;
+
+      els.dailyRunStatus.textContent = status;
+      els.dailyRunStatus.className = dungeon.running
+        ? "running"
+        : dungeon.lastResult === "cleared"
+          ? "cleared"
+          : dungeon.lastResult === "failed"
+            ? "failed"
+            : "";
+
+      els.dailyRunProgress.innerHTML = Array.from({length:5},(_,index) => {
+        const wave = index+1;
+        let cls = "";
+        if (dungeon.lastResult === "cleared" || wave < dungeon.currentWave) cls = "complete";
+        if (dungeon.running && wave === dungeon.currentWave) cls = "current";
+        if (!dungeon.running && dungeon.lastResult === "failed" && wave === dungeon.currentWave) cls = "failed";
+        return `
+          <div class="daily-wave-step ${cls}">
+            <span>${wave}</span>
+            <strong>${wave === 5 ? "균열핵" : `${wave}웨이브`}</strong>
+          </div>
+        `;
+      }).join("");
+
+      const logEntries = dungeon.runLog || [];
+      els.dailyRunLog.innerHTML = logEntries.length
+        ? logEntries.map(entry => `
+            <div class="daily-run-line ${entry.cls || "neutral"}">
+              <span>${String(entry.order || 0).padStart(2,"0")}</span>
+              <p>${entry.text}</p>
+            </div>
+          `).join("")
+        : `<div class="daily-run-empty">난이도를 고르고 도전하면 입장부터 보상 획득까지 전투 기록이 이곳에 남습니다.</div>`;
+
+      if (dungeon.running) {
+        requestAnimationFrame(() => {
+          els.dailyRunLog.scrollTop = els.dailyRunLog.scrollHeight;
+        });
+      }
+    }
+
     async function runDailyDungeon(difficultyId) {
       ensureDailyDungeon();
       if (state.dailyDungeon.cleared) return toast("오늘의 던전은 이미 클리어했습니다.");
       if (state.dailyDungeon.attempts <= 0) return toast("오늘의 도전 횟수를 모두 사용했습니다.");
-      if (isBusy) return;
+      if (isBusy || state.dailyDungeon.running) return;
 
       const difficulty = dailyDifficulties.find(d => d.id === difficultyId);
       if (!difficulty) return;
+
+      if (autoTimer) toggleAuto();
       isBusy = true;
+      state.dailyDungeon.running = true;
+      state.dailyDungeon.currentWave = 0;
+      state.dailyDungeon.lastResult = "";
+      state.dailyDungeon.runLog = [];
       state.dailyDungeon.attempts--;
+
+      const theme = currentDailyTheme();
       const originalHp = state.hp;
       const originalMp = state.mp;
       const s = totalStats();
       state.hp = s.maxHp;
       state.mp = s.maxMp;
-      let cleared = true
+
+      let cleared = true;
       let totalTurns = 0;
       let waveReached = 0;
+      const rewardItems = [];
 
-      log(`[일일 던전] ${currentDailyTheme().name} · ${difficulty.name} 난이도 입장`, "rarity-epic");
+      pushDailyRunLog(
+        `[균열 개방] ${theme.name} · ${difficulty.name} 난이도에 입장했다. 입장권이 1장 소모되었다.`,
+        "rarity-epic"
+      );
+      pushDailyRunLog(
+        `공략 시작 상태 · HP ${fmt(state.hp)}/${fmt(s.maxHp)} · MP ${fmt(state.mp)}/${fmt(s.maxMp)} · 5연전`,
+        "battle-start"
+      );
+      log(`[일일 던전] ${theme.name} · ${difficulty.name} 난이도 입장`, "rarity-epic");
+      renderDailyDungeon();
+
+      requestAnimationFrame(() => {
+        els.dailyRunPanel?.scrollIntoView({behavior:"smooth",block:"nearest"});
+      });
+      await dailyDungeonPause(420);
 
       for (let wave=1; wave<=5; wave++) {
-        const enemy = createDungeonEnemy(wave, difficulty);
+        state.dailyDungeon.currentWave = wave;
+        const enemy = createDungeonEnemy(wave,difficulty);
+
+        pushDailyRunLog(
+          `[${wave}/5] ${enemy.name} 출현 · ${enemy.rank} · HP ${fmt(enemy.hp)} · 공격 ${fmt(enemy.attack)} · 방어 ${fmt(enemy.defense)}`,
+          wave === 5 ? "rarity-legendary" : "battle-start",
+          wave
+        );
+        renderDailyDungeon();
+        await dailyDungeonPause(wave === 5 ? 520 : 320);
+
         const result = simulateBattle(enemy);
-        result.events.forEach(event => log(`[던전 ${wave}/5] ${event.text}`, event.cls));
+        const highlights = dailyBattleHighlights(result.events);
+
+        for (const event of highlights) {
+          pushDailyRunLog(`[${wave}/5] ${event.text}`,event.cls || "neutral",wave);
+          await dailyDungeonPause(70);
+        }
+
         totalTurns += result.turns;
         waveReached = wave;
         state.hp = result.heroHp;
         state.mp = result.heroMp;
+
         if (!result.won) {
           cleared = false;
+          pushDailyRunLog(
+            `[${wave}/5] 전투 불능 · ${result.turns}막 · 균열 수호자를 돌파하지 못했다.`,
+            "negative",
+            wave
+          );
           break;
         }
-        const currentStats = totalStats();
-        state.hp = Math.min(currentStats.maxHp, state.hp + Math.round(currentStats.maxHp * .12));
-        state.mp = Math.min(currentStats.maxMp, state.mp + Math.round(currentStats.maxMp * .10));
+
+        pushDailyRunLog(
+          `[${wave}/5] 돌파 성공 · ${result.turns}막 · 남은 HP ${fmt(state.hp)} · MP ${fmt(state.mp)}`,
+          wave === 5 ? "rarity-legendary" : "positive",
+          wave
+        );
+
+        if (wave < 5) {
+          const currentStats = totalStats();
+          const beforeHp = state.hp;
+          const beforeMp = state.mp;
+          state.hp = Math.min(currentStats.maxHp,state.hp+Math.round(currentStats.maxHp*.12));
+          state.mp = Math.min(currentStats.maxMp,state.mp+Math.round(currentStats.maxMp*.10));
+          pushDailyRunLog(
+            `균열 사이의 짧은 휴식 · HP +${fmt(state.hp-beforeHp)} · MP +${fmt(state.mp-beforeMp)}`,
+            "battle-heal",
+            wave
+          );
+        }
+
+        renderDailyDungeon();
+        await dailyDungeonPause(300);
       }
 
       state.hp = originalHp;
       state.mp = originalMp;
-      const theme = currentDailyTheme();
 
       if (cleared) {
         state.dailyDungeon.cleared = true;
-        state.dailyDungeon.best = { difficulty:difficulty.id, turns:totalTurns };
-        state.records.dailyClears = (state.records.dailyClears || 0) + 1;
+        state.dailyDungeon.best = {difficulty:difficulty.id,turns:totalTurns};
+        state.records.dailyClears = (state.records.dailyClears || 0)+1;
+
         const rewardMult = difficulty.rewardMult;
-        const goldReward = Math.round(260 * rewardMult * theme.gold);
-        const dustReward = Math.round(7 * rewardMult * theme.dust);
-        const skillReward = Math.round((difficulty.id === "nightmare" ? 1 : 0) + theme.skill);
-        const tierStoneReward = (difficulty.id === "normal" ? 1 : difficulty.id === "hard" ? 2 : 3) + (theme.id === "arcane" ? 1 : 0);
+        const goldReward = Math.round(260*rewardMult*theme.gold);
+        const dustReward = Math.round(7*rewardMult*theme.dust);
+        const skillReward = Math.round((difficulty.id === "nightmare" ? 1 : 0)+theme.skill);
+        const tierStoneReward =
+          (difficulty.id === "normal" ? 1 : difficulty.id === "hard" ? 2 : 3)+
+          (theme.id === "arcane" ? 1 : 0);
+
         state.gold += goldReward;
         state.dust += dustReward;
         state.skillPoints += skillReward;
         state.materials.sameTierRunes += tierStoneReward;
         state.records.totalGold += goldReward;
 
+        pushDailyRunLog(
+          `[균열핵 파괴] ${totalTurns}막에 걸친 5연전이 끝났다. 균열이 안정되기 시작한다.`,
+          "rarity-legendary",
+          5
+        );
+
         if (theme.id === "supply") {
-          state.consumables.health += 2+(difficulty.id !== "normal" ? 1 : 0);
-          state.consumables.mana += 2+(difficulty.id === "nightmare" ? 1 : 0);
-          state.consumables.stamina += difficulty.id === "nightmare" ? 2 : 1;
-          state.consumables.elixir += difficulty.id === "nightmare" ? 2 : 1;
+          const healthReward = 2+(difficulty.id !== "normal" ? 1 : 0);
+          const manaReward = 2+(difficulty.id === "nightmare" ? 1 : 0);
+          const staminaReward = difficulty.id === "nightmare" ? 2 : 1;
+          const elixirReward = difficulty.id === "nightmare" ? 2 : 1;
+          state.consumables.health += healthReward;
+          state.consumables.mana += manaReward;
+          state.consumables.stamina += staminaReward;
+          state.consumables.elixir += elixirReward;
+          pushDailyRunLog(
+            `보급 균열 회수 · 체력약 +${healthReward} · 마나약 +${manaReward} · 활력약 +${staminaReward} · 영약 +${elixirReward}`,
+            "battle-heal"
+          );
         }
 
-        const itemCount = theme.items + (difficulty.id === "hard" ? 1 : difficulty.id === "nightmare" ? 2 : 0);
+        const itemCount = theme.items+(difficulty.id === "hard" ? 1 : difficulty.id === "nightmare" ? 2 : 0);
         for (let i=0; i<itemCount; i++) {
           const bonus = difficulty.id === "nightmare" ? 8 : difficulty.id === "hard" ? 4 : 2;
-          const dailyZone = [...zones].reverse().find(z => power() >= z.rec * .75) || zones[0];
-          const item = generateItem(dailyZone.mult * (1 + difficulty.rewardMult*.18), bonus);
+          const dailyZone = [...zones].reverse().find(z => power() >= z.rec*.75) || zones[0];
+          const item = generateItem(dailyZone.mult*(1+difficulty.rewardMult*.18),bonus);
           storeItem(item);
           recordDroppedItem(item);
+          rewardItems.push(item);
         }
+
+        pushDailyRunLog(
+          `핵심 보상 · 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)} · 동급 각인석 +${tierStoneReward}${skillReward ? ` · 스킬 포인트 +${skillReward}` : ""}`,
+          "rarity-set"
+        );
+
+        rewardItems.forEach((item,index) => {
+          pushDailyRunLog(
+            `전리품 ${index+1} · ${item.name} · ${item.rarityName} · 장비 점수 ${fmt(item.score)}`,
+            item.rarityClass || "positive"
+          );
+        });
 
         const line = `${difficulty.name} 클리어 · ${totalTurns}턴 · 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)} · 동급 각인석 +${tierStoneReward}${skillReward ? ` · 스킬 포인트 +${skillReward}` : ""}`;
         state.dailyDungeon.history.unshift(line);
         state.dailyDungeon.history = state.dailyDungeon.history.slice(0,5);
+        state.dailyDungeon.lastResult = "cleared";
         log(`[일일 던전] ${line}`, "rarity-legendary");
-        toast("일일 던전 클리어!");
+        toast("오늘의 균열 정복 완료!");
       } else {
         const line = `${difficulty.name} 실패 · ${waveReached}웨이브 도달`;
         state.dailyDungeon.history.unshift(line);
         state.dailyDungeon.history = state.dailyDungeon.history.slice(0,5);
+        state.dailyDungeon.lastResult = "failed";
+        pushDailyRunLog(
+          `[균열 붕괴] ${waveReached}웨이브에서 후퇴했다. 다음 도전에서는 처음부터 다시 진입한다.`,
+          "negative",
+          waveReached
+        );
         log(`[일일 던전] ${line}`, "negative");
-        toast("던전 공략 실패");
+        toast(`${waveReached}웨이브에서 공략 실패`);
       }
 
+      state.dailyDungeon.running = false;
       isBusy = false;
       saveState();
       renderAll();
     }
 
     function resetDailyDungeonDemo() {
-      state.dailyDungeon = { date:localDateKey(), attempts:3, cleared:false, best:null, history:[] };
+      state.dailyDungeon = {
+        date:localDateKey(),
+        attempts:3,
+        cleared:false,
+        best:null,
+        history:[],
+        runLog:[],
+        running:false,
+        currentWave:0,
+        lastResult:""
+      };
       log("오늘의 균열 입장권을 시험용으로 복구했다.", "neutral");
       saveState();
       renderAll();
@@ -4168,7 +4401,12 @@ const VERSION = 29;
     function renderDailyDungeon() {
       ensureDailyDungeon();
       const theme = currentDailyTheme();
-      els.dailyTicketBadge.textContent = state.dailyDungeon.cleared ? "오늘 클리어 완료" : `도전 ${state.dailyDungeon.attempts} / 3`;
+      els.dailyTicketBadge.textContent = state.dailyDungeon.running
+        ? `공략 중 · ${Math.max(1,state.dailyDungeon.currentWave || 1)}/5`
+        : state.dailyDungeon.cleared
+          ? "오늘 클리어 완료"
+          : `도전 ${state.dailyDungeon.attempts} / 3`;
+      els.dailyTicketBadge.classList.toggle("running",!!state.dailyDungeon.running);
       els.dailyTierStoneBadge.textContent = `동급 각인석 ${fmt(state.materials.sameTierRunes || 0)}`;
       els.dailyTheme.innerHTML = `
         <h3>${theme.name}</h3>
@@ -4182,14 +4420,15 @@ const VERSION = 29;
           <div class="daily-desc">${diff.recText}<br>보상 배율 ×${diff.rewardMult}</div>
           <div class="daily-reward">골드 ${fmt(Math.round(260*diff.rewardMult*theme.gold))} · 별가루 ${fmt(Math.round(7*diff.rewardMult*theme.dust))}<br>동급 각인석 ${diff.id === "normal" ? 1 : diff.id === "hard" ? 2 : 3}${theme.id === "arcane" ? " +1" : ""}</div>
           <div class="mini-buttons">
-            <button class="primary" data-daily-run="${diff.id}" ${state.dailyDungeon.cleared || state.dailyDungeon.attempts<=0 ? "disabled" : ""}>도전하기</button>
+            <button class="primary" data-daily-run="${diff.id}" ${state.dailyDungeon.running || state.dailyDungeon.cleared || state.dailyDungeon.attempts<=0 ? "disabled" : ""}>${state.dailyDungeon.running ? "공략 진행 중" : "도전하기"}</button>
           </div>
         </article>
       `).join("");
       els.dailyGrid.querySelectorAll("[data-daily-run]").forEach(btn => btn.onclick = () => runDailyDungeon(btn.dataset.dailyRun));
+      renderDailyRunLog();
       els.dailyHistory.innerHTML = state.dailyDungeon.history.length
-        ? `<strong>오늘의 기록</strong><br>${state.dailyDungeon.history.map(x => `• ${x}`).join("<br>")}`
-        : "아직 오늘의 도전 기록이 없습니다.";
+        ? `<strong>오늘의 결과 요약</strong><br>${state.dailyDungeon.history.map(x => `• ${x}`).join("<br>")}`
+        : "아직 오늘의 도전 결과가 없습니다.";
     }
 
     function ensureArena() {

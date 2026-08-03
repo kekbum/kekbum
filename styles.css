@@ -4436,3 +4436,258 @@ body.modal-open {
     width:100%;
   }
 }
+
+
+/* v30: 오늘의 균열 웨이브 진행 및 전용 공략 로그 */
+.daily-run-panel {
+  margin:14px 16px;
+  overflow:hidden;
+  border:1px solid rgba(171,113,235,.42);
+  border-radius:14px;
+  background:
+    radial-gradient(circle at 85% 0,rgba(151,82,223,.15),transparent 38%),
+    linear-gradient(155deg,#17141d,#0d0e12 72%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.daily-run-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:13px 14px;
+  border-bottom:1px solid rgba(171,113,235,.20);
+  background:rgba(95,52,136,.09);
+}
+
+.daily-run-heading span {
+  display:block;
+  color:#8d789f;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.18em;
+}
+
+.daily-run-heading h3 {
+  margin:3px 0 0;
+  color:#e3d8eb;
+  font-size:15px;
+}
+
+.daily-run-heading > strong {
+  flex:0 0 auto;
+  padding:6px 9px;
+  border:1px solid #45404a;
+  border-radius:999px;
+  color:#a7a0ae;
+  background:#141218;
+  font-size:9px;
+}
+
+.daily-run-heading > strong.running {
+  border-color:#8b5eb4;
+  color:#d6b3f5;
+  animation:rift-status-pulse 1.2s ease-in-out infinite;
+}
+
+.daily-run-heading > strong.cleared {
+  border-color:#8d7139;
+  color:#f1cc73;
+}
+
+.daily-run-heading > strong.failed {
+  border-color:#854d55;
+  color:#e9a5ae;
+}
+
+@keyframes rift-status-pulse {
+  0%,100% { box-shadow:0 0 0 rgba(172,102,236,0); }
+  50% { box-shadow:0 0 13px rgba(172,102,236,.24); }
+}
+
+.daily-run-progress {
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:6px;
+  padding:11px 12px;
+  border-bottom:1px solid rgba(255,255,255,.055);
+}
+
+.daily-wave-step {
+  position:relative;
+  min-width:0;
+  padding:8px 5px;
+  border:1px solid #35323a;
+  border-radius:8px;
+  color:#686572;
+  background:#111116;
+  text-align:center;
+}
+
+.daily-wave-step span {
+  display:grid;
+  place-items:center;
+  width:20px;
+  height:20px;
+  margin:0 auto 5px;
+  border:1px solid #494550;
+  border-radius:50%;
+  font-size:8px;
+  font-weight:950;
+}
+
+.daily-wave-step strong {
+  display:block;
+  overflow:hidden;
+  font-size:8px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.daily-wave-step.complete {
+  border-color:rgba(175,136,65,.46);
+  color:#d3b56f;
+  background:rgba(116,82,29,.13);
+}
+
+.daily-wave-step.complete span {
+  border-color:#99773b;
+  color:#f3cf77;
+}
+
+.daily-wave-step.current {
+  border-color:#9963c9;
+  color:#dfc0f7;
+  background:rgba(125,69,177,.18);
+  box-shadow:0 0 14px rgba(153,83,215,.16);
+}
+
+.daily-wave-step.current span {
+  border-color:#ad75db;
+  color:#f1d8ff;
+}
+
+.daily-wave-step.failed {
+  border-color:#98515b;
+  color:#eaa4ad;
+  background:rgba(131,57,69,.15);
+}
+
+.daily-run-log {
+  height:300px;
+  overflow-y:auto;
+  padding:10px 12px 12px;
+  scrollbar-color:#53415f #111116;
+}
+
+.daily-run-line {
+  display:grid;
+  grid-template-columns:25px minmax(0,1fr);
+  gap:8px;
+  padding:7px 4px;
+  border-bottom:1px dashed rgba(255,255,255,.055);
+}
+
+.daily-run-line > span {
+  color:#56525d;
+  font:800 8px/1.55 monospace;
+}
+
+.daily-run-line > p {
+  margin:0;
+  color:#a8a4ae;
+  font-size:9px;
+  line-height:1.55;
+  word-break:keep-all;
+}
+
+.daily-run-line.battle-start > p {
+  color:#c5b7d2;
+}
+
+.daily-run-line.battle-turn > p {
+  color:#b8b4bd;
+}
+
+.daily-run-line.battle-enemy > p,
+.daily-run-line.negative > p {
+  color:#df929d;
+}
+
+.daily-run-line.battle-heal > p,
+.daily-run-line.positive > p {
+  color:#91d1ad;
+}
+
+.daily-run-line.battle-effect > p {
+  color:#aebfe1;
+}
+
+.daily-run-line.rarity-epic > p {
+  color:#ca9bf1;
+}
+
+.daily-run-line.rarity-legendary > p {
+  color:#f0c568;
+  font-weight:900;
+}
+
+.daily-run-line.rarity-set > p {
+  color:#78d7b4;
+  font-weight:850;
+}
+
+.daily-run-line.rarity-unique > p {
+  color:#efa07a;
+  font-weight:900;
+}
+
+.daily-run-empty {
+  display:grid;
+  place-items:center;
+  min-height:260px;
+  padding:20px;
+  color:#6e6975;
+  font-size:10px;
+  line-height:1.65;
+  text-align:center;
+}
+
+#dailyTicketBadge.running {
+  border-color:#8f5dbd;
+  color:#d8b7f3;
+  background:rgba(108,60,151,.17);
+}
+
+@media (max-width:620px) {
+  .daily-run-panel {
+    margin:12px;
+  }
+
+  .daily-run-heading {
+    align-items:flex-start;
+  }
+
+  .daily-run-progress {
+    gap:4px;
+    padding:9px 8px;
+  }
+
+  .daily-wave-step {
+    padding:7px 2px;
+  }
+
+  .daily-wave-step strong {
+    font-size:7px;
+  }
+
+  .daily-run-log {
+    height:330px;
+    padding:8px;
+  }
+
+  .daily-run-line {
+    grid-template-columns:22px minmax(0,1fr);
+    gap:5px;
+  }
+}
