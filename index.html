@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=27">
+  <link rel="stylesheet" href="styles.css?v=28">
 
 </head>
 <body>
@@ -467,10 +467,10 @@
         <div class="page-heading">
           <div>
             <h2>활력 야영지</h2>
-            <p>사냥이 끝난 뒤 숫자 봉인을 풀어 활력을 되찾는다. 하루 세 번까지 도전할 수 있다.</p>
+            <p>하루 5판의 보상 대전으로 활력을 얻고, 이후에는 보상 10%의 연습 대전을 무제한 진행할 수 있다.</p>
           </div>
           <div class="toolbar">
-            <span class="badge" id="baseballTicketBadge">도전 3 / 3</span>
+            <span class="badge" id="baseballTicketBadge">보상 대전 5 / 5</span>
             <span class="resource-pill stamina-pill" id="campStaminaBadge">활력 60 / 60</span>
             <span class="resource-pill stamina-pill" id="campPotionBadge">활력 물약 0</span>
           </div>
@@ -494,16 +494,17 @@
               <div><strong>4~5회 성공</strong><span>활력 +18</span></div>
               <div><strong>6~8회 성공</strong><span>활력 +12</span></div>
               <div><strong>실패</strong><span>위로의 활력 +4</span></div>
+              <div class="practice-reward-line"><strong>5판 이후 연습</strong><span>위 활력 보상의 10% · 물약 없음</span></div>
             </div>
 
             <div class="baseball-controls">
-              <button id="baseballStartBtn" class="camp-primary">숫자 봉인 시작</button>
+              <button id="baseballStartBtn" class="camp-primary">보상 대전 시작 · 5판 남음</button>
               <div class="baseball-guess-row">
                 <input id="baseballGuessInput" type="text" inputmode="numeric" maxlength="3" placeholder="세 자리 숫자" autocomplete="off" />
                 <button id="baseballGuessBtn">봉인 해독</button>
               </div>
               <button id="baseballGiveUpBtn" class="camp-muted">이번 봉인 포기</button>
-              <button id="baseballResetBtn" class="camp-muted">시험용 도전 횟수 복구</button>
+              <button id="baseballResetBtn" class="camp-muted">시험용 보상 5판 복구</button>
             </div>
 
             <div class="baseball-seal" id="baseballSeal">
@@ -926,7 +927,7 @@
     </div>
   </div>
 
-  <script src="game.js?v=27"></script>
+  <script src="game.js?v=28"></script>
 
 </body>
 </html>

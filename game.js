@@ -1,4 +1,4 @@
-const VERSION = 27;
+const VERSION = 28;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -55,6 +55,8 @@ const VERSION = 27;
     const STAMINA_MAX = 60;
     const STAMINA_RECOVERY_MS = 10 * 60 * 1000;
     const AUTO_HUNT_INTERVAL_MS = 5000;
+    const BASEBALL_DAILY_REWARD_GAMES = 5;
+    const BASEBALL_PRACTICE_REWARD_RATE = .10;
 
     const classCombatText = {
       vanguard: { action:"검격", damageType:"physical" },
@@ -692,8 +694,9 @@ const VERSION = 27;
       gamble: { selectedSlot:"weapon", lastResult:null, history:[] },
       staminaGame: {
         date:"",
-        tickets:3,
+        tickets:BASEBALL_DAILY_REWARD_GAMES,
         active:false,
+        practice:false,
         secret:"",
         attempts:0,
         maxAttempts:8,
@@ -762,6 +765,8 @@ const VERSION = 27;
         numberBaseballGames: 0,
         numberBaseballWins: 0,
         numberBaseballBest: 0,
+        numberBaseballPracticeGames: 0,
+        numberBaseballPracticeWins: 0,
         staminaEarnedFromGames: 0,
         skillBooksDropped: 0,
         skillBooksUsed: 0,
@@ -1041,6 +1046,7 @@ const VERSION = 27;
         return {
           ...fresh,
           ...loaded,
+          version:VERSION,
           attributes: { ...fresh.attributes, ...(loaded.attributes || {}) },
           skills: Object.fromEntries(
             Object.keys(fresh.skills).map(classId => [
@@ -1091,6 +1097,18 @@ const VERSION = 27;
           staminaGame: {
             ...fresh.staminaGame,
             ...(loaded.staminaGame || {}),
+            ...(
+              Number(loaded.version || 0) < 28 &&
+              loaded.staminaGame?.date === localDateKey()
+                ? {
+                    tickets:Math.min(
+                      BASEBALL_DAILY_REWARD_GAMES,
+                      Math.max(0,Number(loaded.staminaGame?.tickets ?? 3))+2
+                    ),
+                    practice:false
+                  }
+                : {}
+            ),
             history:[...((loaded.staminaGame && loaded.staminaGame.history) || [])]
           },
           pendingRecovery: loaded.pendingRecovery || null,
@@ -1566,6 +1584,13 @@ const VERSION = 27;
     function randomChoice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
     function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
     function fmt(n) { return Math.floor(n).toLocaleString("ko-KR"); }
+
+    function fmtStamina(n) {
+      const value = Math.round((Number(n) || 0)*10)/10;
+      return Number.isInteger(value)
+        ? value.toLocaleString("ko-KR")
+        : value.toLocaleString("ko-KR",{minimumFractionDigits:1,maximumFractionDigits:1});
+    }
 
     function chooseRarity(bonus=0) {
       const adjusted = rarityTable.map((r, i) => ({
@@ -3144,7 +3169,7 @@ const VERSION = 27;
             <div class="info-card"><h3 class="rarity-set">세트·유니크 완성도</h3><p>세트와 유니크는 일반 접사를 갖지 않는 대신 일반 장비에 없는 전용 효과가 붙는다.</p><p>결함품·불완전·온전·완벽·각성으로 완성도가 나뉘며 능력치와 고유 효과 출력이 달라진다.</p></div>
             <div class="info-card"><h3 class="rarity-unique">대박과 꽝</h3><p>같은 이름의 유물도 감정 결과가 다르다. 좋은 기반 유니크의 각성품은 대박이고, 약한 유니크의 결함품은 실제 꽝에 가깝다.</p><p>누더기 행상단 세트와 무딘 왕의 식칼·금 간 모래시계는 의도적으로 약하거나 대가가 있는 특별 전리품이다.</p></div>
             <div class="info-card"><h3 class="rarity-set">녹빛 활력 물약</h3><p>몬스터의 회복품 드롭에서 낮은 확률로 등장하며 한 병당 활력 12를 회복한다.</p><p>수동 사냥에서는 즉시 사용·보관·판매를 고를 수 있고 연속 사냥에서는 자동으로 보관된다.</p></div>
-            <div class="info-card"><h3>숫자 봉인</h3><p>활력 야영지에서 하루 세 번 도전하는 세 자리 숫자야구다. 최대 8번 안에 맞히면 시도 횟수에 따라 활력을 얻는다.</p><p>1~3회 성공 시 활력 물약도 받으며 연승이 이어질수록 활력 보너스가 조금 증가한다.</p></div>
+            <div class="info-card"><h3>숫자 봉인</h3><p>활력 야영지에서 하루 5판까지 정상 보상을 받는 세 자리 숫자야구다. 최대 8번 안에 맞히면 시도 횟수에 따라 활력을 얻는다.</p><p>5판 이후에는 무제한 연습 대전으로 전환되며 활력 보상은 10%, 활력 물약은 지급되지 않는다. 연습 결과는 보상 대전 연승에 영향을 주지 않는다.</p></div>
             <div class="info-card"><h3>초보자 가이드 미션</h3><p>현재 단계 하나만 활성화되며 목표를 달성하고 보상을 받으면 다음 단계가 열린다. 가이드가 열리기 전에 수행한 장착·스탯 배분·수동 저장도 자동으로 인정된다.</p><p>사냥·장착·능력치·기술·도감·의뢰·야영지·일일 균열·저장까지 차례로 익힌다.</p></div>
             <div class="info-card"><h3 class="rarity-epic">몬스터 스킬북</h3><p>몬스터는 낮은 확률로 특정 직업과 기술이 적힌 스킬북을 떨어뜨린다. 정예·보스·희귀 지도에서 확률이 높다.</p><p>낡은 책은 Lv.5, 온전한 책은 Lv.8, 금단의 책은 Lv.10까지 기술을 직접 올릴 수 있다.</p></div>
             <div class="info-card"><h3 class="rarity-set">야전 정비 계약</h3><p>한 판당 최대 지출액을 정하면 일반 사냥이 끝난 뒤 부족한 체력과 마나를 자동으로 복구한다.</p><p>1골드는 체력 2 또는 마나 1로 환산되며, 설정한 상한을 전부 쓰는 것이 아니라 실제 부족분에 필요한 골드만 사용한다.</p></div>
@@ -3658,8 +3683,9 @@ const VERSION = 27;
       if (state.staminaGame.date !== today) {
         state.staminaGame = {
           date:today,
-          tickets:3,
+          tickets:BASEBALL_DAILY_REWARD_GAMES,
           active:false,
+          practice:false,
           secret:"",
           attempts:0,
           maxAttempts:8,
@@ -3699,35 +3725,47 @@ const VERSION = 27;
       return {strikes,balls};
     }
 
-    function grantGameStamina(amount,source) {
+    function grantGameStamina(amount,source,{allowOverflowPotion=true}={}) {
+      const normalizedAmount = Math.max(0,Math.round((Number(amount) || 0)*10)/10);
       const before = state.stamina;
-      state.stamina = Math.min(STAMINA_MAX,state.stamina+amount);
+      state.stamina = Math.min(STAMINA_MAX,Math.round((state.stamina+normalizedAmount)*10)/10);
       state.staminaUpdatedAt = Date.now();
-      const gained = state.stamina-before;
-      const overflow = Math.max(0,amount-gained);
+      const gained = Math.round((state.stamina-before)*10)/10;
+      const overflow = Math.max(0,Math.round((normalizedAmount-gained)*10)/10);
       let potionBonus = 0;
-      if (overflow > 0) {
+      if (allowOverflowPotion && overflow > 0) {
         potionBonus = Math.max(1,Math.ceil(overflow/12));
         state.consumables.stamina = (state.consumables.stamina || 0)+potionBonus;
       }
-      state.records.staminaEarnedFromGames = (state.records.staminaEarnedFromGames || 0)+gained;
-      log(`${source} · 활력 +${fmt(gained)}${potionBonus ? ` · 초과분 활력 물약 +${potionBonus}` : ""}`,"rarity-set");
+      state.records.staminaEarnedFromGames = Math.round(((state.records.staminaEarnedFromGames || 0)+gained)*10)/10;
+      log(`${source} · 활력 +${fmtStamina(gained)}${potionBonus ? ` · 초과분 활력 물약 +${potionBonus}` : ""}`,"rarity-set");
       return {gained,potionBonus};
     }
 
     function startBaseballGame() {
       ensureStaminaGame();
       if (state.staminaGame.active) return toast("이미 숫자 봉인을 풀고 있습니다.");
-      if (state.staminaGame.tickets <= 0) return toast("오늘의 숫자 봉인 도전을 모두 사용했습니다.");
 
-      state.staminaGame.tickets--;
+      const practice = state.staminaGame.tickets <= 0;
+      if (!practice) state.staminaGame.tickets--;
+
       state.staminaGame.active = true;
+      state.staminaGame.practice = practice;
       state.staminaGame.secret = createBaseballSecret();
       state.staminaGame.attempts = 0;
       state.staminaGame.history = [];
       state.records.numberBaseballGames = (state.records.numberBaseballGames || 0)+1;
+      if (practice) {
+        state.records.numberBaseballPracticeGames = (state.records.numberBaseballPracticeGames || 0)+1;
+      }
+
       els.baseballGuessInput.value = "";
-      log("활력 야영지 · 점술사의 숫자 봉인을 시작했다.","neutral");
+      log(
+        practice
+          ? "활력 야영지 · 연습 숫자 봉인을 시작했다. 보상은 10%만 지급된다."
+          : `활력 야영지 · 보상 숫자 봉인을 시작했다. 오늘 ${state.staminaGame.tickets}판 남았다.`,
+        practice ? "neutral" : "rarity-set"
+      );
       saveState();
       renderStaminaCamp();
       setTimeout(() => els.baseballGuessInput.focus(),50);
@@ -3735,25 +3773,45 @@ const VERSION = 27;
 
     function finishBaseballGame(won,reason="") {
       const game = state.staminaGame;
+      const practice = !!game.practice;
       let reward = 4;
       let potionReward = 0;
 
       if (won) {
         reward = game.attempts <= 3 ? 24 : game.attempts <= 5 ? 18 : 12;
-        game.streak = (game.streak || 0)+1;
-        const streakBonus = Math.min(6,Math.max(0,(game.streak-1)*2));
-        reward += streakBonus;
-        if (game.attempts <= 3) potionReward = 1;
-        game.winsToday = (game.winsToday || 0)+1;
+
+        if (!practice) {
+          game.streak = (game.streak || 0)+1;
+          const streakBonus = Math.min(6,Math.max(0,(game.streak-1)*2));
+          reward += streakBonus;
+          if (game.attempts <= 3) potionReward = 1;
+          game.winsToday = (game.winsToday || 0)+1;
+        } else {
+          state.records.numberBaseballPracticeWins = (state.records.numberBaseballPracticeWins || 0)+1;
+        }
+
         game.bestAttempts = game.bestAttempts == null ? game.attempts : Math.min(game.bestAttempts,game.attempts);
         state.records.numberBaseballWins = (state.records.numberBaseballWins || 0)+1;
         const oldBest = state.records.numberBaseballBest || 0;
         if (!oldBest || game.attempts < oldBest) state.records.numberBaseballBest = game.attempts;
-      } else {
+      } else if (!practice) {
         game.streak = 0;
       }
 
-      const result = grantGameStamina(reward,won ? `숫자 봉인 ${game.attempts}회 만에 해독` : "숫자 봉인 위로 보상");
+      if (practice) {
+        reward = Math.round(reward*BASEBALL_PRACTICE_REWARD_RATE*10)/10;
+        potionReward = 0;
+      }
+
+      const rewardSource = practice
+        ? won
+          ? `연습 숫자 봉인 ${game.attempts}회 만에 해독 · 보상 10%`
+          : "연습 숫자 봉인 위로 보상 · 보상 10%"
+        : won
+          ? `숫자 봉인 ${game.attempts}회 만에 해독`
+          : "숫자 봉인 위로 보상";
+
+      const result = grantGameStamina(reward,rewardSource,{allowOverflowPotion:!practice});
       if (potionReward) {
         state.consumables.stamina = (state.consumables.stamina || 0)+potionReward;
         log(`빠른 해독 보너스 · 녹빛 활력 물약 +${potionReward}`,"rarity-set");
@@ -3762,18 +3820,24 @@ const VERSION = 27;
       game.active = false;
       const secret = game.secret;
       game.secret = "";
+      game.practice = false;
       game.history.unshift({
         final:true,
         won,
+        practice,
         secret,
         text:won
-          ? `${game.attempts}회 만에 봉인 해독 · 활력 +${result.gained}${potionReward ? ` · 물약 +${potionReward}` : ""}`
-          : `${reason || "봉인 해독 실패"} · 정답 ${secret} · 활력 +${result.gained}`
+          ? `${practice ? "연습 · " : ""}${game.attempts}회 만에 봉인 해독 · 활력 +${fmtStamina(result.gained)}${potionReward ? ` · 물약 +${potionReward}` : ""}`
+          : `${practice ? "연습 · " : ""}${reason || "봉인 해독 실패"} · 정답 ${secret} · 활력 +${fmtStamina(result.gained)}`
       });
       game.history = game.history.slice(0,12);
       saveState();
       renderAll();
-      toast(won ? "숫자 봉인 해독 성공!" : "숫자 봉인이 닫혔습니다.");
+      toast(
+        won
+          ? practice ? "연습 숫자 봉인 성공! 보상 10%" : "숫자 봉인 해독 성공!"
+          : practice ? "연습 대전이 끝났습니다." : "숫자 봉인이 닫혔습니다."
+      );
     }
 
     function submitBaseballGuess() {
@@ -3810,15 +3874,19 @@ const VERSION = 27;
 
     function giveUpBaseballGame() {
       if (!state.staminaGame.active) return;
-      if (!confirm("이번 숫자 봉인을 포기할까요? 도전 횟수는 돌아오지 않습니다.")) return;
+      const message = state.staminaGame.practice
+        ? "이번 연습 숫자 봉인을 포기할까요?"
+        : "이번 숫자 봉인을 포기할까요? 보상 대전 횟수는 돌아오지 않습니다.";
+      if (!confirm(message)) return;
       finishBaseballGame(false,"봉인 해독 포기");
     }
 
     function resetBaseballDemo() {
       state.staminaGame = {
         date:localDateKey(),
-        tickets:3,
+        tickets:BASEBALL_DAILY_REWARD_GAMES,
         active:false,
+        practice:false,
         secret:"",
         attempts:0,
         maxAttempts:8,
@@ -3827,7 +3895,7 @@ const VERSION = 27;
         streak:state.staminaGame.streak || 0,
         bestAttempts:state.staminaGame.bestAttempts || null
       };
-      log("시험용 숫자 봉인 도전 횟수를 복구했다.","neutral");
+      log("시험용 숫자 봉인 보상 대전 5판을 복구했다.","neutral");
       saveState();
       renderAll();
     }
@@ -3838,24 +3906,40 @@ const VERSION = 27;
       const active = game.active;
       const remaining = Math.max(0,game.maxAttempts-game.attempts);
 
-      els.staminaCampNavMark.textContent = game.tickets > 0 ? `(${game.tickets})` : "";
-      els.baseballTicketBadge.textContent = `도전 ${game.tickets} / 3`;
-      els.campStaminaBadge.textContent = `활력 ${fmt(state.stamina)} / ${STAMINA_MAX}`;
+      const practiceAvailable = game.tickets <= 0;
+      const activePractice = active && !!game.practice;
+
+      els.staminaCampNavMark.textContent = game.tickets > 0 ? `(${game.tickets})` : "(연습)";
+      els.baseballTicketBadge.textContent = game.tickets > 0
+        ? `보상 대전 ${game.tickets} / ${BASEBALL_DAILY_REWARD_GAMES}`
+        : "연습 대전 · 보상 10%";
+      els.baseballTicketBadge.classList.toggle("practice",practiceAvailable);
+      els.campStaminaBadge.textContent = `활력 ${fmtStamina(state.stamina)} / ${STAMINA_MAX}`;
       els.campPotionBadge.textContent = `활력 물약 ${fmt(state.consumables.stamina || 0)}`;
       els.campPotionCount.textContent = `보유 ${fmt(state.consumables.stamina || 0)}개`;
       els.campUsePotionBtn.disabled = (state.consumables.stamina || 0) <= 0 || state.stamina >= STAMINA_MAX;
 
-      els.baseballStartBtn.disabled = active || game.tickets <= 0;
+      els.baseballStartBtn.disabled = active;
+      els.baseballStartBtn.textContent = practiceAvailable
+        ? "연습 대전 시작 · 보상 10%"
+        : `보상 대전 시작 · ${game.tickets}판 남음`;
+      els.baseballStartBtn.classList.toggle("practice",practiceAvailable);
       els.baseballGuessInput.disabled = !active;
       els.baseballGuessBtn.disabled = !active;
       els.baseballGiveUpBtn.disabled = !active;
 
-      els.baseballTitle.textContent = active ? `숫자 봉인 해독 중 · 남은 기회 ${remaining}` : "점술사의 숫자 봉인";
+      els.baseballTitle.textContent = active
+        ? `${activePractice ? "연습 " : ""}숫자 봉인 해독 중 · 남은 기회 ${remaining}`
+        : practiceAvailable
+          ? "점술사의 숫자 봉인 · 연습 대전"
+          : "점술사의 숫자 봉인";
       els.baseballStatus.textContent = active
-        ? `${game.attempts}회 시도했다. 스트라이크와 볼의 흔적을 읽어 다음 숫자를 골라라.`
+        ? activePractice
+          ? `${game.attempts}회 시도했다. 연습 대전은 활력 보상의 10%만 받으며 물약은 지급되지 않는다.`
+          : `${game.attempts}회 시도했다. 스트라이크와 볼의 흔적을 읽어 다음 숫자를 골라라.`
         : game.tickets > 0
-          ? "서로 다른 숫자 세 자리를 맞혀라. 숫자와 자리가 맞으면 스트라이크, 숫자만 맞으면 볼이다."
-          : "오늘의 봉인은 모두 닫혔다. 내일 다시 세 번의 기회가 열린다.";
+          ? `오늘 보상 대전이 ${game.tickets}판 남았다. 다 사용한 뒤에도 연습 대전을 계속할 수 있다.`
+          : "오늘의 보상 대전 5판을 모두 마쳤다. 이제 무제한 연습 대전에서 활력 보상의 10%를 받는다.";
 
       els.baseballSeal.classList.toggle("solved",!active && game.history[0]?.final && game.history[0]?.won);
       const sealDigits = active
@@ -3868,8 +3952,8 @@ const VERSION = 27;
       els.baseballHistory.innerHTML = game.history.length
         ? game.history.map(entry => {
             if (entry.final) {
-              return `<div class="baseball-history-row">
-                <span>결과</span>
+              return `<div class="baseball-history-row ${entry.practice ? "practice" : ""}">
+                <span>${entry.practice ? "연습" : "결과"}</span>
                 <strong>${entry.won ? "해독 성공" : "봉인 종료"}</strong>
                 <span class="baseball-result ${entry.won ? "strike" : "out"}">${entry.text}</span>
               </div>`;
@@ -3888,7 +3972,9 @@ const VERSION = 27;
           <div class="stat"><span>누적 도전</span><strong>${fmt(state.records.numberBaseballGames || 0)}</strong></div>
           <div class="stat"><span>누적 성공</span><strong>${fmt(state.records.numberBaseballWins || 0)}</strong></div>
           <div class="stat"><span>최고 기록</span><strong>${state.records.numberBaseballBest ? `${state.records.numberBaseballBest}회` : "-"}</strong></div>
-          <div class="stat"><span>현재 연승</span><strong>${fmt(game.streak || 0)}</strong></div>
+          <div class="stat"><span>보상 대전 연승</span><strong>${fmt(game.streak || 0)}</strong></div>
+          <div class="stat"><span>연습 도전</span><strong>${fmt(state.records.numberBaseballPracticeGames || 0)}</strong></div>
+          <div class="stat"><span>연습 성공</span><strong>${fmt(state.records.numberBaseballPracticeWins || 0)}</strong></div>
         </div>
       `;
     }
@@ -5833,7 +5919,7 @@ const VERSION = 27;
 
       els.xpText.textContent = `${fmt(state.xp)} / ${fmt(need)}`;
       els.xpBar.style.width = `${clamp(state.xp / need * 100, 0, 100)}%`;
-      els.focusText.textContent = `${state.stamina} / ${STAMINA_MAX} · ${staminaRecoveryLabel()}`;
+      els.focusText.textContent = `${fmtStamina(state.stamina)} / ${STAMINA_MAX} · ${staminaRecoveryLabel()}`;
       els.focusBar.style.width = `${state.stamina / STAMINA_MAX * 100}%`;
       els.focusBonusText.textContent = "일반 사냥 -1 · 희귀 지도 -3";
 
@@ -6025,7 +6111,7 @@ const VERSION = 27;
       recoverOffline();
       renderRareMap();
       const s = totalStats();
-      els.focusText.textContent = `${state.stamina} / ${STAMINA_MAX} · ${staminaRecoveryLabel()}`;
+      els.focusText.textContent = `${fmtStamina(state.stamina)} / ${STAMINA_MAX} · ${staminaRecoveryLabel()}`;
       els.focusBar.style.width = `${state.stamina / STAMINA_MAX * 100}%`;
       updateAutoButton();
       state.hp = Math.min(state.hp, s.maxHp);

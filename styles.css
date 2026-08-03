@@ -4331,3 +4331,35 @@ body.modal-open {
     margin-top:14px;
   }
 }
+
+
+/* v28: 숫자야구 5판 보상 + 무제한 연습 대전 */
+.baseball-reward-table .practice-reward-line {
+  border-color:rgba(113,137,171,.34);
+  background:linear-gradient(90deg,rgba(49,69,96,.18),rgba(17,19,24,.32));
+}
+
+.baseball-reward-table .practice-reward-line strong {
+  color:#aac5e5;
+}
+
+#baseballTicketBadge.practice {
+  border-color:#546b89;
+  color:#b9d2ef;
+  background:rgba(52,75,103,.16);
+}
+
+#baseballStartBtn.practice {
+  border-color:#607b9c;
+  color:#eef6ff;
+  background:linear-gradient(#5e7895,#34475d);
+}
+
+#baseballStartBtn.practice:hover {
+  background:linear-gradient(#6d89a8,#3d5269);
+}
+
+.baseball-history-row.practice {
+  border-left:3px solid #607e9f;
+  background:rgba(58,78,103,.09);
+}
