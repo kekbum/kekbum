@@ -3217,3 +3217,365 @@
     #skillBookDropCard {
       display:none !important;
     }
+
+
+/* 능력치 상세 설명과 초기화 */
+.attribute-row {
+  align-items:center;
+}
+
+.attribute-label {
+  min-width:0;
+}
+
+.attribute-label > span {
+  display:block;
+  font-weight:900;
+}
+
+.attribute-label small {
+  display:block;
+  margin-top:3px;
+  color:#8f98a8;
+  font-size:9px;
+  line-height:1.35;
+  word-break:keep-all;
+}
+
+.stat-reset-panel {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:9px;
+  padding:9px 10px;
+  border:1px solid rgba(242,193,78,.22);
+  border-radius:9px;
+  background:rgba(242,193,78,.045);
+}
+
+.stat-reset-panel strong {
+  display:block;
+  color:#e7cb83;
+  font-size:11px;
+}
+
+.stat-reset-panel span {
+  display:block;
+  margin-top:3px;
+  color:#929aab;
+  font-size:9px;
+  line-height:1.35;
+}
+
+.stat-reset-panel button {
+  flex:0 0 auto;
+  border:1px solid #796033;
+  border-radius:7px;
+  padding:7px 9px;
+  color:#f0d798;
+  background:linear-gradient(#49371f,#261c11);
+  font-size:10px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.stat-reset-panel button:disabled {
+  opacity:.38;
+  cursor:not-allowed;
+}
+
+@media (max-width:720px) {
+  .attribute-grid {
+    grid-template-columns:1fr;
+  }
+
+  .attribute-row {
+    grid-template-columns:minmax(0,1fr) 54px 42px;
+  }
+
+  .stat-reset-panel {
+    align-items:stretch;
+    flex-direction:column;
+  }
+
+  .stat-reset-panel button {
+    width:100%;
+  }
+}
+
+
+/* 패배 인지 및 자동 사냥 중지 안내 */
+body.modal-open {
+  overflow:hidden;
+}
+
+.defeat-modal {
+  position:fixed;
+  inset:0;
+  z-index:120;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:
+    radial-gradient(circle at 50% 35%,rgba(151,31,31,.22),transparent 43%),
+    rgba(5,5,7,.92);
+  backdrop-filter:blur(9px);
+}
+
+.defeat-modal-card {
+  width:min(520px,100%);
+  padding:22px;
+  border:1px solid #713d3d;
+  border-top:3px solid #b84d4d;
+  border-radius:15px;
+  background:
+    radial-gradient(circle at 50% 0,rgba(169,48,48,.14),transparent 42%),
+    linear-gradient(160deg,#211819,#111216 68%);
+  box-shadow:0 30px 100px rgba(0,0,0,.68),0 0 42px rgba(158,36,36,.12);
+  text-align:center;
+}
+
+.defeat-emblem {
+  display:grid;
+  place-items:center;
+  width:66px;
+  height:66px;
+  margin:0 auto 11px;
+  border:1px solid #924848;
+  border-radius:50%;
+  color:#e78989;
+  background:#160d0e;
+  box-shadow:0 0 26px rgba(183,66,66,.16);
+  font:900 29px/1 Georgia,"Noto Serif KR",serif;
+}
+
+.defeat-kicker {
+  color:#9d6060;
+  font:900 9px/1.2 Georgia,serif;
+  letter-spacing:.25em;
+}
+
+.defeat-modal-card h2 {
+  margin:6px 0 7px;
+  color:#f0d3cf;
+  font:900 25px/1.25 Georgia,"Noto Serif KR",serif;
+}
+
+.defeat-summary {
+  margin:0 auto 15px;
+  max-width:430px;
+  color:#b9a5a2;
+  font-size:12px;
+  line-height:1.65;
+}
+
+.defeat-detail-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  text-align:left;
+}
+
+.defeat-detail-grid > div {
+  padding:10px;
+  border:1px solid #443235;
+  border-radius:8px;
+  background:rgba(9,10,12,.68);
+}
+
+.defeat-detail-grid span {
+  display:block;
+  margin-bottom:4px;
+  color:#82777a;
+  font-size:9px;
+  font-weight:900;
+}
+
+.defeat-detail-grid strong {
+  display:block;
+  overflow:hidden;
+  color:#e4d3cf;
+  font-size:12px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.defeat-auto-stop {
+  margin-top:11px;
+  padding:10px;
+  border:1px solid #8a4343;
+  border-radius:8px;
+  color:#ffaaaa;
+  background:rgba(134,34,34,.13);
+  font-size:12px;
+  font-weight:950;
+}
+
+.defeat-auto-stop.manual {
+  color:#d2c1a6;
+  border-color:#67573d;
+  background:rgba(105,81,36,.10);
+}
+
+.defeat-actions {
+  display:grid;
+  grid-template-columns:1fr 1.25fr;
+  gap:8px;
+  margin-top:13px;
+}
+
+.defeat-actions button {
+  min-height:44px;
+  border:1px solid #5d4d4f;
+  border-radius:8px;
+  color:#d5c7c4;
+  background:linear-gradient(#2a2425,#171517);
+  font-size:11px;
+  font-weight:950;
+  cursor:pointer;
+}
+
+.defeat-actions .defeat-confirm {
+  color:#fff0e9;
+  border-color:#9f4c45;
+  background:linear-gradient(#853d37,#4b2423);
+}
+
+@media (max-width:520px) {
+  .defeat-modal {
+    align-items:flex-end;
+    padding:10px;
+  }
+
+  .defeat-modal-card {
+    padding:18px 14px 14px;
+    border-radius:15px 15px 10px 10px;
+  }
+
+  .defeat-modal-card h2 {
+    font-size:22px;
+  }
+
+  .defeat-actions {
+    grid-template-columns:1fr;
+  }
+
+  .defeat-actions .defeat-confirm {
+    order:-1;
+  }
+}
+
+
+/* v21: 능력치 6종 모바일 잘림 방지
+   기존의 2열 규칙보다 뒤에서 적용되며 모든 화면에서 한 줄씩 표시한다. */
+.attribute-box,
+.attribute-grid,
+.attribute-row,
+.attribute-label {
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+
+.attribute-box {
+  overflow:visible;
+}
+
+.attribute-grid {
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) !important;
+  width:100%;
+  gap:7px;
+}
+
+.attribute-row {
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 58px 48px !important;
+  width:100%;
+  overflow:hidden;
+}
+
+.attribute-label {
+  overflow:hidden;
+}
+
+.attribute-label > span,
+.attribute-label small {
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.attribute-row input {
+  width:58px !important;
+  max-width:58px;
+  box-sizing:border-box;
+}
+
+.attribute-row button {
+  width:48px !important;
+  min-width:48px !important;
+  max-width:48px;
+  box-sizing:border-box;
+}
+
+@media (max-width:390px) {
+  .attribute-row {
+    grid-template-columns:minmax(0,1fr) 50px 43px !important;
+    gap:4px;
+    padding-left:6px;
+    padding-right:6px;
+  }
+
+  .attribute-row input {
+    width:50px !important;
+    max-width:50px;
+    padding-left:2px;
+    padding-right:2px;
+  }
+
+  .attribute-row button {
+    width:43px !important;
+    min-width:43px !important;
+    max-width:43px;
+    padding-left:2px;
+    padding-right:2px;
+    font-size:10px;
+  }
+
+  .attribute-label small {
+    font-size:8px;
+  }
+}
+
+
+/* v22: 캐릭터 삭제 경고 */
+.character-delete-zone {
+  display:grid;
+  gap:8px;
+}
+
+.character-delete-warning {
+  padding:8px 9px;
+  border:1px solid rgba(184,75,75,.24);
+  border-radius:7px;
+  color:#a98e8e;
+  background:rgba(128,34,34,.055);
+  font-size:9px;
+  line-height:1.45;
+  word-break:keep-all;
+}
+
+.character-delete-zone .action.danger {
+  min-height:40px;
+  border-color:#8c3f3f;
+  color:#ffd3d3;
+  background:linear-gradient(#682d2d,#361a1a);
+  font-weight:950;
+}
+
+.character-delete-zone .action.danger:hover {
+  border-color:#c45858;
+  background:linear-gradient(#7d3434,#421d1d);
+}

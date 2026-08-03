@@ -1,4 +1,4 @@
-const VERSION = 18;
+const VERSION = 22;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -8,7 +8,7 @@ const VERSION = 18;
       vit: { name:"생명", short:"생명", desc:"체력·방어" },
       int: { name:"지능", short:"지능", desc:"공격 안정성" },
       spi: { name:"정신", short:"정신", desc:"방어·회복" },
-      luck:{ name:"행운", short:"행운", desc:"치명타·드롭" },
+      luck:{ name:"행운", short:"행운", desc:"치명타·골드·장비 발견" },
       spd: { name:"속도", short:"속도", desc:"연속공격·회피" }
     };
 
@@ -645,6 +645,7 @@ const VERSION = 18;
       classId: null,
       attributes: { str:5, vit:5, int:5, spi:5, luck:5, spd:5 },
       statPoints: 0,
+      statResetCount: 0,
       skillPoints: 0,
       skills: defaultSkillState(),
       skillBooks: [],
@@ -790,7 +791,9 @@ const VERSION = 18;
         gambleCount: 0,
         gambleGoldSpent: 0,
         gambleEpicPlus: 0,
-        gambleSpecialItems: 0
+        gambleSpecialItems: 0,
+        statResets: 0,
+        statResetGoldSpent: 0
       },
       logs: ["《잿빛 전리품》에 입장했습니다. 사냥터를 선택하고 첫 전투를 시작하세요."]
     });
@@ -813,9 +816,20 @@ const VERSION = 18;
       attributes: document.getElementById("attributes"),
       recommendedStatsBtn: document.getElementById("recommendedStatsBtn"),
       balancedStatsBtn: document.getElementById("balancedStatsBtn"),
+      statResetBtn: document.getElementById("statResetBtn"),
+      statResetHint: document.getElementById("statResetHint"),
       changeClassBtn: document.getElementById("changeClassBtn"),
       classModal: document.getElementById("classModal"),
       classOptions: document.getElementById("classOptions"),
+      defeatModal: document.getElementById("defeatModal"),
+      defeatSummary: document.getElementById("defeatSummary"),
+      defeatEnemy: document.getElementById("defeatEnemy"),
+      defeatTurns: document.getElementById("defeatTurns"),
+      defeatHp: document.getElementById("defeatHp"),
+      defeatMp: document.getElementById("defeatMp"),
+      defeatAutoStop: document.getElementById("defeatAutoStop"),
+      defeatInventoryBtn: document.getElementById("defeatInventoryBtn"),
+      defeatConfirmBtn: document.getElementById("defeatConfirmBtn"),
       nicknameModal: document.getElementById("nicknameModal"),
       nicknameModalInput: document.getElementById("nicknameModalInput"),
       nicknameConfirmBtn: document.getElementById("nicknameConfirmBtn"),
@@ -3160,6 +3174,7 @@ const VERSION = 18;
           ["용병 고용 / 유니크 진화", `${fmt(r.mercenariesHired || 0)} / ${fmt(r.uniqueEvolutions || 0)}`],
           ["도박 횟수 / 골드 지출", `${fmt(r.gambleCount || 0)} / ${fmt(r.gambleGoldSpent || 0)}G`],
           ["도박 영웅 이상 / 세트·유니크", `${fmt(r.gambleEpicPlus || 0)} / ${fmt(r.gambleSpecialItems || 0)}`],
+          ["능력치 초기화 / 골드 지출", `${fmt(r.statResets || 0)} / ${fmt(r.statResetGoldSpent || 0)}G`],
           ["가이드 미션", `${fmt(r.guideMissionsClaimed || 0)} / ${guideMissions.length}`],
           ["정예 / 변이 처치", `${fmt(r.eliteKills || 0)} / ${fmt(r.mutatedKills || 0)}`],
           ["분해 / 재련", `${fmt(r.itemsSalvaged || 0)} / ${fmt(r.reforges || 0)}`],
@@ -5044,6 +5059,40 @@ const VERSION = 18;
         : `계약을 켜면 전투 후 최대 ${fmt(care.budget)}G 안에서 필요한 만큼만 사용한다. 골드가 부족하면 보유액까지만 정비한다.`;
     }
 
+    function showDefeatModal({enemy,result,autoStopped}) {
+      const stats = totalStats();
+      els.defeatEnemy.textContent = enemy?.name || "알 수 없는 적";
+      els.defeatTurns.textContent = `${fmt(result?.turns || 0)}턴`;
+      els.defeatHp.textContent = `${fmt(state.hp)} / ${fmt(stats.maxHp)}`;
+      els.defeatMp.textContent = `${fmt(state.mp)} / ${fmt(stats.maxMp)}`;
+      els.defeatSummary.textContent = autoStopped
+        ? "연속 패배를 막기 위해 자동 사냥을 멈췄습니다. 장비와 경험치는 잃지 않았습니다."
+        : "이번 사냥에서 쓰러졌습니다. 장비와 경험치는 잃지 않았으며, 정비 후 다시 도전할 수 있습니다.";
+      els.defeatAutoStop.textContent = autoStopped
+        ? "자동 사냥이 즉시 중지되었습니다."
+        : "수동 사냥 패배가 기록되었습니다.";
+      els.defeatAutoStop.classList.toggle("manual",!autoStopped);
+      els.defeatModal.classList.remove("hidden");
+      document.body.classList.add("modal-open");
+
+      if (navigator.vibrate) {
+        try { navigator.vibrate([120,70,220]); } catch (_) {}
+      }
+    }
+
+    function closeDefeatModal() {
+      els.defeatModal.classList.add("hidden");
+      document.body.classList.remove("modal-open");
+    }
+
+    function openRecoveryInventoryAfterDefeat() {
+      closeDefeatModal();
+      switchPage("inventory");
+      setTimeout(() => {
+        document.querySelector(".consumable-shelf")?.scrollIntoView({behavior:"smooth",block:"start"});
+      },80);
+    }
+
     async function hunt(inRareMap=false) {
       if (!state.classId) { showClassModal(); return; }
       if (state.pendingRecovery) {
@@ -5081,6 +5130,7 @@ const VERSION = 18;
       await new Promise(r => setTimeout(r, 650));
 
       const result = simulateBattle(enemy);
+      let defeatNotice = null;
       if (state.stamina >= STAMINA_MAX) state.staminaUpdatedAt = Date.now();
       state.stamina = Math.max(0, state.stamina - cost);
       state.mp = result.heroMp;
@@ -5202,16 +5252,22 @@ const VERSION = 18;
         log(`${enemy.name}이 ${enemy.turnLimit}막 안에 쓰러지지 않아 도망쳤습니다.`, "negative");
       } else {
         const s = totalStats();
+        const autoStopped = !!autoTimer;
+        if (autoTimer) toggleAuto();
+
         state.records.defeats++;
         state.streak = 0;
-        state.hp = Math.max(1, Math.round(s.maxHp * .45));
-        state.mp = Math.max(0, Math.round(s.maxMp * .25));
-        updateCodex(enemy, result, null, null);
-        if (feverActive) state.feverBattles = Math.max(0, state.feverBattles - 1);
-        log(`${enemy.name}에게 패배했습니다. 장비와 경험치는 잃지 않으며 마나는 25% 남습니다.`, "negative");
+        state.hp = Math.max(1,Math.round(s.maxHp*.45));
+        state.mp = Math.max(0,Math.round(s.maxMp*.25));
+        updateCodex(enemy,result,null,null);
+        if (feverActive) state.feverBattles = Math.max(0,state.feverBattles-1);
+
+        defeatNotice = {enemy,result,autoStopped};
+        log(`${enemy.name}에게 패배했습니다.${autoStopped ? " 자동 사냥을 즉시 중지했습니다." : ""} 장비와 경험치는 잃지 않습니다.`, "negative");
       }
 
       applyFieldCare();
+      if (defeatNotice) showDefeatModal(defeatNotice);
       saveState();
       setTimeout(() => {
         isBusy = false;
@@ -5331,6 +5387,72 @@ const VERSION = 18;
       toast(`${cls.name} 선택 완료`);
     }
 
+    function attributeDetail(key) {
+      const detail = {
+        str:"공격력 +1.48",
+        vit:"최대 체력 +8 · 방어력 +0.62",
+        int:"마법력 +1.58 · 최대 마나 +5.4",
+        spi:"방어력 +0.78 · 마나 +4.2 · 체력 +2",
+        luck:"치명타 +0.33%p · 골드 +0.12% · 장비 발견 +0.11%",
+        spd:"공격력 +0.28 · 치명타 +0.09%p · 연속공격·회피·지도 발견"
+      };
+      return detail[key] || attributeInfo[key]?.desc || "";
+    }
+
+    function manualStatAllocation() {
+      const clsStart = state.classId ? (classes[state.classId]?.start || {}) : {};
+      return Object.fromEntries(Object.keys(attributeInfo).map(key => [
+        key,
+        Math.max(0,Math.round(Number(state.attributes[key] || 0)-5-Number(clsStart[key] || 0)))
+      ]));
+    }
+
+    function refundableStatPoints() {
+      return Object.values(manualStatAllocation()).reduce((sum,value) => sum+value,0);
+    }
+
+    function statResetCost() {
+      if (Number(state.statResetCount || 0) === 0) return 0;
+      const paidResetIndex = Math.max(0,Number(state.statResetCount || 0)-1);
+      return Math.max(500,Math.round((500+state.level*120+paidResetIndex*700)/100)*100);
+    }
+
+    function resetAllocatedStats() {
+      const refund = refundableStatPoints();
+      if (refund <= 0) return toast("되돌릴 능력치 포인트가 없습니다.");
+
+      const cost = statResetCost();
+      if (state.gold < cost) return toast(`초기화 비용이 부족합니다. 필요 ${fmt(cost)}G`);
+
+      const costText = cost > 0 ? `${fmt(cost)}G` : "무료";
+      if (!confirm(`배분한 능력치 ${fmt(refund)}포인트를 되돌릴까요?\n비용: ${costText}\n직업 기본 능력치와 장비 능력치는 유지됩니다.`)) return;
+
+      if (autoTimer) toggleAuto();
+      state.gold -= cost;
+      state.records.statResetGoldSpent = (state.records.statResetGoldSpent || 0)+cost;
+
+      state.attributes = Object.fromEntries(Object.keys(attributeInfo).map(key => [key,5]));
+      const cls = currentClass();
+      if (cls) {
+        Object.entries(cls.start || {}).forEach(([key,value]) => {
+          state.attributes[key] += Number(value || 0);
+        });
+      }
+
+      state.statPoints += refund;
+      state.statResetCount = Number(state.statResetCount || 0)+1;
+      state.records.statResets = (state.records.statResets || 0)+1;
+
+      const stats = totalStats();
+      state.hp = stats.maxHp;
+      state.mp = stats.maxMp;
+
+      log(`능력치 초기화 · ${fmt(refund)}포인트 반환 · 비용 ${costText}`,cost > 0 ? "rarity-legendary" : "positive");
+      saveState();
+      renderAll();
+      toast(cost > 0 ? `능력치 초기화 · ${fmt(cost)}G` : "첫 능력치 초기화 무료 완료");
+    }
+
     function allocateStat(key, amount=1) {
       if (state.statPoints <= 0 || !Object.hasOwn(attributeInfo, key)) return;
       const safeAmount = Math.max(0, Math.min(state.statPoints, Math.floor(Number(amount) || 0)));
@@ -5392,11 +5514,21 @@ const VERSION = 18;
       els.statPoints.textContent = `남은 포인트 ${fmt(state.statPoints)}`;
       els.attributes.innerHTML = Object.entries(attributeInfo).map(([key, info]) => `
         <div class="attribute-row ${cls && cls.main === key ? "main-stat" : ""}">
-          <span>${info.short} <strong>${fmt(attrs[key])}</strong></span>
+          <div class="attribute-label">
+            <span>${info.short} <strong>${fmt(attrs[key])}</strong></span>
+            <small>${attributeDetail(key)}</small>
+          </div>
           <input type="number" min="0" max="${state.statPoints}" value="${state.statPoints > 0 ? 1 : 0}" data-stat-input="${key}" ${state.statPoints <= 0 ? "disabled" : ""} />
           <button data-stat-apply="${key}" ${state.statPoints <= 0 ? "disabled" : ""}>배분</button>
         </div>
       `).join("");
+      const resetCost = statResetCost();
+      const refund = refundableStatPoints();
+      els.statResetHint.textContent = resetCost === 0
+        ? `첫 초기화 무료 · 반환 가능 ${fmt(refund)}포인트`
+        : `반환 가능 ${fmt(refund)}포인트 · 비용 ${fmt(resetCost)}G`;
+      els.statResetBtn.textContent = resetCost === 0 ? "무료 초기화" : `${fmt(resetCost)}G로 초기화`;
+      els.statResetBtn.disabled = refund <= 0 || state.gold < resetCost;
       els.attributes.querySelectorAll("[data-stat-apply]").forEach(btn => btn.onclick = () => applyStatInput(btn.dataset.statApply));
       els.attributes.querySelectorAll("[data-stat-input]").forEach(input => input.onkeydown = event => {
         if (event.key === "Enter") applyStatInput(input.dataset.statInput);
@@ -5478,6 +5610,7 @@ const VERSION = 18;
         ["희귀 몬스터 처치", fmt(r.rareMonsterKills || 0)],
         ["도박 횟수 / 지출", `${fmt(r.gambleCount || 0)} / ${fmt(r.gambleGoldSpent || 0)}G`],
         ["도박 영웅+ / 특수", `${fmt(r.gambleEpicPlus || 0)} / ${fmt(r.gambleSpecialItems || 0)}`],
+        ["능력치 초기화 / 지출", `${fmt(r.statResets || 0)} / ${fmt(r.statResetGoldSpent || 0)}G`],
         ["가이드 미션", `${fmt(r.guideMissionsClaimed || 0)} / ${guideMissions.length}`],
         ["변이 처치", fmt(r.mutatedKills || 0)],
         ["출석 / 동급 각인", `${fmt(r.attendanceClaims || 0)} / ${fmt(r.tierRerolls || 0)}`],
@@ -5627,6 +5760,9 @@ const VERSION = 18;
 
     els.huntBtn.onclick = () => hunt(false);
     els.autoBtn.onclick = toggleAuto;
+    els.defeatConfirmBtn.onclick = closeDefeatModal;
+    els.defeatInventoryBtn.onclick = openRecoveryInventoryAfterDefeat;
+    els.statResetBtn.onclick = resetAllocatedStats;
     els.changeClassBtn.onclick = showClassModal;
     els.potionBtn.onclick = potion;
     els.manaPotionBtn.onclick = manaPotion;
@@ -5653,16 +5789,44 @@ const VERSION = 18;
     els.baseballGuessInput.onkeydown = event => {
       if (event.key === "Enter") submitBaseballGuess();
     };
-    els.resetBtn.onclick = () => {
-      if (!confirm("모든 사냥 기록을 지울까요?")) return;
+    function deleteCurrentCharacter() {
+      const nickname = cleanNickname(state.nickname || "");
+      const displayName = nickname || "무명의 사냥꾼";
+
+      const firstConfirmed = confirm(
+        `[${displayName}] 캐릭터를 삭제하시겠습니까?\n\n`+
+        "레벨, 장비, 골드, 수집 기록과 수동 저장 슬롯이 모두 삭제됩니다.\n"+
+        "삭제한 데이터는 복구할 수 없습니다."
+      );
+      if (!firstConfirmed) return;
+
+      const typed = prompt(
+        "정말 삭제하려면 현재 닉네임을 정확히 입력하세요.\n\n"+
+        `입력할 닉네임: ${displayName}`,
+        ""
+      );
+      if (typed === null) return;
+
+      if (cleanNickname(typed) !== displayName) {
+        toast("닉네임이 일치하지 않아 캐릭터 삭제를 취소했습니다.");
+        return;
+      }
+
       if (autoTimer) toggleAuto();
+
       localStorage.removeItem(SAVE_KEY);
+      for (let slot=1;slot<=3;slot++) {
+        localStorage.removeItem(saveSlotKey(slot));
+      }
+
       state = defaultState();
       saveState();
       renderAll();
       showNicknameModal();
-      toast("모든 기록을 지웠습니다.");
-    };
+      toast("캐릭터가 삭제되었습니다.");
+    }
+
+    els.resetBtn.onclick = deleteCurrentCharacter;
 
     window.addEventListener("beforeunload", saveState);
     setInterval(() => {

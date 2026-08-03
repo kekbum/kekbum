@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=18">
+  <link rel="stylesheet" href="styles.css?v=22">
 
 </head>
 <body>
@@ -80,6 +80,13 @@
                 <button id="balancedStatsBtn">균등 배분</button>
               </div>
               <div class="attribute-grid" id="attributes"></div>
+              <div class="stat-reset-panel">
+                <div>
+                  <strong>능력치 다시 배분</strong>
+                  <span id="statResetHint">첫 초기화는 무료입니다.</span>
+                </div>
+                <button id="statResetBtn">능력치 초기화</button>
+              </div>
             </div>
 
             <div class="meter-wrap">
@@ -215,8 +222,11 @@
           <div class="panel-title">현재 가이드 미션</div>
           <div class="panel-body">
             <div id="guideMiniTracker"></div>
-            <div class="danger-zone">
-              <button class="action danger" id="resetBtn" style="width:100%">모든 기록 지우기</button>
+            <div class="danger-zone character-delete-zone">
+              <div class="character-delete-warning">
+                현재 캐릭터와 장비·수집 기록·수동 저장 슬롯을 모두 삭제합니다.
+              </div>
+              <button class="action danger" id="resetBtn" style="width:100%">캐릭터 삭제</button>
             </div>
           </div>
         </div>
@@ -795,6 +805,44 @@
   </div>
 
 
+
+  <div class="defeat-modal hidden" id="defeatModal" role="dialog" aria-modal="true" aria-labelledby="defeatModalTitle">
+    <div class="defeat-modal-card">
+      <div class="defeat-emblem">敗</div>
+      <div class="defeat-kicker">HUNT FAILED</div>
+      <h2 id="defeatModalTitle">사냥에서 패배했습니다</h2>
+      <p class="defeat-summary" id="defeatSummary"></p>
+
+      <div class="defeat-detail-grid">
+        <div>
+          <span>패배한 상대</span>
+          <strong id="defeatEnemy">-</strong>
+        </div>
+        <div>
+          <span>버틴 전투</span>
+          <strong id="defeatTurns">0턴</strong>
+        </div>
+        <div>
+          <span>현재 체력</span>
+          <strong id="defeatHp">0 / 0</strong>
+        </div>
+        <div>
+          <span>현재 마나</span>
+          <strong id="defeatMp">0 / 0</strong>
+        </div>
+      </div>
+
+      <div class="defeat-auto-stop" id="defeatAutoStop">
+        자동 사냥이 즉시 중지되었습니다.
+      </div>
+
+      <div class="defeat-actions">
+        <button id="defeatInventoryBtn">회복품 가방 보기</button>
+        <button class="defeat-confirm" id="defeatConfirmBtn">패배를 확인했습니다</button>
+      </div>
+    </div>
+  </div>
+
   <div class="nickname-modal hidden" id="nicknameModal">
     <div class="nickname-modal-card">
       <div class="brand-kicker">NAME THE HUNTER</div>
@@ -806,7 +854,7 @@
     </div>
   </div>
 
-  <script src="game.js?v=18"></script>
+  <script src="game.js?v=22"></script>
 
 </body>
 </html>
