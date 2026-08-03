@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=28">
+  <link rel="stylesheet" href="styles.css?v=29">
 
 </head>
 <body>
@@ -649,25 +649,32 @@
         <div class="page-heading">
           <div>
             <h2>기록 보관소</h2>
-            <p>현재 진행을 수동 슬롯에 새기거나 세이브 파일로 보관한다.</p>
+            <p>현재 진행을 저장하거나 다른 컴퓨터·휴대폰으로 옮긴다.</p>
           </div>
           <span class="badge" id="saveVaultHero">이름 없는 기록</span>
         </div>
 
         <div class="save-warning">
-          수동 슬롯은 이 브라우저 안에 저장된다. 브라우저 데이터가 지워질 상황에 대비하려면
-          <strong>세이브 파일 내보내기</strong>로 컴퓨터에 백업해 두는 것이 안전하다.
+          수동 슬롯은 현재 브라우저에만 저장된다. 다른 기기로 옮길 때는
+          <strong>카카오톡으로 세이브 보내기</strong>를 사용하고, 받은 기기에서
+          <strong>세이브 파일 불러오기</strong>를 누르면 된다.
         </div>
 
         <div class="save-slot-grid" id="saveSlotGrid"></div>
 
-        <div class="save-file-panel">
-          <div>
-            <h3>세이브 파일</h3>
-            <p>현재 기록 전체를 JSON 파일로 내보내거나, 이전에 보관한 파일을 다시 불러온다.</p>
+        <div class="save-file-panel save-transfer-panel">
+          <div class="save-transfer-copy">
+            <h3>기기 간 세이브 이동</h3>
+            <p>휴대폰에서는 공유창에서 카카오톡을 선택한다. PC에서 공유가 지원되지 않으면 파일이 내려받아지므로 카카오톡 ‘나와의 채팅’에 첨부하면 된다.</p>
+            <div class="save-transfer-steps">
+              <span><b>1</b> 보내는 기기에서 세이브 전송</span>
+              <span><b>2</b> 카카오톡에서 파일 받기</span>
+              <span><b>3</b> 받는 기기에서 세이브 불러오기</span>
+            </div>
           </div>
           <div class="save-file-actions">
-            <button id="exportSaveBtn" class="vault-primary">세이브 파일 내보내기</button>
+            <button id="shareSaveBtn" class="vault-share">카카오톡으로 세이브 보내기</button>
+            <button id="exportSaveBtn" class="vault-primary">세이브 파일 다운로드</button>
             <button id="importSaveBtn">세이브 파일 불러오기</button>
             <input id="importSaveInput" type="file" accept=".json,application/json" class="hidden" />
           </div>
@@ -927,7 +934,7 @@
     </div>
   </div>
 
-  <script src="game.js?v=28"></script>
+  <script src="game.js?v=29"></script>
 
 </body>
 </html>

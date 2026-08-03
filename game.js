@@ -1,4 +1,4 @@
-const VERSION = 28;
+const VERSION = 29;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -1027,6 +1027,7 @@ const VERSION = 28;
       arenaLog: document.getElementById("arenaLog"),
       saveVaultHero: document.getElementById("saveVaultHero"),
       saveSlotGrid: document.getElementById("saveSlotGrid"),
+      shareSaveBtn: document.getElementById("shareSaveBtn"),
       exportSaveBtn: document.getElementById("exportSaveBtn"),
       importSaveBtn: document.getElementById("importSaveBtn"),
       importSaveInput: document.getElementById("importSaveInput")
@@ -1260,23 +1261,81 @@ const VERSION = 28;
       toast(`슬롯 ${slot} 삭제 완료`);
     }
 
-    function exportSaveFile() {
+    function saveTransferFilename() {
+      const safeName = cleanNickname(state.nickname || "hunter")
+        .replace(/\s+/g,"_")
+        .replace(/[^0-9A-Za-z가-힣_-]/g,"");
+      const date = new Date().toISOString().slice(0,10);
+      return `ash_loot_${safeName || "hunter"}_${date}.json`;
+    }
+
+    function createSaveTransferFile() {
       saveState();
       const snapshot = saveSnapshot();
-      const blob = new Blob([JSON.stringify(snapshot,null,2)],{type:"application/json"});
-      const url = URL.createObjectURL(blob);
+      const contents = JSON.stringify(snapshot,null,2);
+      const filename = saveTransferFilename();
+      const blob = new Blob([contents],{type:"application/json"});
+      const file = typeof File === "function"
+        ? new File([blob],filename,{type:"application/json",lastModified:Date.now()})
+        : null;
+      return {snapshot,contents,filename,blob,file};
+    }
+
+    function countSaveTransfer() {
+      state.records.manualSaves = (state.records.manualSaves || 0)+1;
+      saveState();
+    }
+
+    function downloadSaveTransferFile(transfer=createSaveTransferFile()) {
+      const url = URL.createObjectURL(transfer.blob);
       const anchor = document.createElement("a");
-      const safeName = cleanNickname(state.nickname || "hunter").replace(/\s+/g,"_");
-      const date = new Date().toISOString().slice(0,10);
       anchor.href = url;
-      anchor.download = `ash_loot_${safeName}_${date}.json`;
+      anchor.download = transfer.filename;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      state.records.manualSaves = (state.records.manualSaves || 0)+1;
-      saveState();
+      countSaveTransfer();
       setTimeout(() => URL.revokeObjectURL(url),1000);
-      toast("세이브 파일을 내보냈습니다.");
+      return transfer.filename;
+    }
+
+    function exportSaveFile() {
+      downloadSaveTransferFile();
+      toast("세이브 파일을 다운로드했습니다.");
+    }
+
+    async function shareSaveFile() {
+      const transfer = createSaveTransferFile();
+      const shareData = transfer.file
+        ? {
+            title:"잿빛 전리품 세이브",
+            text:`${state.nickname || "무명의 사냥꾼"}의 세이브 파일입니다. 받은 기기에서 ‘세이브 파일 불러오기’를 눌러 주세요.`,
+            files:[transfer.file]
+          }
+        : null;
+
+      const fileSharingSupported = !!(
+        shareData &&
+        navigator.share &&
+        (!navigator.canShare || navigator.canShare({files:shareData.files}))
+      );
+
+      if (fileSharingSupported) {
+        try {
+          await navigator.share(shareData);
+          countSaveTransfer();
+          toast("공유가 완료되었습니다.");
+          return;
+        } catch (error) {
+          if (error && error.name === "AbortError") {
+            toast("공유를 취소했습니다.");
+            return;
+          }
+        }
+      }
+
+      downloadSaveTransferFile(transfer);
+      toast("공유 기능이 없어 파일을 다운로드했습니다. 카카오톡에 첨부해 주세요.");
     }
 
     function importSaveFile(file) {
@@ -5985,6 +6044,7 @@ const VERSION = 28;
     els.nicknameModalInput.onkeydown = event => {
       if (event.key === "Enter") confirmNickname();
     };
+    els.shareSaveBtn.onclick = shareSaveFile;
     els.exportSaveBtn.onclick = exportSaveFile;
     els.importSaveBtn.onclick = () => els.importSaveInput.click();
     els.importSaveInput.onchange = () => importSaveFile(els.importSaveInput.files?.[0]);
