@@ -3579,3 +3579,483 @@ body.modal-open {
   border-color:#c45858;
   background:linear-gradient(#7d3434,#421d1d);
 }
+
+
+/* v23: 메인 사냥 화면 정리 — 단일 던전 선택창 */
+.dungeon-panel .panel-body {
+  padding:12px;
+}
+
+.dungeon-picker {
+  display:grid;
+  gap:6px;
+}
+
+.dungeon-picker > span {
+  color:#928a78;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.04em;
+}
+
+.dungeon-select {
+  width:100%;
+  min-height:44px;
+  padding:0 38px 0 12px;
+  border:1px solid #5d4d31;
+  border-radius:4px;
+  color:#ead9b6;
+  background:
+    linear-gradient(45deg,transparent 50%,#c9a45b 50%) calc(100% - 17px) 18px/6px 6px no-repeat,
+    linear-gradient(135deg,#c9a45b 50%,transparent 50%) calc(100% - 11px) 18px/6px 6px no-repeat,
+    linear-gradient(#29241b,#171510);
+  box-sizing:border-box;
+  font-size:12px;
+  font-weight:900;
+  appearance:none;
+  -webkit-appearance:none;
+}
+
+.dungeon-select:focus {
+  outline:2px solid rgba(224,178,84,.24);
+  outline-offset:1px;
+  border-color:#d2a84e;
+}
+
+.dungeon-summary {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+  margin-top:8px;
+}
+
+.dungeon-summary > div {
+  min-width:0;
+  padding:7px 8px;
+  border:1px solid #40382a;
+  border-radius:3px;
+  background:rgba(17,16,13,.7);
+}
+
+.dungeon-summary span {
+  display:block;
+  color:#817a6c;
+  font-size:8px;
+  font-weight:800;
+}
+
+.dungeon-summary strong {
+  display:block;
+  overflow:hidden;
+  margin-top:3px;
+  color:#d9c7a1;
+  font-size:10px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.information-record-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+  padding:13px 14px;
+  border:1px solid #51432d;
+  border-left:4px solid #d0a54d;
+  border-radius:3px;
+  background:linear-gradient(105deg,rgba(102,70,29,.25),rgba(21,19,15,.92));
+}
+
+.information-record-header span {
+  color:#96866a;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.16em;
+}
+
+.information-record-header h3 {
+  margin:3px 0 0;
+  color:#ead8b6;
+  font-size:15px;
+}
+
+.information-record-header > strong {
+  color:#f0c96f;
+  font:900 16px/1 Georgia,serif;
+}
+
+.information-record-card {
+  max-width:760px;
+}
+
+@media (max-width:480px) {
+  .dungeon-summary {
+    grid-template-columns:1fr;
+  }
+
+  .dungeon-summary > div {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+
+  .dungeon-summary strong {
+    margin-top:0;
+  }
+
+  .information-record-header {
+    align-items:flex-start;
+  }
+}
+
+
+/* v24: 암시장 정보 보강 및 매수·매도 분리 */
+.market-overview-box {
+  min-width:0;
+}
+
+.market-eyebrow {
+  color:#a89772;
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:.08em;
+}
+
+.market-stat-grid,
+.market-position-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+
+.market-stat-grid {
+  margin-top:14px;
+}
+
+.market-stat-grid > div,
+.market-position-grid > div {
+  min-width:0;
+  padding:8px 9px;
+  border:1px solid rgba(242,193,78,.16);
+  border-radius:8px;
+  background:rgba(7,8,10,.34);
+}
+
+.market-stat-grid span,
+.market-position-grid span {
+  display:block;
+  color:#847d6f;
+  font-size:8px;
+  font-weight:850;
+}
+
+.market-stat-grid strong,
+.market-position-grid strong {
+  display:block;
+  overflow:hidden;
+  margin-top:4px;
+  color:#e4d6ba;
+  font-size:11px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.market-position-title {
+  margin:15px 0 7px;
+  padding-top:12px;
+  border-top:1px solid rgba(242,193,78,.16);
+  color:#c5aa73;
+  font-size:10px;
+  font-weight:950;
+}
+
+.market-chart-box {
+  min-width:0;
+}
+
+.market-chart-caption {
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:6px;
+  color:#777e89;
+  font-size:8px;
+}
+
+.market-chart-caption strong {
+  color:#c8b78f;
+}
+
+.market-bar.latest {
+  background:linear-gradient(180deg,#ffe096,#b47d22);
+  box-shadow:0 0 10px rgba(242,193,78,.28);
+}
+
+.market-trade-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  padding:0 16px 16px;
+}
+
+.market-trade-card {
+  min-width:0;
+  padding:15px;
+  border:1px solid #343947;
+  border-radius:13px;
+  background:linear-gradient(150deg,rgba(36,40,51,.9),rgba(16,18,23,.96));
+}
+
+.market-trade-card.buy-card {
+  border-color:rgba(218,174,77,.40);
+  background:linear-gradient(150deg,rgba(103,75,27,.19),rgba(16,18,23,.97));
+}
+
+.market-trade-card.sell-card {
+  border-color:rgba(103,133,169,.40);
+  background:linear-gradient(150deg,rgba(47,71,99,.20),rgba(16,18,23,.97));
+}
+
+.market-trade-heading {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.market-trade-heading span {
+  display:block;
+  color:#7f8692;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.18em;
+}
+
+.market-trade-heading h3 {
+  margin:3px 0 0;
+  color:#e6dac2;
+  font-size:15px;
+}
+
+.market-trade-heading > strong {
+  flex:0 0 auto;
+  color:#e2bd63;
+  font-size:11px;
+}
+
+.sell-card .market-trade-heading > strong {
+  color:#a9c7e8;
+}
+
+.market-trade-card > p {
+  min-height:36px;
+  margin:8px 0 11px;
+  color:#838997;
+  font-size:9px;
+  line-height:1.5;
+}
+
+.market-quantity-field {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:9px;
+}
+
+.market-quantity-field > span {
+  color:#a9a18f;
+  font-size:9px;
+  font-weight:900;
+}
+
+.market-quantity-field input {
+  width:100%;
+  min-width:0;
+  min-height:38px;
+  padding:0 10px;
+  border:1px solid #464d5b;
+  border-radius:8px;
+  color:#f2e7d0;
+  background:#101218;
+  box-sizing:border-box;
+  font-size:13px;
+  font-weight:900;
+  text-align:right;
+}
+
+.market-quick-buttons {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;
+  margin-top:8px;
+}
+
+.market-quick-buttons button {
+  min-width:0;
+  min-height:34px;
+  padding:5px 2px;
+  border:1px solid #424957;
+  border-radius:7px;
+  color:#b9bec9;
+  background:#1a1d24;
+  font-size:10px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.market-quick-buttons button:hover {
+  border-color:#8b7547;
+  color:#f0d393;
+}
+
+.market-order-summary {
+  display:grid;
+  gap:6px;
+  margin-top:10px;
+}
+
+.market-order-summary > div {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:7px 8px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:7px;
+  background:rgba(5,6,8,.30);
+}
+
+.market-order-summary span {
+  color:#7f8590;
+  font-size:9px;
+}
+
+.market-order-summary strong {
+  color:#e7dbc4;
+  font-size:10px;
+}
+
+.market-order-button {
+  width:100%;
+  min-height:42px;
+  margin-top:10px;
+  border:0;
+  border-radius:9px;
+  font-size:12px;
+  font-weight:950;
+  cursor:pointer;
+}
+
+.market-order-button.buy {
+  color:#18130a;
+  background:linear-gradient(#f0c865,#bd8b2c);
+}
+
+.market-order-button.sell {
+  color:#f2f7ff;
+  background:linear-gradient(#6989ad,#40566f);
+}
+
+.market-order-button:disabled {
+  opacity:.35;
+  cursor:not-allowed;
+}
+
+@media (max-width:760px) {
+  .market-trade-grid {
+    grid-template-columns:1fr;
+    padding:0 12px 12px;
+  }
+}
+
+@media (max-width:430px) {
+  .market-stat-grid,
+  .market-position-grid {
+    grid-template-columns:1fr 1fr;
+    gap:5px;
+  }
+
+  .market-stat-grid > div,
+  .market-position-grid > div {
+    padding:7px;
+  }
+
+  .market-quick-buttons {
+    gap:4px;
+  }
+
+  .market-quick-buttons button {
+    font-size:9px;
+  }
+
+  .market-price {
+    font-size:34px;
+  }
+}
+
+
+/* v25: 암시장 가격 정보 간소화 */
+.market-simple-prices {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+
+.market-simple-prices > div {
+  min-width:0;
+  padding:11px 10px;
+  border:1px solid rgba(242,193,78,.17);
+  border-radius:9px;
+  background:rgba(7,8,10,.36);
+}
+
+.market-simple-prices > div.primary {
+  border-color:rgba(242,193,78,.38);
+  background:linear-gradient(145deg,rgba(116,83,29,.24),rgba(7,8,10,.42));
+}
+
+.market-simple-prices span {
+  display:block;
+  color:#888173;
+  font-size:8px;
+  font-weight:900;
+}
+
+.market-simple-prices strong {
+  display:block;
+  overflow:hidden;
+  margin-top:5px;
+  color:#e6d5b2;
+  font-size:16px;
+  line-height:1.15;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.market-simple-prices .primary strong {
+  color:#f1c967;
+  font-size:21px;
+}
+
+@media (max-width:430px) {
+  .market-simple-prices {
+    grid-template-columns:1fr;
+    gap:5px;
+  }
+
+  .market-simple-prices > div {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:9px 10px;
+  }
+
+  .market-simple-prices strong,
+  .market-simple-prices .primary strong {
+    margin-top:0;
+    font-size:14px;
+  }
+}

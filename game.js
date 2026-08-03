@@ -1,4 +1,4 @@
-const VERSION = 22;
+const VERSION = 25;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -845,7 +845,8 @@ const VERSION = 22;
       focusText: document.getElementById("focusText"),
       focusBar: document.getElementById("focusBar"),
       equipment: document.getElementById("equipment"),
-      zones: document.getElementById("zones"),
+      zoneSelect: document.getElementById("zoneSelect"),
+      zoneSelectSummary: document.getElementById("zoneSelectSummary"),
       currentZoneName: document.getElementById("currentZoneName"),
       enemyName: document.getElementById("enemyName"),
       enemyMeta: document.getElementById("enemyMeta"),
@@ -874,7 +875,6 @@ const VERSION = 22;
       skillBookDropCard: document.getElementById("skillBookDropCard"),
       lootCard: document.getElementById("lootCard"),
       combatLog: document.getElementById("combatLog"),
-      records: document.getElementById("records"),
       saveState: document.getElementById("saveState"),
       resetBtn: document.getElementById("resetBtn"),
       toast: document.getElementById("toast"),
@@ -915,14 +915,25 @@ const VERSION = 22;
       gambleResult: document.getElementById("gambleResult"),
       gambleHistory: document.getElementById("gambleHistory"),
       marketPrice: document.getElementById("marketPrice"),
-      marketTrend: document.getElementById("marketTrend"),
+      marketSellPrice: document.getElementById("marketSellPrice"),
+      marketHistoryAvg: document.getElementById("marketHistoryAvg"),
       marketGold: document.getElementById("marketGold"),
       marketTokens: document.getElementById("marketTokens"),
       marketAvg: document.getElementById("marketAvg"),
+      marketPositionValue: document.getElementById("marketPositionValue"),
+      marketUnrealized: document.getElementById("marketUnrealized"),
+      marketReturn: document.getElementById("marketReturn"),
       marketProfit: document.getElementById("marketProfit"),
-      marketQty: document.getElementById("marketQty"),
-      marketBuyMax: document.getElementById("marketBuyMax"),
-      marketSellAll: document.getElementById("marketSellAll"),
+      marketTradeCount: document.getElementById("marketTradeCount"),
+      marketBuyQty: document.getElementById("marketBuyQty"),
+      marketSellQty: document.getElementById("marketSellQty"),
+      marketBuyUnit: document.getElementById("marketBuyUnit"),
+      marketSellUnit: document.getElementById("marketSellUnit"),
+      marketBuyAvailable: document.getElementById("marketBuyAvailable"),
+      marketSellAvailable: document.getElementById("marketSellAvailable"),
+      marketBuyTotal: document.getElementById("marketBuyTotal"),
+      marketSellTotal: document.getElementById("marketSellTotal"),
+      marketSellProfitPreview: document.getElementById("marketSellProfitPreview"),
       marketBuyBtn: document.getElementById("marketBuyBtn"),
       marketSellBtn: document.getElementById("marketSellBtn"),
       marketHistory: document.getElementById("marketHistory"),
@@ -1015,7 +1026,7 @@ const VERSION = 22;
       importSaveInput: document.getElementById("importSaveInput")
     };
 
-    let activeInfoTab = "zones";
+    let activeInfoTab = "records";
 
     function loadState() {
       try {
@@ -3156,6 +3167,11 @@ const VERSION = 22;
       } else {
         const r = state.records;
         const rows = [
+          ["사냥꾼", state.nickname || "무명의 사냥꾼"],
+          ["현재 직업", currentClass()?.name || "미선택"],
+          ["직업 숙련도", fmt(state.classId ? state.mastery[state.classId] || 0 : 0)],
+          ["현재 레벨 / 전투력", `${fmt(state.level)} / ${fmt(power())}`],
+          ["인벤토리", `${fmt(state.inventory.length)} / ${fmt(state.inventoryCapacity)}`],
           ["총 처치", fmt(r.kills)], ["승리 / 패배", `${fmt(r.wins)} / ${fmt(r.defeats)}`],
           ["최고 피해", fmt(r.highestDamage)], ["최고 연속 처치", fmt(r.bestStreak)],
           ["획득 장비", fmt(r.items)], ["판매한 장비", fmt(r.itemsSold || 0)],
@@ -3189,7 +3205,17 @@ const VERSION = 22;
           ["전설 / 세트 / 유니크", `${fmt(r.legendary)} / ${fmt(r.setItems || 0)} / ${fmt(r.uniqueItems || 0)}`], ["희귀 지도", fmt(r.rareMaps)],
           ["총 획득 골드", fmt(r.totalGold)], ["거래 횟수", fmt(state.market.trades || 0)]
         ];
-        els.infoContent.innerHTML = `<div class="info-card"><h3>누적 플레이 기록</h3>${rows.map(([k,v]) => `<div class="record"><span>${k}</span><strong>${v}</strong></div>`).join("")}</div>`;
+        els.infoContent.innerHTML = `
+          <div class="information-record-header">
+            <div>
+              <span>ADVENTURE RECORD</span>
+              <h3>${state.nickname || "무명의 사냥꾼"}의 전과 기록</h3>
+            </div>
+            <strong>Lv.${fmt(state.level)}</strong>
+          </div>
+          <div class="info-card information-record-card">
+            ${rows.map(([k,v]) => `<div class="record"><span>${k}</span><strong>${v}</strong></div>`).join("")}
+          </div>`;
       }
     }
 
@@ -4350,8 +4376,59 @@ const VERSION = 22;
       return true;
     }
 
-    function tradeQty() {
-      return Math.max(1, Math.floor(Number(els.marketQty.value) || 1));
+    function marketQuantity(input) {
+      return Math.max(1,Math.floor(Number(input?.value) || 1));
+    }
+
+    function marketBuyMaximum() {
+      return Math.max(0,Math.floor(state.gold / Math.max(1,state.market.price)));
+    }
+
+    function marketSellMaximum() {
+      return Math.max(0,Math.floor(state.market.tokens || 0));
+    }
+
+    function marketPresetQuantity(maximum,preset) {
+      if (maximum <= 0) return 1;
+      if (preset === "one") return 1;
+      if (preset === "third") return Math.max(1,Math.floor(maximum/3));
+      if (preset === "half") return Math.max(1,Math.floor(maximum/2));
+      return maximum;
+    }
+
+    function setMarketPreset(side,preset) {
+      updateMarket();
+      const buying = side === "buy";
+      const maximum = buying ? marketBuyMaximum() : marketSellMaximum();
+      const input = buying ? els.marketBuyQty : els.marketSellQty;
+      input.value = marketPresetQuantity(maximum,preset);
+      renderMarketTradePreviews();
+    }
+
+    function renderMarketTradePreviews() {
+      const buyMax = marketBuyMaximum();
+      const sellMax = marketSellMaximum();
+      const sellUnit = Math.floor(state.market.price*.98);
+
+      els.marketBuyQty.max = Math.max(1,buyMax);
+      els.marketSellQty.max = Math.max(1,sellMax);
+
+      const requestedBuy = marketQuantity(els.marketBuyQty);
+      const requestedSell = marketQuantity(els.marketSellQty);
+      const buyQty = buyMax > 0 ? Math.min(requestedBuy,buyMax) : 0;
+      const sellQty = sellMax > 0 ? Math.min(requestedSell,sellMax) : 0;
+
+      els.marketBuyAvailable.textContent = `${fmt(buyMax)}개`;
+      els.marketSellAvailable.textContent = `${fmt(sellMax)}개`;
+      els.marketBuyTotal.textContent = `${fmt(state.market.price*buyQty)}G`;
+      els.marketSellTotal.textContent = `${fmt(sellUnit*sellQty)}G`;
+
+      const previewProfit = Math.round((sellUnit-state.market.avgCost)*sellQty);
+      els.marketSellProfitPreview.textContent = `${previewProfit >= 0 ? "+" : ""}${fmt(previewProfit)}G`;
+      els.marketSellProfitPreview.className = previewProfit >= 0 ? "positive" : "negative";
+
+      els.marketBuyBtn.disabled = buyQty <= 0;
+      els.marketSellBtn.disabled = sellQty <= 0;
     }
 
     function buyMarket(qty) {
@@ -4395,26 +4472,46 @@ const VERSION = 22;
     function renderMarket() {
       updateMarket();
       const history = state.market.history.length ? state.market.history : [state.market.price];
-      const prev = history.length > 1 ? history[history.length - 2] : state.market.price;
-      const change = state.market.price - prev;
       const min = Math.min(...history);
       const max = Math.max(...history);
-      const span = Math.max(1, max - min);
+      const average = history.reduce((sum,price) => sum+price,0)/history.length;
+      const span = Math.max(1,max-min);
+      const sellUnit = Math.floor(state.market.price*.98);
+      const positionValue = sellUnit*state.market.tokens;
+      const unrealized = Math.round((sellUnit-state.market.avgCost)*state.market.tokens);
+      const invested = state.market.avgCost*state.market.tokens;
+      const returnRate = invested > 0 ? unrealized/invested*100 : 0;
+
       els.marketPrice.textContent = `${fmt(state.market.price)} G`;
-      els.marketTrend.textContent = change === 0 ? "변동 없음" : `직전 대비 ${change > 0 ? "+" : ""}${change} G`;
-      els.marketTrend.className = `market-change ${change > 0 ? "positive" : change < 0 ? "negative" : "neutral"}`;
+      els.marketSellPrice.textContent = `${fmt(sellUnit)} G`;
+      els.marketHistoryAvg.textContent = `${average.toFixed(1)} G`;
+
       els.marketGold.textContent = `${fmt(state.gold)} G`;
       els.marketTokens.textContent = `${fmt(state.market.tokens)}개`;
       els.marketAvg.textContent = `${state.market.avgCost ? state.market.avgCost.toFixed(1) : "0"} G`;
+      els.marketPositionValue.textContent = `${fmt(positionValue)} G`;
+      els.marketUnrealized.textContent = `${unrealized >= 0 ? "+" : ""}${fmt(unrealized)} G`;
+      els.marketUnrealized.className = unrealized >= 0 ? "positive" : "negative";
+      els.marketReturn.textContent = `${returnRate >= 0 ? "+" : ""}${returnRate.toFixed(1)}%`;
+      els.marketReturn.className = returnRate >= 0 ? "positive" : "negative";
       els.marketProfit.textContent = `${state.market.realized >= 0 ? "+" : ""}${fmt(state.market.realized)} G`;
       els.marketProfit.className = state.market.realized >= 0 ? "positive" : "negative";
-      els.marketHistory.innerHTML = history.map(price => {
-        const h = 28 + ((price - min) / span) * 138;
-        return `<div class="market-bar" style="height:${h}px" title="${price}G"></div>`;
+      els.marketTradeCount.textContent = `${fmt(state.market.trades || 0)}회`;
+
+      els.marketBuyUnit.textContent = `개당 ${fmt(state.market.price)}G`;
+      els.marketSellUnit.textContent = `개당 ${fmt(sellUnit)}G`;
+
+      els.marketHistory.innerHTML = history.map((price,index) => {
+        const h = 28+((price-min)/span)*138;
+        const isLatest = index === history.length-1 ? " latest" : "";
+        return `<div class="market-bar${isLatest}" style="height:${h}px" title="${price}G"></div>`;
       }).join("");
+
       els.marketLedger.innerHTML = state.market.ledger.length
         ? state.market.ledger.map(line => `<div class="detail-row"><span>${line}</span></div>`).join("")
         : `<div class="notice">아직 거래 기록이 없습니다.</div>`;
+
+      renderMarketTradePreviews();
     }
 
     function generateRareMap() {
@@ -5550,23 +5647,29 @@ const VERSION = 22;
     }
 
     function renderZones() {
-      els.zones.innerHTML = zones.map(z => `
-        <button class="zone-btn ${z.id === state.currentZone ? "active" : ""}" data-zone="${z.id}">
-          <div class="zone-top"><span>${z.name}<span class="zone-tier">T${z.tier}</span></span><span>${Math.round(state.heat[z.id] || 0)}%</span></div>
-          <div class="zone-rec">권장 전투력 ${fmt(z.rec)} · 입장 제한 없음</div>
-        </button>
+      els.zoneSelect.innerHTML = zones.map(z => `
+        <option value="${z.id}">T${z.tier} · ${z.name} · 권장 ${fmt(z.rec)}</option>
       `).join("");
-      els.zones.querySelectorAll("[data-zone]").forEach(btn => {
-        btn.onclick = () => {
-          if (autoTimer) toggleAuto();
-          state.currentZone = btn.dataset.zone;
-          state.zonesVisited[state.currentZone] = true;
-          saveState();
-          renderAll();
-          log(`${zone().name}으로 이동했습니다.`, "neutral");
-          renderLog();
-        };
-      });
+      els.zoneSelect.value = state.currentZone;
+
+      const current = zone();
+      els.zoneSelectSummary.innerHTML = `
+        <div><span>선택 던전</span><strong>${current.name}</strong></div>
+        <div><span>권장 전투력</span><strong>${fmt(current.rec)}</strong></div>
+        <div><span>현재 과열도</span><strong>${Math.round(state.heat[current.id] || 0)}%</strong></div>
+      `;
+
+      els.zoneSelect.onchange = () => {
+        const nextZone = zones.find(z => z.id === els.zoneSelect.value);
+        if (!nextZone || nextZone.id === state.currentZone) return;
+        if (autoTimer) toggleAuto();
+        state.currentZone = nextZone.id;
+        state.zonesVisited[state.currentZone] = true;
+        saveState();
+        renderAll();
+        log(`${nextZone.name}으로 이동했습니다.`, "neutral");
+        renderLog();
+      };
     }
 
     function renderLoot() {
@@ -5584,48 +5687,6 @@ const VERSION = 22;
       }).join("");
       els.combatLog.innerHTML = rows;
       els.combatLog.scrollTop = els.combatLog.scrollHeight;
-    }
-
-    function renderRecords() {
-      const r = state.records;
-      const data = [
-        ["사냥꾼", state.nickname || "무명의 사냥꾼"],
-        ["현재 직업", currentClass()?.name || "미선택"],
-        ["직업 숙련도", fmt(state.classId ? state.mastery[state.classId] || 0 : 0)],
-        ["총 처치 수", fmt(r.kills)],
-        ["승리 / 패배", `${fmt(r.wins)} / ${fmt(r.defeats)}`],
-        ["최고 피해량", fmt(r.highestDamage)],
-        ["최고 연속 처치", fmt(r.bestStreak)],
-        ["획득 장비", fmt(r.items)],
-        ["인벤토리", `${fmt(state.inventory.length)} / ${fmt(state.inventoryCapacity)}`],
-        ["판매한 장비", fmt(r.itemsSold || 0)],
-        ["회복품 발견", fmt(r.recoveryDrops || 0)],
-        ["활력 물약 발견 / 사용", `${fmt(r.staminaPotionDrops || 0)} / ${fmt(r.staminaPotionsUsed || 0)}`],
-        ["숫자 봉인 승리", `${fmt(r.numberBaseballWins || 0)} / ${fmt(r.numberBaseballGames || 0)}`],
-        ["스킬북 발견 / 사용", `${fmt(r.skillBooksDropped || 0)} / ${fmt(r.skillBooksUsed || 0)}`],
-        ["야전 정비 횟수 / 지출", `${fmt(r.fieldCareBattles || 0)} / ${fmt(r.fieldCareGoldSpent || 0)}G`],
-        ["자동 판매 / 분해", `${fmt(r.autoSoldItems || 0)} / ${fmt(r.autoSalvagedItems || 0)}`],
-        ["접사 추출 성공", `${fmt(r.affixExtractionSuccesses || 0)} / ${fmt(r.affixExtractionAttempts || 0)}`],
-        ["심연 최고 / 일일 보스 승", `${fmt(r.abyssBestFloor || 0)}층 / ${fmt(r.dailyBossWins || 0)}`],
-        ["희귀 몬스터 처치", fmt(r.rareMonsterKills || 0)],
-        ["도박 횟수 / 지출", `${fmt(r.gambleCount || 0)} / ${fmt(r.gambleGoldSpent || 0)}G`],
-        ["도박 영웅+ / 특수", `${fmt(r.gambleEpicPlus || 0)} / ${fmt(r.gambleSpecialItems || 0)}`],
-        ["능력치 초기화 / 지출", `${fmt(r.statResets || 0)} / ${fmt(r.statResetGoldSpent || 0)}G`],
-        ["가이드 미션", `${fmt(r.guideMissionsClaimed || 0)} / ${guideMissions.length}`],
-        ["변이 처치", fmt(r.mutatedKills || 0)],
-        ["출석 / 동급 각인", `${fmt(r.attendanceClaims || 0)} / ${fmt(r.tierRerolls || 0)}`],
-        ["6접사 장비", fmt(r.sixAffixItems || 0)],
-        ["특수 감정 꽝 / 대박", `${fmt(r.specialDuds || 0)} / ${fmt(r.specialJackpots || 0)}`],
-        ["일일 / 아레나 승", `${fmt(r.dailyClears || 0)} / ${fmt(r.arenaWins || 0)}`],
-        ["분해 / 재련", `${fmt(r.itemsSalvaged || 0)} / ${fmt(r.reforges || 0)}`],
-        ["도감 점수", fmt(codexScoreValue())],
-        ["전설 / 세트 / 유니크", `${fmt(r.legendary)} / ${fmt(r.setItems || 0)} / ${fmt(r.uniqueItems || 0)}`],
-        ["희귀 지도 발견", fmt(r.rareMaps)],
-        ["총 획득 골드", fmt(r.totalGold)],
-        ["검은 주화", fmt(state.market.tokens || 0)],
-        ["거래소 실현 손익", `${state.market.realized >= 0 ? "+" : ""}${fmt(state.market.realized || 0)}G`]
-      ];
-      els.records.innerHTML = data.map(([k,v]) => `<div class="record"><span>${k}</span><strong>${v}</strong></div>`).join("");
     }
 
     function renderAll() {
@@ -5695,7 +5756,6 @@ const VERSION = 22;
       renderArena();
       renderSaveVault();
       renderGambleShop();
-      renderRecords();
       renderLog();
       renderInventory();
       renderCharacterDetails();
@@ -5739,15 +5799,16 @@ const VERSION = 22;
     els.abyssRetreatBtn.onclick = retreatAbyss;
     els.gambleOnceBtn.onclick = () => gambleItems(1);
     els.gambleTenBtn.onclick = () => gambleItems(10);
-    els.marketBuyBtn.onclick = () => buyMarket(tradeQty());
-    els.marketSellBtn.onclick = () => sellMarket(tradeQty());
-    els.marketBuyMax.onclick = () => {
-      updateMarket();
-      els.marketQty.value = Math.max(1, Math.floor(state.gold / state.market.price));
-    };
-    els.marketSellAll.onclick = () => {
-      els.marketQty.value = Math.max(1, state.market.tokens);
-    };
+    els.marketBuyBtn.onclick = () => buyMarket(marketQuantity(els.marketBuyQty));
+    els.marketSellBtn.onclick = () => sellMarket(marketQuantity(els.marketSellQty));
+    els.marketBuyQty.oninput = renderMarketTradePreviews;
+    els.marketSellQty.oninput = renderMarketTradePreviews;
+    document.querySelectorAll("[data-market-buy-preset]").forEach(btn => {
+      btn.onclick = () => setMarketPreset("buy",btn.dataset.marketBuyPreset);
+    });
+    document.querySelectorAll("[data-market-sell-preset]").forEach(btn => {
+      btn.onclick = () => setMarketPreset("sell",btn.dataset.marketSellPreset);
+    });
 
     els.refillStaminaBtn.onclick = () => {
       state.stamina = STAMINA_MAX;

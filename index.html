@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=22">
+  <link rel="stylesheet" href="styles.css?v=25">
 
 </head>
 <body>
@@ -26,7 +26,7 @@
       <button class="top-tab" data-page-target="guide">초보자 길잡이 <span id="guideNavMark"></span></button>
       <button class="top-tab" data-page-target="inventory">전리품 가방 <span id="inventoryNavCount"></span></button>
       <button class="top-tab" data-page-target="character">능력치</button>
-      <button class="top-tab" data-page-target="info">모험서</button>
+      <button class="top-tab" data-page-target="info">정보</button>
       <button class="top-tab" data-page-target="codex">몬스터 도감 <span id="codexNavCount"></span></button>
       <button class="top-tab" data-page-target="bounties">현상수배 <span id="bountyNavCount"></span></button>
       <button class="top-tab" data-page-target="skills">기술서 <span id="skillNavCount"></span></button>
@@ -104,10 +104,14 @@
           </div>
         </div>
 
-        <div class="panel" style="margin-top:14px">
-          <div class="panel-title">목적지</div>
+        <div class="panel dungeon-panel" style="margin-top:14px">
+          <div class="panel-title">던전</div>
           <div class="panel-body">
-            <div class="zones" id="zones"></div>
+            <label class="dungeon-picker" for="zoneSelect">
+              <span>사냥할 던전 선택</span>
+              <select id="zoneSelect" aria-label="사냥할 던전"></select>
+            </label>
+            <div class="dungeon-summary" id="zoneSelectSummary"></div>
           </div>
         </div>
       </section>
@@ -212,13 +216,6 @@
 
       <section class="right-column">
         <div class="panel">
-          <div class="panel-title">전과</div>
-          <div class="panel-body">
-            <div class="record-list" id="records"></div>
-          </div>
-        </div>
-
-        <div class="panel" style="margin-top:14px">
           <div class="panel-title">현재 가이드 미션</div>
           <div class="panel-body">
             <div id="guideMiniTracker"></div>
@@ -359,15 +356,15 @@
       <div class="panel wide-panel">
         <div class="page-heading">
           <div>
-            <h2>모험서</h2>
-            <p>사냥터, 직업, 장비 등급과 플레이 기록을 탭으로 확인할 수 있습니다.</p>
+            <h2>정보</h2>
+            <p>내 전과 기록과 던전·직업·전리품 정보를 한곳에서 확인합니다.</p>
           </div>
         </div>
         <div class="info-tabs">
-          <button class="info-tab active" data-info-target="zones">사냥터</button>
+          <button class="info-tab active" data-info-target="records">내 기록</button>
+          <button class="info-tab" data-info-target="zones">던전</button>
           <button class="info-tab" data-info-target="classes">직업</button>
           <button class="info-tab" data-info-target="drops">드롭 정보</button>
-          <button class="info-tab" data-info-target="records">내 기록</button>
         </div>
         <div class="info-content" id="infoContent"></div>
       </div>
@@ -757,37 +754,107 @@
         <div class="page-heading">
           <div>
             <h2>흑상단 암시장</h2>
-            <p>골드로 검은 주화를 사고팔 수 있습니다. 시세는 약 10초마다 변하며 브라우저에 저장됩니다.</p>
+            <p>검은 주화의 시세와 보유 손익을 확인하고, 매수와 매도를 각각 진행합니다. 시세는 약 10초마다 변합니다.</p>
           </div>
           <span class="badge">흑상단 운영</span>
         </div>
+
         <div class="market-layout">
-          <div class="market-price-box">
-            <div class="neutral">검은 주화 1개 현재가</div>
-            <div class="market-price" id="marketPrice">0 G</div>
-            <div class="market-change neutral" id="marketTrend">변동 없음</div>
-            <div class="detail-list" style="margin-top:14px">
-              <div class="detail-row"><span>보유 골드</span><strong id="marketGold">0</strong></div>
-              <div class="detail-row"><span>보유 검은 주화</span><strong id="marketTokens">0</strong></div>
-              <div class="detail-row"><span>평균 매수가</span><strong id="marketAvg">0 G</strong></div>
-              <div class="detail-row"><span>실현 손익</span><strong id="marketProfit">0 G</strong></div>
+          <div class="market-price-box market-overview-box">
+            <div class="market-simple-prices">
+              <div class="primary">
+                <span>현재 매수가</span>
+                <strong id="marketPrice">0 G</strong>
+              </div>
+              <div>
+                <span>현재 매도가</span>
+                <strong id="marketSellPrice">0 G</strong>
+              </div>
+              <div>
+                <span>최근 평균가</span>
+                <strong id="marketHistoryAvg">0 G</strong>
+              </div>
             </div>
-            <div class="toolbar" style="margin-top:14px">
-              <input id="marketQty" type="number" min="1" step="1" value="1" style="width:110px" />
-              <button id="marketBuyMax">최대 구매량</button>
-              <button id="marketSellAll">전량 선택</button>
-            </div>
-            <div class="market-actions">
-              <button class="buy" id="marketBuyBtn">구매</button>
-              <button class="sell" id="marketSellBtn">판매 · 수수료 2%</button>
+
+            <div class="market-position-title">내 보유 현황</div>
+            <div class="market-position-grid">
+              <div><span>보유 골드</span><strong id="marketGold">0</strong></div>
+              <div><span>보유 주화</span><strong id="marketTokens">0</strong></div>
+              <div><span>평균 매수가</span><strong id="marketAvg">0 G</strong></div>
+              <div><span>현재 평가액</span><strong id="marketPositionValue">0 G</strong></div>
+              <div><span>평가 손익</span><strong id="marketUnrealized">0 G</strong></div>
+              <div><span>수익률</span><strong id="marketReturn">0%</strong></div>
+              <div><span>누적 실현 손익</span><strong id="marketProfit">0 G</strong></div>
+              <div><span>누적 거래</span><strong id="marketTradeCount">0회</strong></div>
             </div>
           </div>
-          <div>
+
+          <div class="market-chart-box">
             <div class="panel-title">최근 시세 흐름</div>
             <div class="market-history" id="marketHistory" style="margin-top:12px"></div>
+            <div class="market-chart-caption">
+              <span>과거</span>
+              <span>최근 24회 시세</span>
+              <span>현재</span>
+            </div>
             <div class="market-ledger" id="marketLedger"></div>
-            <div class="notice">흑상단이 고시하는 검은 주화 시세다. 가격은 기준가 주변에서 흔들리며 매도 시 2%의 수수료를 거둔다.</div>
+            <div class="notice">매도 가격에는 흑상단 수수료 2%가 반영됩니다. 평가액과 평가 손익도 실제 매도가를 기준으로 계산합니다.</div>
           </div>
+        </div>
+
+        <div class="market-trade-grid">
+          <section class="market-trade-card buy-card">
+            <div class="market-trade-heading">
+              <div>
+                <span>BUY</span>
+                <h3>검은 주화 매수</h3>
+              </div>
+              <strong id="marketBuyUnit">개당 0G</strong>
+            </div>
+            <p>보유 골드로 검은 주화를 구입합니다. 전량은 현재 골드로 살 수 있는 최대 수량입니다.</p>
+            <label class="market-quantity-field">
+              <span>매수 수량</span>
+              <input id="marketBuyQty" type="number" min="1" step="1" value="1" inputmode="numeric" />
+            </label>
+            <div class="market-quick-buttons">
+              <button data-market-buy-preset="one">1개</button>
+              <button data-market-buy-preset="third">1/3</button>
+              <button data-market-buy-preset="half">1/2</button>
+              <button data-market-buy-preset="all">전량</button>
+            </div>
+            <div class="market-order-summary">
+              <div><span>최대 매수 가능</span><strong id="marketBuyAvailable">0개</strong></div>
+              <div><span>예상 결제액</span><strong id="marketBuyTotal">0G</strong></div>
+            </div>
+            <button class="market-order-button buy" id="marketBuyBtn">매수하기</button>
+          </section>
+
+          <section class="market-trade-card sell-card">
+            <div class="market-trade-heading">
+              <div>
+                <span>SELL</span>
+                <h3>검은 주화 매도</h3>
+              </div>
+              <strong id="marketSellUnit">개당 0G</strong>
+            </div>
+            <p>보유 주화를 판매합니다. 표시된 가격과 수령액에는 수수료 2%가 이미 반영되어 있습니다.</p>
+            <label class="market-quantity-field">
+              <span>매도 수량</span>
+              <input id="marketSellQty" type="number" min="1" step="1" value="1" inputmode="numeric" />
+            </label>
+            <div class="market-quick-buttons">
+              <button data-market-sell-preset="one">1개</button>
+              <button data-market-sell-preset="third">1/3</button>
+              <button data-market-sell-preset="half">1/2</button>
+              <button data-market-sell-preset="all">전량</button>
+            </div>
+            <div class="market-order-summary">
+              <div><span>현재 보유량</span><strong id="marketSellAvailable">0개</strong></div>
+              <div><span>예상 수령액</span><strong id="marketSellTotal">0G</strong></div>
+              <div><span>예상 거래 손익</span><strong id="marketSellProfitPreview">0G</strong></div>
+            </div>
+            <button class="market-order-button sell" id="marketSellBtn">매도하기</button>
+          </section>
         </div>
       </div>
     </section>
@@ -854,7 +921,7 @@
     </div>
   </div>
 
-  <script src="game.js?v=22"></script>
+  <script src="game.js?v=25"></script>
 
 </body>
 </html>
