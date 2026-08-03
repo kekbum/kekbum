@@ -1,4 +1,4 @@
-const VERSION = 25;
+const VERSION = 27;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -845,6 +845,7 @@ const VERSION = 25;
       focusText: document.getElementById("focusText"),
       focusBar: document.getElementById("focusBar"),
       equipment: document.getElementById("equipment"),
+      equipmentTooltip: document.getElementById("equipmentTooltip"),
       zoneSelect: document.getElementById("zoneSelect"),
       zoneSelectSummary: document.getElementById("zoneSelectSummary"),
       currentZoneName: document.getElementById("currentZoneName"),
@@ -5632,18 +5633,138 @@ const VERSION = 25;
       });
     }
 
+    let activeEquipmentTooltipSlot = null;
+
+    function equipmentTooltipHtml(item) {
+      normalizeItemAffixes(item);
+      const kind = itemKind(item);
+      const slotLabel = slots.find(slot => slot.key === item.slot)?.label || item.slot;
+      const kindLabel = kind === "unique"
+        ? "유니크 장비"
+        : kind === "set"
+          ? `${item.setName || "세트"} 세트`
+          : `${item.rarityName || "일반"} 장비`;
+      const statRows = itemStatLines(item);
+
+      return `
+        <div class="equipment-tooltip-head">
+          <div>
+            <span class="equipment-tooltip-type">${kindLabel} · ${slotLabel}</span>
+            <strong class="${item.rarityClass}">${itemKind(item)==="unique" ? "◆ " : itemKind(item)==="set" ? "◇ " : ""}${item.name}</strong>
+          </div>
+          <b>${fmt(item.score)}점</b>
+        </div>
+        <div class="equipment-tooltip-equipped">현재 장착 중</div>
+        <div class="equipment-tooltip-stats">
+          ${statRows.length
+            ? statRows.map(line => `<div>${line}</div>`).join("")
+            : `<div class="neutral">추가 능력 없음</div>`}
+        </div>
+        ${specialItemLines(item)}
+        <div class="equipment-tooltip-footer">
+          <span>판매가</span>
+          <strong>${fmt(item.sellPrice || 0)}G</strong>
+        </div>
+      `;
+    }
+
+    function positionEquipmentTooltip(clientX,clientY,anchor=null) {
+      const tooltip = els.equipmentTooltip;
+      if (!tooltip || tooltip.classList.contains("hidden")) return;
+
+      const margin = 12;
+      const gap = 14;
+      const rect = tooltip.getBoundingClientRect();
+      let x = Number.isFinite(clientX) ? clientX+gap : margin;
+      let y = Number.isFinite(clientY) ? clientY+gap : margin;
+
+      if (anchor) {
+        const anchorRect = anchor.getBoundingClientRect();
+        x = anchorRect.right+gap;
+        y = anchorRect.top;
+        if (x+rect.width > window.innerWidth-margin) {
+          x = anchorRect.left-rect.width-gap;
+        }
+      }
+
+      if (x+rect.width > window.innerWidth-margin) x = window.innerWidth-rect.width-margin;
+      if (y+rect.height > window.innerHeight-margin) y = window.innerHeight-rect.height-margin;
+      x = Math.max(margin,x);
+      y = Math.max(margin,y);
+
+      tooltip.style.left = `${Math.round(x)}px`;
+      tooltip.style.top = `${Math.round(y)}px`;
+    }
+
+    function showEquipmentTooltip(slotKey,event=null,anchor=null) {
+      const item = state.equipment[slotKey];
+      if (!item || !els.equipmentTooltip) return;
+
+      activeEquipmentTooltipSlot = slotKey;
+      els.equipmentTooltip.innerHTML = equipmentTooltipHtml(item);
+      els.equipmentTooltip.classList.remove("hidden");
+      els.equipmentTooltip.setAttribute("aria-hidden","false");
+
+      requestAnimationFrame(() => {
+        const pointerX = event && Number.isFinite(event.clientX) ? event.clientX : NaN;
+        const pointerY = event && Number.isFinite(event.clientY) ? event.clientY : NaN;
+        positionEquipmentTooltip(pointerX,pointerY,anchor);
+      });
+    }
+
+    function hideEquipmentTooltip() {
+      activeEquipmentTooltipSlot = null;
+      if (!els.equipmentTooltip) return;
+      els.equipmentTooltip.classList.add("hidden");
+      els.equipmentTooltip.setAttribute("aria-hidden","true");
+    }
+
+    function bindEquipmentTooltips() {
+      els.equipment.querySelectorAll("[data-equipment-tooltip]").forEach(row => {
+        const slotKey = row.dataset.equipmentTooltip;
+
+        row.addEventListener("mouseenter",event => {
+          showEquipmentTooltip(slotKey,event,row);
+        });
+
+        row.addEventListener("mousemove",event => {
+          if (activeEquipmentTooltipSlot === slotKey && window.matchMedia("(hover:hover)").matches) {
+            positionEquipmentTooltip(event.clientX,event.clientY);
+          }
+        });
+
+        row.addEventListener("mouseleave",hideEquipmentTooltip);
+        row.addEventListener("focus",() => showEquipmentTooltip(slotKey,null,row));
+        row.addEventListener("blur",hideEquipmentTooltip);
+
+        row.addEventListener("click",event => {
+          if (window.matchMedia("(hover:hover)").matches) return;
+          event.stopPropagation();
+          if (activeEquipmentTooltipSlot === slotKey && !els.equipmentTooltip.classList.contains("hidden")) {
+            hideEquipmentTooltip();
+          } else {
+            showEquipmentTooltip(slotKey,null,row);
+          }
+        });
+      });
+    }
+
     function renderEquipment() {
+      hideEquipmentTooltip();
       els.equipment.innerHTML = slots.map(slot => {
         const item = state.equipment[slot.key];
         return `
-          <div class="equip-row">
+          <div class="equip-row ${item ? "has-equipment-tooltip" : ""}"
+            ${item ? `data-equipment-tooltip="${slot.key}" tabindex="0" aria-label="${slot.label} 장비 정보 보기"` : ""}>
             <div class="slot">${slot.label}</div>
             <div class="equip-name ${item ? item.rarityClass : "neutral"}">
               ${item ? `${itemKind(item)==="unique" ? "◆ " : itemKind(item)==="set" ? "◇ " : ""}${item.name} · ${fmt(item.score)}` : "비어 있음"}
             </div>
+            ${item ? `<span class="equipment-info-mark">i</span>` : ""}
           </div>
         `;
       }).join("");
+      bindEquipmentTooltips();
     }
 
     function renderZones() {
@@ -5821,6 +5942,16 @@ const VERSION = 25;
 
     els.huntBtn.onclick = () => hunt(false);
     els.autoBtn.onclick = toggleAuto;
+    document.addEventListener("click",event => {
+      if (!event.target.closest("[data-equipment-tooltip]") && !event.target.closest("#equipmentTooltip")) {
+        hideEquipmentTooltip();
+      }
+    });
+    window.addEventListener("scroll",hideEquipmentTooltip,{passive:true});
+    window.addEventListener("resize",hideEquipmentTooltip);
+    document.addEventListener("keydown",event => {
+      if (event.key === "Escape") hideEquipmentTooltip();
+    });
     els.defeatConfirmBtn.onclick = closeDefeatModal;
     els.defeatInventoryBtn.onclick = openRecoveryInventoryAfterDefeat;
     els.statResetBtn.onclick = resetAllocatedStats;

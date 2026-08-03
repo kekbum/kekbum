@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=25">
+  <link rel="stylesheet" href="styles.css?v=27">
 
 </head>
 <body>
@@ -104,16 +104,6 @@
           </div>
         </div>
 
-        <div class="panel dungeon-panel" style="margin-top:14px">
-          <div class="panel-title">던전</div>
-          <div class="panel-body">
-            <label class="dungeon-picker" for="zoneSelect">
-              <span>사냥할 던전 선택</span>
-              <select id="zoneSelect" aria-label="사냥할 던전"></select>
-            </label>
-            <div class="dungeon-summary" id="zoneSelectSummary"></div>
-          </div>
-        </div>
       </section>
 
       <section class="center-column panel">
@@ -215,6 +205,17 @@
       </section>
 
       <section class="right-column">
+        <div class="panel dungeon-panel dungeon-panel-right">
+          <div class="panel-title">던전</div>
+          <div class="panel-body">
+            <label class="dungeon-picker" for="zoneSelect">
+              <span>사냥할 던전 선택</span>
+              <select class="dungeon-select" id="zoneSelect" aria-label="사냥할 던전"></select>
+            </label>
+            <div class="dungeon-summary" id="zoneSelectSummary"></div>
+          </div>
+        </div>
+
         <div class="panel">
           <div class="panel-title">현재 가이드 미션</div>
           <div class="panel-body">
@@ -863,6 +864,10 @@
 
   <div class="toast" id="toast"></div>
 
+
+  <div class="equipment-tooltip hidden" id="equipmentTooltip" role="tooltip" aria-hidden="true"></div>
+
+
   <div class="class-modal hidden" id="classModal">
     <div class="class-modal-card">
       <h2>직업을 선택하세요</h2>
@@ -921,7 +926,7 @@
     </div>
   </div>
 
-  <script src="game.js?v=25"></script>
+  <script src="game.js?v=27"></script>
 
 </body>
 </html>
