@@ -8793,3 +8793,323 @@
     min-height:60px;
   }
 }
+
+
+/* v42: 세이브 소유권 및 일회용 기기 이전 */
+.ranking-status-badge.blocked {
+  border-color:#9a783d !important;
+  color:#e4c67f !important;
+  background:rgba(112,78,28,.13) !important;
+}
+
+.ranking-notice.external,
+.ranking-notice.setup-required {
+  border-color:rgba(182,128,54,.45);
+  background:
+    radial-gradient(circle at 100% 0,rgba(164,105,31,.13),transparent 42%),
+    #15120e;
+}
+
+.ranking-notice.external strong,
+.ranking-notice.setup-required strong {
+  color:#e2bf72;
+}
+
+.ranking-notice.offline {
+  border-color:rgba(126,117,96,.38);
+}
+
+.save-ownership-panel {
+  margin:12px 16px;
+  overflow:hidden;
+  border:1px solid #3c4148;
+  border-radius:12px;
+  background:
+    radial-gradient(circle at 100% 0,rgba(70,119,143,.09),transparent 40%),
+    #101318;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.save-ownership-panel.owned {
+  border-color:rgba(76,139,98,.45);
+  background:
+    radial-gradient(circle at 100% 0,rgba(45,115,68,.11),transparent 42%),
+    #101512;
+}
+
+.save-ownership-panel.external,
+.save-ownership-panel.setup_required {
+  border-color:rgba(178,125,53,.50);
+  background:
+    radial-gradient(circle at 100% 0,rgba(167,106,31,.12),transparent 42%),
+    #16130f;
+}
+
+.save-ownership-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:13px 14px;
+  border-bottom:1px solid rgba(255,255,255,.065);
+  background:rgba(0,0,0,.14);
+}
+
+.save-ownership-heading > div {
+  min-width:0;
+}
+
+.save-ownership-heading span:first-child {
+  display:block;
+  color:#668ba0;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.15em;
+}
+
+.save-ownership-panel.owned .save-ownership-heading span:first-child {
+  color:#679274;
+}
+
+.save-ownership-panel.external .save-ownership-heading span:first-child,
+.save-ownership-panel.setup_required .save-ownership-heading span:first-child {
+  color:#a17a42;
+}
+
+.save-ownership-heading h3 {
+  margin:4px 0;
+  color:#cbdbe2;
+  font-size:15px;
+}
+
+.save-ownership-heading p {
+  margin:0;
+  color:#7d8a91;
+  font-size:9px;
+  line-height:1.55;
+}
+
+.save-ownership-badge.checking,
+.save-ownership-badge.offline {
+  border-color:#5f6870 !important;
+  color:#aab4b9 !important;
+}
+
+.save-ownership-badge.owned {
+  border-color:#568d65 !important;
+  color:#a9d6b3 !important;
+  background:rgba(42,100,60,.12) !important;
+}
+
+.save-ownership-badge.external,
+.save-ownership-badge.setup_required {
+  border-color:#9a7137 !important;
+  color:#e2c077 !important;
+  background:rgba(112,76,26,.13) !important;
+}
+
+.save-identity-row {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding:10px 13px 0;
+}
+
+.save-identity-row > div {
+  padding:9px 10px;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:8px;
+  background:rgba(0,0,0,.16);
+}
+
+.save-identity-row span {
+  display:block;
+  color:#74828a;
+  font-size:8px;
+  font-weight:900;
+}
+
+.save-identity-row strong {
+  display:block;
+  margin-top:4px;
+  color:#b9ccd5;
+  font:850 10px/1.4 monospace;
+}
+
+.save-transfer-code-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+  padding:10px 13px 13px;
+}
+
+.save-transfer-code-card {
+  display:grid;
+  align-content:start;
+  gap:6px;
+  min-width:0;
+  padding:12px;
+  border:1px solid #393f45;
+  border-radius:10px;
+  background:#0e1115;
+}
+
+.save-transfer-code-card > span {
+  color:#66879a;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.08em;
+}
+
+.save-transfer-code-card h4 {
+  margin:0;
+  color:#c4d2d9;
+  font-size:12px;
+}
+
+.save-transfer-code-card p {
+  min-height:44px;
+  margin:0;
+  color:#76838b;
+  font-size:9px;
+  line-height:1.55;
+}
+
+.save-transfer-code-card > button,
+.transfer-code-input-row button,
+.save-transfer-code-result button {
+  min-height:37px;
+  padding:7px 11px;
+  border:1px solid #496a7a;
+  border-radius:8px;
+  color:#cbe2ec;
+  background:linear-gradient(180deg,#3b5968,#223640);
+  font-size:9px;
+  font-weight:900;
+}
+
+.save-transfer-code-card > button:hover:not(:disabled),
+.transfer-code-input-row button:hover:not(:disabled),
+.save-transfer-code-result button:hover:not(:disabled) {
+  border-color:#628ba0;
+  color:#edf8fc;
+  background:linear-gradient(180deg,#4a7082,#29434f);
+}
+
+.save-transfer-code-card button:disabled {
+  opacity:.43;
+  cursor:not-allowed;
+}
+
+.save-transfer-code-result {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  padding:10px;
+  border:1px solid rgba(191,138,59,.39);
+  border-radius:9px;
+  background:rgba(111,72,25,.10);
+}
+
+.save-transfer-code-result > strong {
+  color:#f0c86d;
+  font:950 24px/1 monospace;
+  letter-spacing:.14em;
+}
+
+.save-transfer-code-result > div {
+  display:grid;
+  justify-items:end;
+  gap:5px;
+}
+
+.save-transfer-code-result span {
+  color:#a18a65;
+  font-size:8px;
+}
+
+.save-transfer-code-result button {
+  min-height:29px;
+  padding:5px 8px;
+  border-color:#765f38;
+  color:#dfc58e;
+  background:#2a2115;
+  font-size:8px;
+}
+
+.transfer-code-input-row {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:7px;
+  margin-top:auto;
+}
+
+.transfer-code-input-row input {
+  min-width:0;
+  height:37px;
+  padding:7px 10px;
+  border:1px solid #46525a;
+  border-radius:8px;
+  outline:none;
+  color:#e0e8ec;
+  background:#0a0d10;
+  font:900 15px/1 monospace;
+  letter-spacing:.16em;
+}
+
+.transfer-code-input-row input:focus {
+  border-color:#678b9d;
+  box-shadow:0 0 0 2px rgba(81,133,158,.12);
+}
+
+.save-transfer-code-card > small {
+  color:#6e7a81;
+  font-size:8px;
+  line-height:1.45;
+}
+
+@media (max-width:760px) {
+  .save-transfer-code-grid {
+    grid-template-columns:1fr;
+  }
+
+  .save-transfer-code-card p {
+    min-height:0;
+  }
+}
+
+@media (max-width:580px) {
+  .save-ownership-panel {
+    margin-left:11px;
+    margin-right:11px;
+  }
+
+  .save-ownership-heading {
+    display:grid;
+  }
+
+  .save-ownership-badge {
+    justify-self:start;
+  }
+
+  .save-identity-row {
+    grid-template-columns:1fr;
+  }
+
+  .save-transfer-code-result {
+    grid-template-columns:1fr;
+  }
+
+  .save-transfer-code-result > div {
+    justify-items:start;
+  }
+
+  .transfer-code-input-row {
+    grid-template-columns:1fr;
+  }
+
+  .transfer-code-input-row button {
+    width:100%;
+  }
+}

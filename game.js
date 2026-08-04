@@ -1,4 +1,4 @@
-const VERSION = 40;
+const VERSION = 42;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -6,6 +6,21 @@ const VERSION = 40;
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_V7n7cCKOLHTctrtE5pZ_vA_co7Fu_0j";
     const ONLINE_SYNC_INTERVAL = 60000;
     const ONLINE_RANKING_LIMIT = 100;
+
+
+    function createSaveIdentityId() {
+      if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+      const template = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx";
+      return template.replace(/[xy]/g,character => {
+        const random = Math.floor(Math.random()*16);
+        const value = character === "x" ? random : (random&0x3)|0x8;
+        return value.toString(16);
+      });
+    }
+
+    function validSaveIdentityId(value) {
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ""));
+    }
 
     const attributeInfo = {
       str: { name:"힘", short:"힘", desc:"공격력" },
@@ -1197,6 +1212,13 @@ const VERSION = 40;
         lastError:"",
         connected:false
       },
+      saveIdentity: {
+        id:createSaveIdentityId(),
+        status:"checking",
+        lastCheckedAt:0,
+        lastTransferAt:0,
+        lastError:""
+      },
       attributes: { str:5, vit:5, int:5, spi:5, luck:5, spd:5 },
       statPoints: 0,
       statResetCount: 0,
@@ -1431,6 +1453,10 @@ const VERSION = 40;
     let onlineFetchBusy = false;
     let onlineSyncTimer = null;
     let onlineRankingRows = [];
+    let ownershipCheckBusy = false;
+    let transferCodeBusy = false;
+    let activeTransferCode = "";
+    let activeTransferCodeExpiresAt = 0;
 
     const els = {
       heroTitle: document.getElementById("heroTitle"),
@@ -1664,6 +1690,9 @@ const VERSION = 40;
       arenaGrid: document.getElementById("arenaGrid"),
       arenaLog: document.getElementById("arenaLog"),
       rankingNavMark: document.getElementById("rankingNavMark"),
+      rankingOwnershipNotice: document.getElementById("rankingOwnershipNotice"),
+      rankingOwnershipTitle: document.getElementById("rankingOwnershipTitle"),
+      rankingOwnershipText: document.getElementById("rankingOwnershipText"),
       rankingStatusBadge: document.getElementById("rankingStatusBadge"),
       rankingSyncBtn: document.getElementById("rankingSyncBtn"),
       rankingUserId: document.getElementById("rankingUserId"),
@@ -1675,6 +1704,19 @@ const VERSION = 40;
       rankingList: document.getElementById("rankingList"),
       saveVaultHero: document.getElementById("saveVaultHero"),
       saveSlotGrid: document.getElementById("saveSlotGrid"),
+      saveOwnershipPanel: document.getElementById("saveOwnershipPanel"),
+      saveOwnershipDescription: document.getElementById("saveOwnershipDescription"),
+      saveOwnershipStatus: document.getElementById("saveOwnershipStatus"),
+      saveIdentityId: document.getElementById("saveIdentityId"),
+      saveOwnershipDevice: document.getElementById("saveOwnershipDevice"),
+      createTransferCodeBtn: document.getElementById("createTransferCodeBtn"),
+      transferCodeResult: document.getElementById("transferCodeResult"),
+      transferCodeValue: document.getElementById("transferCodeValue"),
+      transferCodeExpiry: document.getElementById("transferCodeExpiry"),
+      copyTransferCodeBtn: document.getElementById("copyTransferCodeBtn"),
+      claimTransferCodeInput: document.getElementById("claimTransferCodeInput"),
+      claimTransferCodeBtn: document.getElementById("claimTransferCodeBtn"),
+      claimTransferCodeHelp: document.getElementById("claimTransferCodeHelp"),
       shareSaveBtn: document.getElementById("shareSaveBtn"),
       exportSaveBtn: document.getElementById("exportSaveBtn"),
       importSaveBtn: document.getElementById("importSaveBtn"),
@@ -1709,6 +1751,16 @@ const VERSION = 40;
             ...fresh.online,
             ...(loaded.online || {}),
             connected:false,
+            lastError:""
+          },
+          saveIdentity: {
+            ...fresh.saveIdentity,
+            ...(loaded.saveIdentity || {}),
+            id:validSaveIdentityId(loaded.saveIdentity?.id)
+              ? loaded.saveIdentity.id
+              : fresh.saveIdentity.id,
+            status:"checking",
+            lastCheckedAt:0,
             lastError:""
           },
           attributes: { ...fresh.attributes, ...(loaded.attributes || {}) },
@@ -1845,7 +1897,11 @@ const VERSION = 40;
       els.rankingStatusBadge.textContent = text;
       els.rankingStatusBadge.className = `badge ranking-status-badge ${status || ""}`;
       if (els.rankingNavMark) {
-        els.rankingNavMark.textContent = status === "connected" ? "●" : status === "error" ? "!" : "";
+        els.rankingNavMark.textContent =
+          status === "connected" ? "●"
+          : status === "blocked" ? "◆"
+          : status === "error" ? "!"
+          : "";
       }
     }
 
@@ -1857,6 +1913,7 @@ const VERSION = 40;
     function buildOnlinePayload(userId) {
       return {
         user_id:userId,
+        save_id:state.saveIdentity.id,
         nickname:cleanNickname(state.nickname || "") || "무명의 사냥꾼",
         class_id:state.classId || "unknown",
         level:Math.max(1,Math.min(999,Math.round(Number(state.level || 1)))),
@@ -1874,6 +1931,314 @@ const VERSION = 40;
           : null,
         game_version:VERSION
       };
+    }
+
+
+    function normalizeRpcResult(data) {
+      if (Array.isArray(data)) return data[0] || {};
+      return data && typeof data === "object" ? data : {};
+    }
+
+    function saveOwnershipAllowsSync() {
+      return state.saveIdentity?.status === "owned";
+    }
+
+    function saveOwnershipMessage() {
+      const status = state.saveIdentity?.status || "checking";
+      if (status === "owned") {
+        return {
+          title:"현재 기기의 세이브",
+          text:"이 세이브는 현재 익명 접속에 등록되어 온라인 랭킹을 정상적으로 동기화할 수 있습니다."
+        };
+      }
+      if (status === "external") {
+        return {
+          title:"외부 저장 기록",
+          text:"다른 기기에 온라인 소유권이 남아 있습니다. 기록 보관소에서 6자리 이전 코드를 입력하면 이 기기로 소유권을 옮길 수 있습니다."
+        };
+      }
+      if (status === "setup_required") {
+        return {
+          title:"기기 이전 서버 준비 필요",
+          text:"Supabase 기기 이전 SQL이 아직 적용되지 않았습니다. SQL을 실행하기 전까지 온라인 기록 동기화가 보류됩니다."
+        };
+      }
+      if (status === "offline") {
+        return {
+          title:"소유권 확인 대기",
+          text:"서버 연결이 불안정해 세이브 소유권을 확인하지 못했습니다. 로컬 플레이와 저장은 그대로 가능합니다."
+        };
+      }
+      return {
+        title:"세이브 소유권 확인 중",
+        text:"현재 세이브가 이 기기의 온라인 기록인지 확인하고 있습니다."
+      };
+    }
+
+    function renderRankingOwnershipNotice() {
+      if (!els.rankingOwnershipNotice) return;
+      const message = saveOwnershipMessage();
+      const status = state.saveIdentity?.status || "checking";
+      els.rankingOwnershipTitle.textContent = status === "owned" ? "베타 랭킹" : message.title;
+      els.rankingOwnershipText.textContent = status === "owned"
+        ? "현재 전투 결과는 각 브라우저에서 계산됩니다. 비정상 기록은 추후 검토·제외될 수 있습니다."
+        : message.text;
+      els.rankingOwnershipNotice.classList.toggle("external",status === "external");
+      els.rankingOwnershipNotice.classList.toggle("setup-required",status === "setup_required");
+      els.rankingOwnershipNotice.classList.toggle("offline",status === "offline");
+      if (els.rankingSyncBtn && !onlineSyncBusy) {
+        els.rankingSyncBtn.disabled = !saveOwnershipAllowsSync();
+        els.rankingSyncBtn.title = saveOwnershipAllowsSync() ? "" : message.text;
+      }
+    }
+
+    function ownershipErrorLooksLikeMissingSetup(error) {
+      const message = String(error?.message || "").toLowerCase();
+      const code = String(error?.code || "");
+      return code === "PGRST202"
+        || message.includes("register_save_ownership")
+        || message.includes("could not find the function")
+        || message.includes("schema cache");
+    }
+
+    async function verifySaveOwnership({silent=false}={}) {
+      if (ownershipCheckBusy) return saveOwnershipAllowsSync();
+      if (!onlineClient || !onlineUser?.id) return false;
+
+      if (!validSaveIdentityId(state.saveIdentity?.id)) {
+        state.saveIdentity.id = createSaveIdentityId();
+      }
+
+      ownershipCheckBusy = true;
+      state.saveIdentity.status = "checking";
+      state.saveIdentity.lastError = "";
+      renderSaveOwnershipPanel();
+      renderRankingOwnershipNotice();
+
+      try {
+        const {data,error} = await onlineClient.rpc("register_save_ownership",{
+          p_save_id:state.saveIdentity.id
+        });
+        if (error) throw error;
+
+        const result = normalizeRpcResult(data);
+        const owned = !!result.is_owner;
+        state.saveIdentity.status = owned ? "owned" : "external";
+        state.saveIdentity.lastCheckedAt = Date.now();
+        state.saveIdentity.lastError = "";
+        saveState({skipOnline:true});
+
+        if (!owned) {
+          onlineStatus("blocked","외부 저장 기록");
+          if (!silent) toast("이전 코드를 입력해야 온라인 기록을 사용할 수 있습니다.");
+        }
+        renderSaveOwnershipPanel();
+        renderRankingOwnershipNotice();
+        return owned;
+      } catch (error) {
+        state.saveIdentity.status = ownershipErrorLooksLikeMissingSetup(error)
+          ? "setup_required"
+          : "offline";
+        state.saveIdentity.lastCheckedAt = Date.now();
+        state.saveIdentity.lastError = error?.message || "세이브 소유권 확인 실패";
+        saveState({skipOnline:true});
+        if (state.saveIdentity.status === "setup_required") {
+          onlineStatus("blocked","이전 서버 준비 필요");
+        } else {
+          onlineStatus("error","소유권 확인 실패");
+        }
+        renderSaveOwnershipPanel();
+        renderRankingOwnershipNotice();
+        if (!silent) toast("세이브 소유권을 확인하지 못했습니다.");
+        return false;
+      } finally {
+        ownershipCheckBusy = false;
+      }
+    }
+
+    function shortSaveIdentity(id) {
+      if (!validSaveIdentityId(id)) return "발급 대기";
+      return `${id.slice(0,8)}…${id.slice(-4)}`;
+    }
+
+    function transferCodeExpiryLabel() {
+      if (!activeTransferCodeExpiresAt) return "10분 동안 유효";
+      const remaining = Math.max(0,activeTransferCodeExpiresAt-Date.now());
+      if (!remaining) return "만료됨";
+      const minutes = Math.max(1,Math.ceil(remaining/60000));
+      const clock = new Date(activeTransferCodeExpiresAt).toLocaleTimeString("ko-KR",{
+        hour:"2-digit",
+        minute:"2-digit"
+      });
+      return `${minutes}분 남음 · ${clock} 만료`;
+    }
+
+    function renderSaveOwnershipPanel() {
+      if (!els.saveOwnershipPanel) return;
+      const status = state.saveIdentity?.status || "checking";
+      const message = saveOwnershipMessage();
+      const statusLabels = {
+        owned:"현재 기기 소유",
+        external:"이전 코드 필요",
+        setup_required:"서버 설정 필요",
+        offline:"확인 대기",
+        checking:"확인 중"
+      };
+
+      els.saveOwnershipPanel.className = `save-ownership-panel ${status}`;
+      els.saveOwnershipStatus.className = `badge save-ownership-badge ${status}`;
+      els.saveOwnershipStatus.textContent = statusLabels[status] || "확인 중";
+      els.saveOwnershipDescription.textContent = message.text;
+      els.saveIdentityId.textContent = shortSaveIdentity(state.saveIdentity?.id);
+      els.saveIdentityId.title = state.saveIdentity?.id || "";
+      els.saveOwnershipDevice.textContent = onlineUser?.id
+        ? shortOnlineUserId(onlineUser.id)
+        : "익명 접속 준비";
+
+      const canIssue = status === "owned" && !!onlineUser?.id && !transferCodeBusy;
+      els.createTransferCodeBtn.disabled = !canIssue;
+      els.createTransferCodeBtn.title = canIssue
+        ? ""
+        : status === "external"
+          ? "이 기기는 현재 소유자가 아닙니다."
+          : message.text;
+
+      els.claimTransferCodeBtn.disabled =
+        transferCodeBusy
+        || !onlineUser?.id
+        || status === "setup_required";
+
+      if (activeTransferCode && activeTransferCodeExpiresAt > Date.now()) {
+        els.transferCodeResult.classList.remove("hidden");
+        els.transferCodeValue.textContent = activeTransferCode;
+        els.transferCodeExpiry.textContent = transferCodeExpiryLabel();
+      } else {
+        if (activeTransferCodeExpiresAt && activeTransferCodeExpiresAt <= Date.now()) {
+          activeTransferCode = "";
+          activeTransferCodeExpiresAt = 0;
+        }
+        els.transferCodeResult.classList.add("hidden");
+      }
+
+      els.claimTransferCodeHelp.textContent =
+        status === "owned"
+          ? "현재 기기는 이미 이 세이브의 온라인 소유자입니다."
+          : status === "external"
+            ? "보내는 기기에서 발급한 코드를 입력하면 온라인 랭킹이 다시 활성화됩니다."
+            : status === "setup_required"
+              ? "Supabase SQL 적용 후 사용할 수 있습니다."
+              : "코드가 없더라도 로컬 플레이는 가능하지만 온라인 랭킹 동기화는 제한됩니다.";
+    }
+
+    async function createDeviceTransferCode() {
+      if (transferCodeBusy) return;
+      if (!onlineClient || !onlineUser?.id) await initializeOnlineRanking();
+      if (!onlineClient || !onlineUser?.id) return toast("온라인 서버에 연결하지 못했습니다.");
+
+      const owned = await verifySaveOwnership({silent:true});
+      if (!owned) return toast("현재 기기가 소유한 세이브에서만 코드를 발급할 수 있습니다.");
+
+      transferCodeBusy = true;
+      renderSaveOwnershipPanel();
+      try {
+        const {data,error} = await onlineClient.rpc("create_save_transfer_code",{
+          p_save_id:state.saveIdentity.id
+        });
+        if (error) throw error;
+        const result = normalizeRpcResult(data);
+        if (!/^\d{6}$/.test(String(result.code || ""))) {
+          throw new Error("이전 코드를 발급받지 못했습니다.");
+        }
+
+        activeTransferCode = String(result.code);
+        activeTransferCodeExpiresAt = new Date(result.expires_at).getTime();
+        renderSaveOwnershipPanel();
+        toast("10분 동안 사용할 수 있는 이전 코드를 발급했습니다.");
+      } catch (error) {
+        if (ownershipErrorLooksLikeMissingSetup(error)) {
+          state.saveIdentity.status = "setup_required";
+          saveState({skipOnline:true});
+        }
+        toast(error?.message || "이전 코드 발급에 실패했습니다.");
+      } finally {
+        transferCodeBusy = false;
+        renderSaveOwnershipPanel();
+      }
+    }
+
+    async function copyDeviceTransferCode() {
+      if (!activeTransferCode) return;
+      try {
+        await navigator.clipboard.writeText(activeTransferCode);
+        toast("이전 코드를 복사했습니다.");
+      } catch (error) {
+        const input = document.createElement("input");
+        input.value = activeTransferCode;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        input.remove();
+        toast("이전 코드를 복사했습니다.");
+      }
+    }
+
+    async function claimDeviceTransferCode() {
+      if (transferCodeBusy) return;
+      const code = String(els.claimTransferCodeInput.value || "").replace(/\D/g,"").slice(0,6);
+      els.claimTransferCodeInput.value = code;
+      if (!/^\d{6}$/.test(code)) return toast("6자리 이전 코드를 입력해 주세요.");
+
+      if (!onlineClient || !onlineUser?.id) await initializeOnlineRanking();
+      if (!onlineClient || !onlineUser?.id) return toast("온라인 서버에 연결하지 못했습니다.");
+
+      transferCodeBusy = true;
+      renderSaveOwnershipPanel();
+      try {
+        const {data,error} = await onlineClient.rpc("claim_save_transfer_code",{
+          p_save_id:state.saveIdentity.id,
+          p_code:code
+        });
+        if (error) throw error;
+
+        const result = normalizeRpcResult(data);
+        if (!result.ok) {
+          if (result.reason === "blocked") {
+            const minutes = Math.max(1,Math.ceil(Number(result.retry_after_seconds || 60)/60));
+            throw new Error(`입력 횟수가 초과되었습니다. 약 ${minutes}분 후 다시 시도해 주세요.`);
+          }
+          const remaining = Number(result.attempts_remaining);
+          throw new Error(
+            Number.isFinite(remaining)
+              ? `코드가 올바르지 않거나 만료되었습니다. 남은 시도 ${remaining}회`
+              : "코드가 올바르지 않거나 만료되었습니다."
+          );
+        }
+
+        state.saveIdentity.status = "owned";
+        state.saveIdentity.lastCheckedAt = Date.now();
+        state.saveIdentity.lastTransferAt = Date.now();
+        state.saveIdentity.lastError = "";
+        state.online.lastSyncAt = 0;
+        activeTransferCode = "";
+        activeTransferCodeExpiresAt = 0;
+        els.claimTransferCodeInput.value = "";
+        saveState({skipOnline:true});
+        onlineStatus("connected","온라인 연결됨");
+        renderSaveOwnershipPanel();
+        renderRankingOwnershipNotice();
+        renderOnlineRanking();
+        await syncOnlineRanking({silent:true,refresh:true,force:true});
+        toast("세이브 소유권을 이 기기로 이전했습니다.");
+      } catch (error) {
+        if (ownershipErrorLooksLikeMissingSetup(error)) {
+          state.saveIdentity.status = "setup_required";
+          saveState({skipOnline:true});
+        }
+        toast(error?.message || "소유권 이전에 실패했습니다.");
+      } finally {
+        transferCodeBusy = false;
+        renderSaveOwnershipPanel();
+      }
     }
 
     async function initializeOnlineRanking() {
@@ -1931,7 +2296,10 @@ const VERSION = 40;
             els.rankingUserId.title = onlineUser.id;
           }
 
-          await syncOnlineRanking({silent:true,refresh:false,force:true});
+          const ownsSave = await verifySaveOwnership({silent:true});
+          if (ownsSave) {
+            await syncOnlineRanking({silent:true,refresh:false,force:true,skipOwnershipCheck:true});
+          }
           await fetchOnlineRanking({silent:true});
           return onlineUser;
         } catch (error) {
@@ -1948,7 +2316,13 @@ const VERSION = 40;
     }
 
     function scheduleOnlineSync(force=false) {
-      if (!onlineClient || !onlineUser?.id || !state.nickname || !state.classId) return;
+      if (
+        !onlineClient
+        || !onlineUser?.id
+        || !state.nickname
+        || !state.classId
+        || !saveOwnershipAllowsSync()
+      ) return;
       if (onlineSyncTimer) clearTimeout(onlineSyncTimer);
 
       const elapsed = Date.now()-(state.online.lastSyncAt || 0);
@@ -1959,7 +2333,12 @@ const VERSION = 40;
       },wait);
     }
 
-    async function syncOnlineRanking({silent=false,refresh=true,force=false}={}) {
+    async function syncOnlineRanking({
+      silent=false,
+      refresh=true,
+      force=false,
+      skipOwnershipCheck=false
+    }={}) {
       if (onlineSyncBusy) return false;
       if (!onlineClient || !onlineUser?.id) {
         await initializeOnlineRanking();
@@ -1971,6 +2350,26 @@ const VERSION = 40;
       if (!state.nickname || !state.classId) {
         if (!silent) toast("이름과 직업을 선택한 뒤 등록할 수 있습니다.");
         return false;
+      }
+
+      if (!skipOwnershipCheck) {
+        const ownsSave = await verifySaveOwnership({silent:true});
+        if (!ownsSave) {
+          onlineStatus("blocked",
+            state.saveIdentity.status === "external"
+              ? "외부 저장 기록"
+              : "소유권 확인 필요"
+          );
+          renderOnlineRanking();
+          if (!silent) {
+            toast(
+              state.saveIdentity.status === "external"
+                ? "기록 보관소에서 이전 코드를 입력해 주세요."
+                : "세이브 소유권 확인 후 동기화할 수 있습니다."
+            );
+          }
+          return false;
+        }
       }
 
       const elapsed = Date.now()-(state.online.lastSyncAt || 0);
@@ -2007,7 +2406,7 @@ const VERSION = 40;
         return false;
       } finally {
         onlineSyncBusy = false;
-        if (els.rankingSyncBtn) els.rankingSyncBtn.disabled = false;
+        renderRankingOwnershipNotice();
       }
     }
 
@@ -2028,7 +2427,7 @@ const VERSION = 40;
         const metric = onlineMetric();
         let query = onlineClient
           .from("leaderboard")
-          .select("user_id,nickname,class_id,level,power,gold,kills,baseball_best,rift_clears,abyss_floor,final_boss_cleared,final_boss_turns,game_version,updated_at");
+          .select("user_id,save_id,nickname,class_id,level,power,gold,kills,baseball_best,rift_clears,abyss_floor,final_boss_cleared,final_boss_turns,game_version,updated_at");
 
         if (metric.requirePositive) query = query.gte(metric.column,1);
         if (metric.finalOnly) query = query.eq("final_boss_cleared",true);
@@ -2082,7 +2481,13 @@ const VERSION = 40;
       const myIndex = onlineUser?.id
         ? onlineRankingRows.findIndex(row => row.user_id === onlineUser.id)
         : -1;
-      const rankText = myIndex >= 0 ? `${myIndex+1}위` : onlineRankingRows.length >= ONLINE_RANKING_LIMIT ? "100위 밖" : "집계 대기";
+      const rankText = !saveOwnershipAllowsSync()
+        ? "동기화 보류"
+        : myIndex >= 0
+          ? `${myIndex+1}위`
+          : onlineRankingRows.length >= ONLINE_RANKING_LIMIT
+            ? "100위 밖"
+            : "집계 대기";
       const synced = state.online.lastSyncAt
         ? new Date(state.online.lastSyncAt).toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})
         : "아직 없음";
@@ -2123,9 +2528,10 @@ const VERSION = 40;
         button.classList.toggle("active",button.dataset.rankingMetric === (state.online.metric || "power"));
       });
 
+      renderRankingOwnershipNotice();
       renderOnlineMyRecord();
 
-      if (!state.online.connected && state.online.lastError) {
+      if (!state.online.connected && state.online.lastError && state.saveIdentity.status !== "external") {
         els.rankingList.innerHTML = `
           <div class="ranking-error">
             <strong>온라인 서버에 연결하지 못했습니다.</strong>
@@ -2569,12 +2975,18 @@ const VERSION = 40;
       if (autoTimer) toggleAuto();
       localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot.state));
       state = loadState();
+      state.saveIdentity.status = "checking";
+      state.saveIdentity.lastCheckedAt = 0;
+      state.saveIdentity.lastError = "";
       storyBootComplete = false;
       isBusy = false;
       onlineRankingRows = [];
+      activeTransferCode = "";
+      activeTransferCodeExpiresAt = 0;
       log(`${sourceLabel}에서 기록을 불러왔다.`, "rarity-epic");
-      saveState();
+      saveState({skipOnline:true});
       renderAll();
+      Promise.resolve(initializeOnlineRanking()).then(() => verifySaveOwnership({silent:true}));
       if (!state.nickname) showNicknameModal();
       else if (!state.classId) showClassModal();
     }
@@ -2647,7 +3059,7 @@ const VERSION = 40;
       const shareData = transfer.file
         ? {
             title:"잿빛 전리품 세이브",
-            text:`${state.nickname || "무명의 사냥꾼"}의 세이브 파일입니다. 받은 기기에서 ‘세이브 파일 불러오기’를 눌러 주세요.`,
+            text:`${state.nickname || "무명의 사냥꾼"}의 세이브 파일입니다. 받은 기기에서 파일을 불러온 뒤 보내는 기기에서 발급한 6자리 이전 코드를 입력해 주세요.`,
             files:[transfer.file]
           }
         : null;
@@ -2729,6 +3141,8 @@ const VERSION = 40;
             </div>
           </article>`;
       }).join("");
+
+      renderSaveOwnershipPanel();
 
       els.saveSlotGrid.querySelectorAll("[data-slot-save]").forEach(btn => btn.onclick = () => writeManualSlot(btn.dataset.slotSave));
       els.saveSlotGrid.querySelectorAll("[data-slot-load]").forEach(btn => btn.onclick = () => loadManualSlot(btn.dataset.slotLoad));
@@ -4658,7 +5072,7 @@ const VERSION = 40;
           <div class="information-record-header">
             <div>
               <span>ADVENTURE RECORD</span>
-              <h3>${state.nickname || "무명의 사냥꾼"}의 전과 기록</h3>
+              <h3>${state.nickname || "무명의 사냥꾼"}의 모험 기록</h3>
             </div>
             <strong>Lv.${fmt(state.level)}</strong>
           </div>
@@ -8724,6 +9138,17 @@ const VERSION = 40;
     els.nicknameModalInput.onkeydown = event => {
       if (event.key === "Enter") confirmNickname();
     };
+    els.createTransferCodeBtn.onclick = createDeviceTransferCode;
+    els.copyTransferCodeBtn.onclick = copyDeviceTransferCode;
+    els.claimTransferCodeBtn.onclick = claimDeviceTransferCode;
+    els.claimTransferCodeInput.oninput = () => {
+      els.claimTransferCodeInput.value = String(els.claimTransferCodeInput.value || "")
+        .replace(/\D/g,"")
+        .slice(0,6);
+    };
+    els.claimTransferCodeInput.onkeydown = event => {
+      if (event.key === "Enter") claimDeviceTransferCode();
+    };
     els.shareSaveBtn.onclick = shareSaveFile;
     els.exportSaveBtn.onclick = exportSaveFile;
     els.importSaveBtn.onclick = () => els.importSaveInput.click();
@@ -8836,6 +9261,8 @@ const VERSION = 40;
       }
 
       state = defaultState();
+      activeTransferCode = "";
+      activeTransferCodeExpiresAt = 0;
       storyBootComplete = false;
       saveState();
       renderAll();
@@ -8870,9 +9297,13 @@ const VERSION = 40;
         onlineUser?.id &&
         state.nickname &&
         state.classId &&
+        saveOwnershipAllowsSync() &&
         Date.now()-(state.online.lastSyncAt || 0) >= ONLINE_SYNC_INTERVAL
       ) {
         scheduleOnlineSync(false);
+      }
+      if (activeTransferCode && activeTransferCodeExpiresAt) {
+        renderSaveOwnershipPanel();
       }
     }, 1000);
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=40">
+  <link rel="stylesheet" href="styles.css?v=42">
 
 </head>
 <body>
@@ -726,10 +726,10 @@
           </div>
         </div>
 
-        <section class="ranking-notice">
+        <section class="ranking-notice" id="rankingOwnershipNotice">
           <div>
-            <strong>베타 랭킹</strong>
-            <p>현재 전투 결과는 각 브라우저에서 계산됩니다. 비정상 기록은 추후 검토·제외될 수 있으며, 다른 기기에서는 별도 익명 이용자로 등록됩니다.</p>
+            <strong id="rankingOwnershipTitle">베타 랭킹</strong>
+            <p id="rankingOwnershipText">현재 전투 결과는 각 브라우저에서 계산됩니다. 비정상 기록은 추후 검토·제외될 수 있습니다.</p>
           </div>
           <div class="ranking-user-id">
             <span>접속 식별자</span>
@@ -784,20 +784,71 @@
 
         <div class="save-warning">
           수동 슬롯은 현재 브라우저에만 저장된다. 다른 기기로 옮길 때는
-          <strong>카카오톡으로 세이브 보내기</strong>를 사용하고, 받은 기기에서
-          <strong>세이브 파일 불러오기</strong>를 누르면 된다.
+          <strong>이전 코드 발급 → 세이브 전송 → 파일 불러오기 → 코드 입력</strong>
+          순서로 진행해야 온라인 랭킹까지 정상적으로 이어진다.
         </div>
 
         <div class="save-slot-grid" id="saveSlotGrid"></div>
 
+
+        <section class="save-ownership-panel" id="saveOwnershipPanel">
+          <div class="save-ownership-heading">
+            <div>
+              <span>SAVE OWNERSHIP · DEVICE TRANSFER</span>
+              <h3>온라인 기록 소유권</h3>
+              <p id="saveOwnershipDescription">현재 세이브의 온라인 소유권을 확인하고 있습니다.</p>
+            </div>
+            <span class="badge save-ownership-badge checking" id="saveOwnershipStatus">확인 중</span>
+          </div>
+
+          <div class="save-identity-row">
+            <div>
+              <span>세이브 식별자</span>
+              <strong id="saveIdentityId">발급 대기</strong>
+            </div>
+            <div>
+              <span>현재 기기</span>
+              <strong id="saveOwnershipDevice">익명 접속 준비</strong>
+            </div>
+          </div>
+
+          <div class="save-transfer-code-grid">
+            <article class="save-transfer-code-card">
+              <span>보내는 기기</span>
+              <h4>일회용 이전 코드 발급</h4>
+              <p>세이브 파일을 보내기 전에 이 기기에서 코드를 발급합니다. 코드는 10분 동안 한 번만 사용할 수 있습니다.</p>
+              <button id="createTransferCodeBtn" class="vault-transfer-code">이전 코드 발급</button>
+              <div class="save-transfer-code-result hidden" id="transferCodeResult">
+                <strong id="transferCodeValue">000000</strong>
+                <div>
+                  <span id="transferCodeExpiry">10분 동안 유효</span>
+                  <button id="copyTransferCodeBtn">코드 복사</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="save-transfer-code-card">
+              <span>받는 기기</span>
+              <h4>이전 코드 입력</h4>
+              <p>세이브 파일을 먼저 불러온 뒤, 보내는 기기에서 발급한 6자리 코드를 입력하면 온라인 소유권이 이 기기로 이동합니다.</p>
+              <div class="transfer-code-input-row">
+                <input id="claimTransferCodeInput" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6자리 코드" />
+                <button id="claimTransferCodeBtn">소유권 이전</button>
+              </div>
+              <small id="claimTransferCodeHelp">코드가 없더라도 로컬 플레이는 가능하지만 온라인 랭킹 동기화는 제한됩니다.</small>
+            </article>
+          </div>
+        </section>
+
         <div class="save-file-panel save-transfer-panel">
           <div class="save-transfer-copy">
             <h3>기기 간 세이브 이동</h3>
-            <p>휴대폰에서는 공유창에서 카카오톡을 선택한다. PC에서 공유가 지원되지 않으면 파일이 내려받아지므로 카카오톡 ‘나와의 채팅’에 첨부하면 된다.</p>
+            <p>정상적인 기기 이동에는 세이브 파일과 일회용 이전 코드가 모두 필요하다. 파일만 전달된 경우 게임은 이어서 할 수 있지만 온라인 랭킹은 등록되지 않는다.</p>
             <div class="save-transfer-steps">
-              <span><b>1</b> 보내는 기기에서 세이브 전송</span>
-              <span><b>2</b> 카카오톡에서 파일 받기</span>
+              <span><b>1</b> 보내는 기기에서 이전 코드 발급</span>
+              <span><b>2</b> 카카오톡으로 세이브 파일 전송</span>
               <span><b>3</b> 받는 기기에서 세이브 불러오기</span>
+              <span><b>4</b> 6자리 코드를 입력해 소유권 이전</span>
             </div>
           </div>
           <div class="save-file-actions">
@@ -1040,7 +1091,7 @@
   </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="game.js?v=40"></script>
+  <script src="game.js?v=42"></script>
 
 </body>
 </html>
