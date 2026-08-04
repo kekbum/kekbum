@@ -1,7 +1,11 @@
-const VERSION = 30;
+const VERSION = 35;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
+    const SUPABASE_URL = "https://fxozpozkguqknxeqlwxp.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_V7n7cCKOLHTctrtE5pZ_vA_co7Fu_0j";
+    const ONLINE_SYNC_INTERVAL = 60000;
+    const ONLINE_RANKING_LIMIT = 100;
 
     const attributeInfo = {
       str: { name:"힘", short:"힘", desc:"공격력" },
@@ -10,6 +14,77 @@ const VERSION = 30;
       spi: { name:"정신", short:"정신", desc:"방어·회복" },
       luck:{ name:"행운", short:"행운", desc:"치명타·골드·장비 발견" },
       spd: { name:"속도", short:"속도", desc:"연속공격·회피" }
+    };
+
+
+    const onlineRankingMetrics = {
+      power:{
+        column:"power",
+        title:"종합 전투력 순위",
+        kicker:"POWER RANKING",
+        ascending:false,
+        format:value => fmt(Number(value || 0)),
+        myLabel:"현재 전투력"
+      },
+      level:{
+        column:"level",
+        title:"사냥꾼 레벨 순위",
+        kicker:"LEVEL RANKING",
+        ascending:false,
+        format:value => `Lv.${fmt(Number(value || 0))}`,
+        myLabel:"현재 레벨"
+      },
+      kills:{
+        column:"kills",
+        title:"누적 몬스터 처치 순위",
+        kicker:"HUNTER KILL RECORD",
+        ascending:false,
+        format:value => `${fmt(Number(value || 0))}마리`,
+        myLabel:"누적 처치"
+      },
+      gold:{
+        column:"gold",
+        title:"보유 골드 순위",
+        kicker:"GOLD HOLDINGS",
+        ascending:false,
+        format:value => `${fmt(Number(value || 0))}G`,
+        myLabel:"보유 골드"
+      },
+      rift_clears:{
+        column:"rift_clears",
+        title:"오늘의 균열 누적 정복 순위",
+        kicker:"DAILY RIFT RECORD",
+        ascending:false,
+        format:value => `${fmt(Number(value || 0))}회`,
+        myLabel:"균열 정복"
+      },
+      abyss_floor:{
+        column:"abyss_floor",
+        title:"끝없는 심연 최고층 순위",
+        kicker:"ENDLESS ABYSS RECORD",
+        ascending:false,
+        format:value => `${fmt(Number(value || 0))}층`,
+        myLabel:"심연 최고층"
+      },
+      baseball_best:{
+        column:"baseball_best",
+        title:"숫자 봉인 최소 시도 순위",
+        kicker:"RIFT SEAL RECORD",
+        ascending:true,
+        requirePositive:true,
+        format:value => value ? `${fmt(Number(value))}회` : "기록 없음",
+        myLabel:"최소 시도"
+      },
+      final_boss_turns:{
+        column:"final_boss_turns",
+        title:"모험 최종장 최단 정복 순위",
+        kicker:"FINAL ACT RECORD",
+        ascending:true,
+        requirePositive:true,
+        finalOnly:true,
+        format:value => value ? `${fmt(Number(value))}막` : "미정복",
+        myLabel:"최종장 기록"
+      }
     };
 
     const classes = {
@@ -231,6 +306,166 @@ const VERSION = 30;
       { id:"normal", name:"보통", mult:.82, rewardMult:1.0, recText:"현재 전투력의 약 80%" },
       { id:"hard", name:"어려움", mult:1.12, rewardMult:1.55, recText:"현재 전투력의 약 110%" },
       { id:"nightmare", name:"악몽", mult:1.48, rewardMult:2.3, recText:"현재 전투력의 약 150%" }
+    ];
+
+    const dailyRiftStages = [
+      {
+        id:"outer",
+        name:"외곽층",
+        short:"외곽층",
+        desc:"현실과 균열이 맞닿는 경계. 길을 잃은 수호자들이 입구를 막고 있다.",
+        guardian:"문지기"
+      },
+      {
+        id:"echo",
+        name:"잔향층",
+        short:"잔향층",
+        desc:"죽음의 순간이 메아리처럼 반복되는 층. 오래 머물수록 감각이 흐려진다.",
+        guardian:"전쟁의 잔향"
+      },
+      {
+        id:"memory",
+        name:"기억층",
+        short:"기억층",
+        desc:"죽은 자의 기억이 장비와 괴물의 형태로 굳어지는 층.",
+        guardian:"기억 포식자"
+      },
+      {
+        id:"depth",
+        name:"심층",
+        short:"심층",
+        desc:"이름과 과거가 지워지는 깊은 층. 균열핵을 지키는 정예가 출현한다.",
+        guardian:"무명의 파수꾼"
+      },
+      {
+        id:"core",
+        name:"균열핵",
+        short:"균열핵",
+        desc:"하루 동안만 모습을 드러내는 불안정한 중심부. 핵을 지키는 수호자가 보상을 품고 있다.",
+        guardian:"균열핵 수호자"
+      }
+    ];
+
+    const dailyRiftRunes = [
+      {id:"ash",label:"재",mark:"灰",desc:"모든 죽음 뒤에 남는 것"},
+      {id:"ember",label:"불씨",mark:"火",desc:"회귀자를 다시 일으키는 열"},
+      {id:"name",label:"이름",mark:"名",desc:"균열이 가장 먼저 빼앗는 기억"}
+    ];
+
+    const finaleMemoryQuestions = [
+      {
+        id:"remnant_protection",
+        statement:"왕립 잔재국은 회귀자를 보호하기 위해 만들어졌다.",
+        answer:false,
+        truth:"왕립 잔재국은 회귀자를 시민이 아니라 왕국의 재산과 병기로 취급한다."
+      },
+      {
+        id:"ledger_funding",
+        statement:"검은 장부회는 대소각 이전부터 회귀자 계획에 자금을 댔다.",
+        answer:true,
+        truth:"검은 동전은 실험체 운송과 회귀자 연구비에 사용되었다."
+      },
+      {
+        id:"cult_closure",
+        statement:"화로 교단은 모든 균열을 닫는 것을 가장 중요한 교리로 삼는다.",
+        answer:false,
+        truth:"화로 교단은 균열을 확대해 모든 이름을 하나의 불꽃으로 합치려 한다."
+      },
+      {
+        id:"launa_record",
+        statement:"기록관 라우나는 회귀자 계획의 기록 책임자였다.",
+        answer:true,
+        truth:"라우나는 R-0의 원본 기록과 마지막 임무를 알고 있었다."
+      },
+      {
+        id:"king_single",
+        statement:"회백의 왕은 대소각 이전에 실존했던 단 한 명의 왕이다.",
+        answer:false,
+        truth:"회백의 왕은 실패한 회귀자들의 이름과 기억이 합쳐진 집합체다."
+      },
+      {
+        id:"ember_prison",
+        statement:"회귀의 불씨는 죽은 자를 완전히 되살리는 기술이다.",
+        answer:false,
+        truth:"불씨는 죽기 직전의 상태를 저장하고 되돌리는 시간 기록 장치에 가깝다."
+      },
+      {
+        id:"relic_memory",
+        statement:"잿빛 전리품은 죽은 존재의 기억이 물질로 굳어진 것이다.",
+        answer:true,
+        truth:"강한 기억일수록 더 높은 등급과 고유한 이름을 가진 전리품이 된다."
+      },
+      {
+        id:"r0_order",
+        statement:"가장 오래된 회귀 실험체 R-0는 계획 중단 명령과 관련되어 있다.",
+        answer:true,
+        truth:"왕립 명령서의 계획 중단 서명은 플레이어의 필체와 같았다."
+      }
+    ];
+
+    const finalePatterns = {
+      wave:{
+        id:"wave",
+        name:"회백의 파도",
+        omen:"수백만의 재가 왕의 오른손으로 모인다.",
+        answer:"defend",
+        answerLabel:"방어",
+        lesson:"왕의 오른손에 재가 모이면 방어해야 한다."
+      },
+      steal:{
+        id:"steal",
+        name:"이름 강탈",
+        omen:"명패의 글자가 한 획씩 사라지기 시작한다.",
+        answer:"anchor",
+        answerLabel:"불씨 고정",
+        lesson:"명패의 글자가 사라지면 불씨를 고정해야 한다."
+      },
+      prison:{
+        id:"prison",
+        name:"기억 감옥",
+        omen:"죽은 자들의 목소리가 손과 기술을 붙잡는다.",
+        answer:"release",
+        answerLabel:"기억 해방",
+        lesson:"목소리가 행동을 붙잡으면 기억을 해방해야 한다."
+      },
+      core:{
+        id:"core",
+        name:"열린 균열핵",
+        omen:"왕의 가슴이 갈라지며 검은 핵이 드러난다.",
+        answer:"attack",
+        answerLabel:"공격",
+        lesson:"왕의 가슴에서 검은 핵이 보일 때 공격해야 한다."
+      }
+    };
+
+    const finaleEchoes = [
+      {
+        name:"이름 없는 방패",
+        trait:"끝까지 문을 지키다 이름을 잃은 선봉대의 잔영",
+        mult:.98,
+        attack:1.18,
+        defense:.94,
+        hp:.96,
+        boss:false
+      },
+      {
+        name:"화로의 연구자",
+        trait:"금지된 지식을 지키기 위해 자신의 기억을 태운 비전술사의 잔영",
+        mult:1.06,
+        attack:1.04,
+        defense:1.18,
+        hp:1.05,
+        boss:false
+      },
+      {
+        name:"처형 명령의 잔영",
+        trait:"R-0를 제거하라는 마지막 명령만 남은 왕립 처형자",
+        mult:1.14,
+        attack:1.12,
+        defense:1.08,
+        hp:1.22,
+        boss:true
+      }
     ];
 
     const arenaNames = [
@@ -626,6 +861,309 @@ const VERSION = 30;
       { id:"throne", name:"재의 왕좌", tier:10, rec:16000, enemies:["재의 군주","종말의 기사","왕좌의 감시자"], mult:13.0 }
     ];
 
+
+    const classMemoryLines = {
+      vanguard:"누군가의 방패가 되어 마지막 문을 지키던 기억",
+      arcanist:"태초의 화로를 열어서는 안 된다고 경고하던 연구자의 기억",
+      oracle:"죽은 자의 목소리를 들으며 이름을 기록하던 사제의 기억",
+      ironfist:"왕국이 죄수를 소모하던 투기장에서 끝까지 살아남은 기억",
+      marksman:"도망친 회귀 실험체를 추적하던 왕립 사냥꾼의 기억",
+      shadow:"검은 장부에 이름조차 남기지 않은 처형자의 기억"
+    };
+
+    const zoneLore = {
+      field:{
+        faction:"잿빛 야영지",
+        title:"대소각의 첫 재가 쌓인 곳",
+        lore:"야영지의 식량과 목재를 구하는 가장 가까운 균열이다. 들쥐와 약탈자조차 실제 생명이 아니라 죽던 순간을 반복하는 잔향이라는 소문이 있다."
+      },
+      camp:{
+        faction:"검은 장부회",
+        title:"왕국의 보급품이 사라지던 길목",
+        lore:"도적들은 검은 동전을 모으지만 그 가치를 알지 못한다. 장부회는 이곳에서 회수된 동전을 시세보다 싸게 사들인다."
+      },
+      grave:{
+        faction:"화로 교단",
+        title:"이름을 태우는 묘지",
+        lore:"묘비의 이름이 밤마다 한 글자씩 사라진다. 교단은 이를 구원이라 부르지만 야영지는 기억 포식의 징조로 본다."
+      },
+      mine:{
+        faction:"왕립 잔재국",
+        title:"회귀자의 불씨를 캐던 폐광",
+        lore:"광산 깊은 곳에는 광물이 아니라 실패한 불씨의 잔해가 매장되어 있다. 왕립 잔재국은 출입 기록을 모두 부정한다."
+      },
+      citadel:{
+        faction:"화로 교단",
+        title:"대소각을 재현하는 성채",
+        lore:"화염 기사들은 지금도 존재하지 않는 왕의 명령을 수행한다. 성채의 용광로는 태초의 화로와 같은 문양을 품고 있다."
+      },
+      frost:{
+        faction:"왕립 잔재국",
+        title:"기억을 얼려 보존한 협곡",
+        lore:"불태울 수 없는 기억을 얼음 속에 봉인한 왕립 수용소였다. 얼음이 녹을 때마다 수감자들의 마지막 대화가 들린다."
+      },
+      sunken:{
+        faction:"잿빛 야영지",
+        title:"죽은 자의 이름을 보관한 신전",
+        lore:"신관들은 대소각 전 모든 시민의 이름을 돌판에 새겼다. 신전이 가라앉은 뒤에도 일부 이름은 물속에서 빛난다."
+      },
+      spire:{
+        faction:"왕립 잔재국",
+        title:"균열을 예측하던 관측소",
+        lore:"별빛 첨탑은 미래를 본 것이 아니라 반복되는 과거의 주기를 계산했다. 최상층 기록에는 회귀자 계획의 첫 실험일이 남아 있다."
+      },
+      garden:{
+        faction:"검은 장부회",
+        title:"기억이 생명처럼 자라는 곳",
+        lore:"검은 꽃은 죽은 자의 기억을 먹고 핀다. 장부회는 꽃가루를 유니크 유물의 감정과 진화에 사용한다."
+      },
+      throne:{
+        faction:"모든 세력",
+        title:"회백의 왕이 기다리는 마지막 왕좌",
+        lore:"왕좌에 앉은 존재는 한 명의 왕이 아니다. 회귀 실험에서 소모된 수많은 이름이 서로를 삼키며 만들어진 집합체다."
+      }
+    };
+
+    const storyChapters = [
+      {
+        id:"prologue",
+        act:"서막",
+        title:"잿더미에서 돌아온 자",
+        subtitle:"처음 기억나는 것은 뜨거움이었다.",
+        unlockHint:"사냥꾼의 이름을 정한다.",
+        condition:() => !!state.nickname,
+        quote:"“이름을 정해. 균열에 들어가면 그것마저 빼앗길 테니까.”",
+        body:[
+          "불길은 보이지 않았지만 가슴 안쪽에서 무언가가 타고 있었다. 눈을 뜬 곳은 시체도 무덤도 없는 넓은 잿더미였다.",
+          "회색 외투를 입은 여자는 당신의 심장 위에 손을 얹고 꺼지지 않는 열을 확인했다. 그녀는 자신을 잿빛 야영지의 기록관 라우나라고 소개했다.",
+          "당신은 자신의 이름도, 죽었던 이유도 기억하지 못했다. 다만 검게 타버린 명패를 쥐는 순간 균열 너머에서 누군가가 당신을 알아보는 듯한 목소리가 들렸다.",
+          "라우나는 말했다. 당신은 살아난 것이 아니라 죽음을 반복하지 않도록 불씨에 붙잡힌 것이라고."
+        ]
+      },
+      {
+        id:"chapter1",
+        act:"제1장",
+        title:"이름 없는 불씨",
+        subtitle:"여섯 개의 과거 중 하나가 전투의 형태로 되살아났다.",
+        unlockHint:"첫 번째 직업의 기억을 선택한다.",
+        condition:() => !!state.classId,
+        quote:"“기억은 진실이 아니다. 그러나 검을 쥐는 방법만큼은 거짓말을 하지 않지.”",
+        body:[
+          "직업을 선택하자 불씨 속에서 낯선 삶의 조각이 떠올랐다. 누군가를 지키거나, 금지된 지식을 연구하거나, 명령에 따라 사람을 쫓던 손의 감각이었다.",
+          "라우나는 회귀자 대부분이 자신의 과거를 선택할 수 없다고 말했다. 과거가 여러 갈래로 보인다는 사실 자체가 당신이 평범한 회귀자가 아니라는 증거였다.",
+          "야영지는 당신에게 주변 균열을 사냥해 물자와 잿빛 전리품을 회수해 달라고 부탁했다.",
+          "첫 전리품을 손에 쥐었을 때, 그것이 장비가 아니라 다른 사람의 마지막 기억이라는 사실을 직감했다."
+        ]
+      },
+      {
+        id:"chapter2",
+        act:"제2장",
+        title:"검은 장부의 조각",
+        subtitle:"죽은 약탈자의 품에서 왕국의 비밀 화폐가 발견되었다.",
+        unlockHint:"레벨 5에 도달하거나 몬스터 25마리를 처치한다.",
+        condition:() => state.level >= 5 || (state.records.kills || 0) >= 25,
+        quote:"“왕국은 존재하지 않는 병사에게도 급료를 지급했다.”",
+        body:[
+          "도적 야영지에서 회수한 검은 동전에는 멸망한 왕국의 인장이 없었다. 대신 장부 번호와 사람의 이름을 지운 흔적이 새겨져 있었다.",
+          "암시장의 중개인 마르칸은 검은 동전이 회귀자 계획의 연구비와 실험체 운송 비용에 쓰였다고 털어놓았다.",
+          "장부의 찢긴 조각에는 당신과 같은 불씨를 가진 실험체들이 숫자로 기록되어 있었다. 가장 오래된 번호는 ‘R-0’이었다.",
+          "마르칸은 그 번호의 주인이 대소각이 일어난 날 태초의 화로 안으로 들어갔다고 말했다."
+        ]
+      },
+      {
+        id:"chapter3",
+        act:"제3장",
+        title:"왕립 잔재국의 봉쇄선",
+        subtitle:"희귀 지도가 가리킨 곳에서 멸망한 왕국의 명령서가 발견되었다.",
+        unlockHint:"희귀 지도를 발견하거나 레벨 10에 도달한다.",
+        condition:() => (state.records.rareMaps || 0) >= 1 || state.level >= 10,
+        quote:"“회귀자는 시민이 아니다. 왕국의 재산이며, 죽음은 계약을 끝내지 않는다.”",
+        body:[
+          "왕립 잔재국은 균열을 통제한다는 명분으로 탐사로를 봉쇄했다. 그들은 당신의 불씨를 확인한 뒤 보호가 아니라 반환을 요구했다.",
+          "봉쇄선 지휘관 카시안은 왕국의 법이 아직 유효하다고 주장했다. 회귀자는 국가가 만든 병기이므로 왕국의 잔재가 소유권을 가진다는 논리였다.",
+          "라우나는 야영지를 지키기 위해 그들과 거래하려 했지만, 검은 장부회는 카시안이 태초의 화로를 다시 가동할 부품을 모으고 있다고 경고했다.",
+          "당신은 명령서 하단에서 자신의 필체와 똑같은 서명을 발견했다. 내용은 회귀자 계획의 중단 명령이었다."
+        ]
+      },
+      {
+        id:"chapter4",
+        act:"제4장",
+        title:"균열핵이 부른 이름",
+        subtitle:"회백의 왕의 잔영은 당신을 처음 만난 것처럼 대하지 않았다.",
+        unlockHint:"오늘의 균열을 처음 정복한다.",
+        condition:() => (state.records.dailyClears || 0) >= 1,
+        quote:"“R-0. 너는 또 나를 죽이러 왔구나.”",
+        body:[
+          "균열핵에서 만난 회백의 왕의 잔영은 당신을 ‘R-0’이라고 불렀다. 그것은 검은 장부에서 가장 오래된 실험체 번호였다.",
+          "삼중 낙인의 순서는 단순한 봉인이 아니었다. 재는 죽음, 불씨는 회귀, 이름은 인간을 뜻했다. 왕국은 인간의 이름을 마지막에 지워 병기로 완성했다.",
+          "보스를 처단하자 수많은 사람의 기억이 한꺼번에 흘러들었다. 그 기억 속에서 당신은 태초의 화로 앞에 서서 왕국의 연구자들과 싸우고 있었다.",
+          "라우나는 당신이 최초의 회귀자였을 가능성을 인정했지만, 왜 대소각을 막지 못했는지는 말하지 않았다."
+        ]
+      },
+      {
+        id:"chapter5",
+        act:"제5장",
+        title:"기억을 먹는 자",
+        subtitle:"유니크 유물 안에서 한 사람의 완전한 목소리가 깨어났다.",
+        unlockHint:"유니크 유물을 획득하거나 레벨 20에 도달한다.",
+        condition:() => (state.records.uniqueItems || 0) >= 1 || state.level >= 20,
+        quote:"“회백의 왕은 괴물이 아니다. 우리가 버린 이름들이 서로를 붙잡은 결과다.”",
+        body:[
+          "유니크 유물에는 단편이 아니라 한 사람의 의지가 남아 있었다. 유물의 주인은 회귀자 계획에서 불씨를 안정시키던 연구자 엘리안이었다.",
+          "엘리안의 기억에 따르면 실패한 회귀자들은 소멸하지 않았다. 이름을 잃은 채 태초의 화로 안에 축적되었고, 서로의 기억을 먹으며 하나의 의식으로 변했다.",
+          "그 의식이 회백의 왕이었다. 왕은 세상을 멸망시키려는 것이 아니라, 자신을 구성하는 모든 이름을 세상에 되돌리려 하고 있었다.",
+          "문제는 그 기억이 한꺼번에 돌아오면 살아 있는 사람들의 기억과 몸이 견디지 못한다는 점이었다."
+        ]
+      },
+      {
+        id:"chapter6",
+        act:"제6장",
+        title:"태초의 화로",
+        subtitle:"심연 아래에는 세계를 태운 장치의 설계도가 잠들어 있었다.",
+        unlockHint:"끝없는 심연 10층에 도달하거나 레벨 30에 도달한다.",
+        condition:() => (state.records.abyssBestFloor || 0) >= 10 || state.level >= 30,
+        quote:"“불씨는 죽은 자를 살리는 기술이 아니다. 죽은 순간을 저장하는 감옥이다.”",
+        body:[
+          "심연의 열 번째 층에서 발견한 설계도는 회귀의 불씨가 부활 장치가 아니라 시간 기록 장치임을 보여주었다.",
+          "플레이어가 패배 후 장비와 경험을 잃지 않는 이유는 불씨가 죽기 직전의 상태를 야영지의 기준점에 다시 기록하기 때문이었다.",
+          "화로 교단은 모든 인류를 하나의 기준점에 저장하면 죽음과 갈등이 사라진다고 믿는다. 왕립 잔재국은 같은 기술로 끝없이 복종하는 군대를 만들려 한다.",
+          "검은 장부회는 어느 쪽이 승리하든 거래할 준비를 하고 있었다. 오직 잿빛 야영지만이 화로를 파괴하자고 주장했지만, 라우나의 과거 역시 계획과 연결되어 있었다."
+        ]
+      },
+      {
+        id:"chapter7",
+        act:"제7장",
+        title:"마지막 전리품",
+        subtitle:"재의 왕좌로 향하는 길이 열렸다.",
+        unlockHint:"재의 왕좌를 발견하거나 레벨 40에 도달한다.",
+        condition:() => !!state.zonesVisited?.throne || state.level >= 40,
+        quote:"“왕을 죽이면 수백만의 이름이 사라진다. 왕을 살리면 지금의 세계가 사라진다.”",
+        body:[
+          "재의 왕좌는 궁전이 아니라 태초의 화로를 감싸기 위해 세운 거대한 봉인 시설이었다. 왕좌의 감시자들은 당신이 돌아오기를 수십 년 동안 반복해 기다렸다.",
+          "라우나는 자신이 회귀자 계획의 기록 책임자였음을 고백했다. 그녀는 R-0에게 계획을 중단해 달라고 부탁했고, 당신은 화로를 파괴하려다 대소각의 중심에서 죽었다.",
+          "회백의 왕은 당신이 버린 기억까지 품고 있다. 왕을 없애면 자신의 진짜 과거도 영원히 사라질 수 있다.",
+          "이제 남은 것은 세 가지 선택이다. 화로를 파괴해 부활을 끝내거나, 왕을 흡수해 새로운 화로가 되거나, 균열을 유지한 채 기억과 함께 살아가는 길이다.",
+          "그러나 선택권을 얻으려면 먼저 재의 왕좌 아래에 잠든 회백의 왕 본체를 쓰러뜨려야 한다. 왕좌의 문은 모든 준비를 마친 회귀자에게만 열린다."
+        ]
+      },
+      {
+        id:"finale",
+        act:"종장",
+        title:"모든 이름의 무덤",
+        subtitle:"회백의 왕이 무너지고, 잃어버린 이름들이 침묵했다.",
+        unlockHint:"모험 최종장에서 회백의 왕을 처단한다.",
+        condition:() => (state.records.finalBossWins || 0) >= 1,
+        quote:"“내가 품은 이름을 가져가라. 그 무게까지 감당할 수 있다면.”",
+        body:[
+          "이름 없는 군대와 네 세력의 거짓, 기억의 삼중 낙인을 지나 마침내 회백의 왕의 심장에 닿았다.",
+          "왕은 마지막까지 당신을 R-0이라고 불렀다. 하지만 명패에 남은 이름은 실험 번호가 아니라 스스로 선택한 인간의 이름이었다.",
+          "회백의 왕이 무너지자 수백만의 기억은 전리품이 되지 않고 재의 왕좌 위로 흩어졌다. 누구도 완전히 되살아나지 않았지만, 더는 하나의 감옥에 갇혀 있지도 않았다.",
+          "태초의 화로는 아직 완전히 꺼지지 않았다. 왕을 쓰러뜨린 자에게 화로의 운명을 정할 권리가 남았다. 그 선택은 다음 이야기에서 이어진다."
+        ]
+      }
+    ];
+
+    const factionDefinitions = [
+      {
+        id:"camp",
+        mark:"燼",
+        name:"잿빛 야영지",
+        type:"생존자 거점",
+        leader:"기록관 라우나",
+        motto:"이름을 기억하는 한 인간은 사라지지 않는다.",
+        publicGoal:"균열을 닫고 생존자들을 보호하며 잿빛 전리품으로 야영지를 유지한다.",
+        hidden:"라우나는 회귀자 계획의 기록 책임자였으며 R-0의 마지막 임무를 알고 있다.",
+        secretChapter:"chapter6",
+        threads:["야영지 내부의 밀고자","라우나가 숨긴 R-0의 원본 기록","불씨 기준점의 진짜 위치"]
+      },
+      {
+        id:"cult",
+        mark:"火",
+        name:"화로 교단",
+        type:"종말 신앙",
+        leader:"대사제 세르마",
+        motto:"모든 이름을 하나의 불꽃으로.",
+        publicGoal:"대소각을 신의 계시로 선포하고 균열을 확대해 죽음 없는 세계를 만든다.",
+        hidden:"교단이 말하는 신은 회백의 왕이며, 세르마는 왕의 목소리를 일부러 왜곡해 전달한다.",
+        secretChapter:"chapter5",
+        threads:["이름을 태우는 세례","용암 성채의 재점화 의식","회백의 왕을 위한 육체"]
+      },
+      {
+        id:"remnant",
+        mark:"冠",
+        name:"왕립 잔재국",
+        type:"멸망 왕국의 후계 세력",
+        leader:"봉쇄군 사령관 카시안",
+        motto:"왕국은 무너졌으나 명령은 끝나지 않았다.",
+        publicGoal:"도로와 균열을 통제하고 옛 질서를 복구한다.",
+        hidden:"그들이 복구하려는 것은 왕국이 아니라 회귀자 군단과 태초의 화로의 통제권이다.",
+        secretChapter:"chapter3",
+        threads:["회귀자 소유권 명령","빙결 협곡의 수감자 명단","재의 왕좌 탈환 작전"]
+      },
+      {
+        id:"ledger",
+        mark:"帳",
+        name:"검은 장부회",
+        type:"암시장 연합",
+        leader:"중개인 마르칸",
+        motto:"기억도 가격이 정해지면 물건이 된다.",
+        publicGoal:"검은 동전과 균열 유물, 봉인품을 거래하며 어느 세력과도 계약한다.",
+        hidden:"대소각 전 회귀자 계획에 자금을 댔고, 현재도 회백의 왕의 기억 조각을 수집하고 있다.",
+        secretChapter:"chapter2",
+        threads:["검은 동전의 최초 발행자","눈먼 행상인의 봉인품","장부에서 지워진 R-0의 가격"]
+      }
+    ];
+
+    const storyIntroScenes = [
+      {
+        kicker:"PROLOGUE · 1/5",
+        title:"뜨거움",
+        paragraphs:[
+          "처음 기억나는 것은 뜨거움이었다.",
+          "불길은 없었다. 그런데도 가슴 안쪽에서 무언가가 타고 있었다.",
+          "눈을 뜨자 하늘도 땅도 회색이었다. 바람이 불 때마다 사람의 흔적처럼 보이는 재가 흩어졌다."
+        ]
+      },
+      {
+        kicker:"PROLOGUE · 2/5",
+        title:"돌아온 자",
+        paragraphs:[
+          "회색 외투를 입은 여자가 당신의 심장 위에 손을 얹었다.",
+          "“또 하나가 돌아왔군.”",
+          "여자는 안도하지 않았다. 오랫동안 같은 기적과 같은 실패를 지켜본 사람의 얼굴이었다."
+        ]
+      },
+      {
+        kicker:"PROLOGUE · 3/5",
+        title:"이름",
+        paragraphs:[
+          "당신은 자신이 누구인지 떠올리려 했다. 아무것도 남아 있지 않았다.",
+          "여자는 검게 타버린 명패 하나를 건넸다.",
+          "“이름을 정해. 균열에 들어가면 그것마저 빼앗길 테니까.”",
+          "명패 위에는 방금 되찾은 이름, “{name}”이 희미하게 빛났다."
+        ]
+      },
+      {
+        kicker:"PROLOGUE · 4/5",
+        title:"회귀의 불씨",
+        paragraphs:[
+          "“살아난 게 아니야. 네 죽음이 끝나지 못한 거지.”",
+          "가슴의 불씨가 맥박처럼 한 번 타올랐다.",
+          "균열 안에서는 죽은 자와 무너진 전장이 끝없이 재생된다. 불씨는 당신을 그 반복 속에서 끌어낼 수 있지만, 대가로 과거를 태운다."
+        ]
+      },
+      {
+        kicker:"PROLOGUE · 5/5",
+        title:"첫 번째 기억",
+        paragraphs:[
+          "야영지 너머에서 검은 균열이 열렸다. 그 안에서 수십 명의 목소리가 동시에 당신의 이름을 불렀다.",
+          "여자는 자신을 기록관 라우나라고 소개했다.",
+          "“전리품을 모아. 죽은 자의 기억 속에 네 과거도 섞여 있을 거야.”",
+          "불씨 속에서 여섯 갈래의 기억이 깨어났다."
+        ]
+      }
+    ];
+
     const rarityTable = [
       { key:"common", name:"일반", className:"rarity-common", weight:72.0, prefixCount:0, suffixCount:0, mult:1.0, sell:1 },
       { key:"uncommon", name:"고급", className:"rarity-uncommon", weight:22.5, prefixCount:1, suffixCount:0, mult:1.18, sell:2 },
@@ -645,6 +1183,20 @@ const VERSION = 30;
       version: VERSION,
       nickname: "",
       classId: null,
+      story: {
+        introSeen:false,
+        unlocked:[],
+        read:[],
+        activeChapter:"",
+        lastUnlockAt:0
+      },
+      online: {
+        metric:"power",
+        lastSyncAt:0,
+        lastFetchAt:0,
+        lastError:"",
+        connected:false
+      },
       attributes: { str:5, vit:5, int:5, spi:5, luck:5, spd:5 },
       statPoints: 0,
       statResetCount: 0,
@@ -724,8 +1276,53 @@ const VERSION = 30;
         history:[],
         runLog:[],
         running:false,
+        activeRun:false,
+        selectedDifficulty:"",
         currentWave:0,
+        completedStages:0,
+        runHp:0,
+        runMp:0,
+        runMaxHp:0,
+        runMaxMp:0,
+        totalTurns:0,
         lastResult:""
+      },
+      finale: {
+        active:false,
+        completed:false,
+        phase:0,
+        phaseOneIndex:0,
+        runHp:0,
+        runMp:0,
+        runMaxHp:0,
+        originalMaxHp:0,
+        runMaxMp:0,
+        totalTurns:0,
+        attempts:0,
+        failures:0,
+        memoryQuestionIds:[],
+        memoryIndex:0,
+        memoryCorrect:0,
+        memoryWrong:0,
+        forgetStacks:0,
+        runeOrder:[],
+        runeSelection:[],
+        runeMistakes:0,
+        bossHp:0,
+        bossMaxHp:0,
+        bossTurn:0,
+        bossPattern:"",
+        patternSuccess:0,
+        patternFails:0,
+        patternStreak:0,
+        memoryBound:0,
+        deleteCountdown:0,
+        learnedPatterns:{},
+        log:[],
+        archive:[],
+        best:null,
+        localFirstClear:null,
+        rewardClaimed:false
       },
       arena: { date:"", tickets:5, rating:1000, wins:0, losses:0, opponents:[], history:[] },
       market: {
@@ -759,6 +1356,10 @@ const VERSION = 30;
         feverActivations: 0,
         bountiesClaimed: 0,
         dailyClears: 0,
+        riftLocalFirstClear: null,
+        finalBossWins: 0,
+        finalBossAttempts: 0,
+        finalBossBestTurns: 0,
         arenaWins: 0,
         arenaLosses: 0,
         questsClaimed: 0,
@@ -810,7 +1411,7 @@ const VERSION = 30;
         statResets: 0,
         statResetGoldSpent: 0
       },
-      logs: ["《잿빛 전리품》에 입장했습니다. 사냥터를 선택하고 첫 전투를 시작하세요."]
+      logs: ["잿더미 위에서 눈을 떴다. 가슴의 회귀 불씨가 아직 타고 있다. 이름을 되찾아야 한다."]
     });
 
     let state = loadState();
@@ -819,6 +1420,17 @@ const VERSION = 30;
     let autoTimer = null;
     let autoNextAt = 0;
     let isBusy = false;
+    let storyBootComplete = false;
+    let storyIntroIndex = 0;
+    let storyIntroReplay = false;
+    let defeatLogTimer = null;
+    let onlineClient = null;
+    let onlineUser = null;
+    let onlineInitPromise = null;
+    let onlineSyncBusy = false;
+    let onlineFetchBusy = false;
+    let onlineSyncTimer = null;
+    let onlineRankingRows = [];
 
     const els = {
       heroTitle: document.getElementById("heroTitle"),
@@ -836,15 +1448,16 @@ const VERSION = 30;
       changeClassBtn: document.getElementById("changeClassBtn"),
       classModal: document.getElementById("classModal"),
       classOptions: document.getElementById("classOptions"),
-      defeatModal: document.getElementById("defeatModal"),
-      defeatSummary: document.getElementById("defeatSummary"),
-      defeatEnemy: document.getElementById("defeatEnemy"),
-      defeatTurns: document.getElementById("defeatTurns"),
-      defeatHp: document.getElementById("defeatHp"),
-      defeatMp: document.getElementById("defeatMp"),
-      defeatAutoStop: document.getElementById("defeatAutoStop"),
-      defeatInventoryBtn: document.getElementById("defeatInventoryBtn"),
-      defeatConfirmBtn: document.getElementById("defeatConfirmBtn"),
+      storyIntroModal: document.getElementById("storyIntroModal"),
+      storyIntroKicker: document.getElementById("storyIntroKicker"),
+      storyIntroTitle: document.getElementById("storyIntroTitle"),
+      storyIntroProgress: document.getElementById("storyIntroProgress"),
+      storyIntroScene: document.getElementById("storyIntroScene"),
+      storyIntroSkipBtn: document.getElementById("storyIntroSkipBtn"),
+      storyIntroNextBtn: document.getElementById("storyIntroNextBtn"),
+      defeatLogBanner: document.getElementById("defeatLogBanner"),
+      defeatLogTitle: document.getElementById("defeatLogTitle"),
+      defeatLogText: document.getElementById("defeatLogText"),
       nicknameModal: document.getElementById("nicknameModal"),
       nicknameModalInput: document.getElementById("nicknameModalInput"),
       nicknameConfirmBtn: document.getElementById("nicknameConfirmBtn"),
@@ -920,6 +1533,7 @@ const VERSION = 30;
       detailStats: document.getElementById("detailStats"),
       detailEquipment: document.getElementById("detailEquipment"),
       infoContent: document.getElementById("infoContent"),
+      storyInfoMark: document.getElementById("storyInfoMark"),
       gambleGoldBadge: document.getElementById("gambleGoldBadge"),
       gambleCountBadge: document.getElementById("gambleCountBadge"),
       gambleSlotGrid: document.getElementById("gambleSlotGrid"),
@@ -1007,8 +1621,16 @@ const VERSION = 30;
       dailyRunPanel: document.getElementById("dailyRunPanel"),
       dailyRunStatus: document.getElementById("dailyRunStatus"),
       dailyRunProgress: document.getElementById("dailyRunProgress"),
+      dailyRunActions: document.getElementById("dailyRunActions"),
       dailyRunLog: document.getElementById("dailyRunLog"),
       dailyHistory: document.getElementById("dailyHistory"),
+      finaleNavMark: document.getElementById("finaleNavMark"),
+      finaleGateBadge: document.getElementById("finaleGateBadge"),
+      finaleRequirements: document.getElementById("finaleRequirements"),
+      finaleFirstClear: document.getElementById("finaleFirstClear"),
+      finaleContent: document.getElementById("finaleContent"),
+      finalePhaseBadge: document.getElementById("finalePhaseBadge"),
+      finaleLog: document.getElementById("finaleLog"),
       dailyBossNavMark: document.getElementById("dailyBossNavMark"),
       dailyBossNavBadge: document.getElementById("dailyBossNavBadge"),
       dailyBossCard: document.getElementById("dailyBossCard"),
@@ -1039,6 +1661,16 @@ const VERSION = 30;
       arenaSummary: document.getElementById("arenaSummary"),
       arenaGrid: document.getElementById("arenaGrid"),
       arenaLog: document.getElementById("arenaLog"),
+      rankingNavMark: document.getElementById("rankingNavMark"),
+      rankingStatusBadge: document.getElementById("rankingStatusBadge"),
+      rankingSyncBtn: document.getElementById("rankingSyncBtn"),
+      rankingUserId: document.getElementById("rankingUserId"),
+      rankingMyRecord: document.getElementById("rankingMyRecord"),
+      rankingMetricTabs: document.getElementById("rankingMetricTabs"),
+      rankingMetricKicker: document.getElementById("rankingMetricKicker"),
+      rankingMetricTitle: document.getElementById("rankingMetricTitle"),
+      rankingRefreshBtn: document.getElementById("rankingRefreshBtn"),
+      rankingList: document.getElementById("rankingList"),
       saveVaultHero: document.getElementById("saveVaultHero"),
       saveSlotGrid: document.getElementById("saveSlotGrid"),
       shareSaveBtn: document.getElementById("shareSaveBtn"),
@@ -1062,6 +1694,21 @@ const VERSION = 30;
           ...fresh,
           ...loaded,
           version:VERSION,
+          story: {
+            ...fresh.story,
+            ...(loaded.story || {}),
+            introSeen:Number(loaded.version || 0) < 32 && !!loaded.nickname
+              ? true
+              : !!loaded.story?.introSeen,
+            unlocked:[...((loaded.story && loaded.story.unlocked) || [])],
+            read:[...((loaded.story && loaded.story.read) || [])]
+          },
+          online: {
+            ...fresh.online,
+            ...(loaded.online || {}),
+            connected:false,
+            lastError:""
+          },
           attributes: { ...fresh.attributes, ...(loaded.attributes || {}) },
           skills: Object.fromEntries(
             Object.keys(fresh.skills).map(classId => [
@@ -1140,7 +1787,20 @@ const VERSION = 30;
             ...(loaded.dailyDungeon || {}),
             history:[...((loaded.dailyDungeon && loaded.dailyDungeon.history) || [])],
             runLog:[...((loaded.dailyDungeon && loaded.dailyDungeon.runLog) || [])],
-            running:false
+            running:false,
+            activeRun:Number(loaded.version || 0) >= 31
+              ? !!loaded.dailyDungeon?.activeRun
+              : false
+          },
+          finale: {
+            ...fresh.finale,
+            ...(loaded.finale || {}),
+            memoryQuestionIds:[...((loaded.finale && loaded.finale.memoryQuestionIds) || [])],
+            runeOrder:[...((loaded.finale && loaded.finale.runeOrder) || [])],
+            runeSelection:[...((loaded.finale && loaded.finale.runeSelection) || [])],
+            learnedPatterns:{...fresh.finale.learnedPatterns,...((loaded.finale && loaded.finale.learnedPatterns) || {})},
+            log:[...((loaded.finale && loaded.finale.log) || [])],
+            archive:[...((loaded.finale && loaded.finale.archive) || [])]
           },
           arena: { ...fresh.arena, ...(loaded.arena || {}), opponents:[...((loaded.arena && loaded.arena.opponents) || [])], history:[...((loaded.arena && loaded.arena.history) || [])] },
           stamina: Number.isFinite(loaded.stamina) ? loaded.stamina : Math.min(STAMINA_MAX, Number.isFinite(loaded.focus) ? loaded.focus : STAMINA_MAX),
@@ -1153,14 +1813,641 @@ const VERSION = 30;
       }
     }
 
-    function saveState() {
+    function saveState(options={}) {
       try {
         localStorage.setItem(SAVE_KEY, JSON.stringify(state));
         els.saveState.textContent = "방금 저장됨";
         setTimeout(() => els.saveState.textContent = "자동 저장", 1000);
+        if (!options?.skipOnline) scheduleOnlineSync(false);
       } catch (e) {
         els.saveState.textContent = "저장 불가";
       }
+    }
+
+    function escapeOnlineHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function onlineMetric() {
+      const id = state.online?.metric || "power";
+      return onlineRankingMetrics[id] || onlineRankingMetrics.power;
+    }
+
+    function onlineStatus(status,text) {
+      if (!els.rankingStatusBadge) return;
+      els.rankingStatusBadge.textContent = text;
+      els.rankingStatusBadge.className = `badge ranking-status-badge ${status || ""}`;
+      if (els.rankingNavMark) {
+        els.rankingNavMark.textContent = status === "connected" ? "●" : status === "error" ? "!" : "";
+      }
+    }
+
+    function shortOnlineUserId(id) {
+      if (!id) return "발급 대기";
+      return `${id.slice(0,8)}…${id.slice(-4)}`;
+    }
+
+    function buildOnlinePayload(userId) {
+      return {
+        user_id:userId,
+        nickname:cleanNickname(state.nickname || "") || "무명의 사냥꾼",
+        class_id:state.classId || "unknown",
+        level:Math.max(1,Math.min(999,Math.round(Number(state.level || 1)))),
+        power:Math.max(0,Math.min(1000000000,Math.round(Number(power() || 0)))),
+        gold:Math.max(0,Math.min(1000000000000,Math.round(Number(state.gold || 0)))),
+        kills:Math.max(0,Math.min(1000000000000,Math.round(Number(state.records.kills || 0)))),
+        baseball_best:(state.records.numberBaseballBest || 0) > 0
+          ? Math.max(1,Math.round(state.records.numberBaseballBest))
+          : null,
+        rift_clears:Math.max(0,Math.min(1000000,Math.round(Number(state.records.dailyClears || 0)))),
+        abyss_floor:Math.max(0,Math.min(100000,Math.round(Number(state.records.abyssBestFloor || 0)))),
+        final_boss_cleared:(state.records.finalBossWins || 0) > 0,
+        final_boss_turns:(state.records.finalBossBestTurns || 0) > 0
+          ? Math.max(1,Math.min(100000,Math.round(state.records.finalBossBestTurns)))
+          : null,
+        game_version:VERSION
+      };
+    }
+
+    async function initializeOnlineRanking() {
+      if (onlineInitPromise) return onlineInitPromise;
+
+      onlineInitPromise = (async () => {
+        try {
+          onlineStatus("connecting","서버 연결 중");
+
+          if (!window.supabase?.createClient) {
+            throw new Error("온라인 라이브러리를 불러오지 못했습니다.");
+          }
+
+          onlineClient = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_PUBLISHABLE_KEY,
+            {
+              auth:{
+                persistSession:true,
+                autoRefreshToken:true,
+                detectSessionInUrl:false
+              }
+            }
+          );
+
+          const {data:sessionData,error:sessionError} = await onlineClient.auth.getSession();
+          if (sessionError) throw sessionError;
+
+          onlineUser = sessionData?.session?.user || null;
+
+          if (!onlineUser) {
+            const {data,error} = await onlineClient.auth.signInAnonymously({
+              options:{
+                data:{
+                  game:"ash-loot",
+                  created_version:VERSION
+                }
+              }
+            });
+            if (error) throw error;
+            onlineUser = data?.user || data?.session?.user || null;
+          }
+
+          if (!onlineUser?.id) {
+            throw new Error("익명 이용자 번호를 발급받지 못했습니다.");
+          }
+
+          state.online.connected = true;
+          state.online.lastError = "";
+          saveState({skipOnline:true});
+          onlineStatus("connected","온라인 연결됨");
+
+          if (els.rankingUserId) {
+            els.rankingUserId.textContent = shortOnlineUserId(onlineUser.id);
+            els.rankingUserId.title = onlineUser.id;
+          }
+
+          await syncOnlineRanking({silent:true,refresh:false,force:true});
+          await fetchOnlineRanking({silent:true});
+          return onlineUser;
+        } catch (error) {
+          state.online.connected = false;
+          state.online.lastError = error?.message || "온라인 연결 실패";
+          saveState({skipOnline:true});
+          onlineStatus("error","연결 실패");
+          renderOnlineRanking();
+          return null;
+        }
+      })();
+
+      return onlineInitPromise;
+    }
+
+    function scheduleOnlineSync(force=false) {
+      if (!onlineClient || !onlineUser?.id || !state.nickname || !state.classId) return;
+      if (onlineSyncTimer) clearTimeout(onlineSyncTimer);
+
+      const elapsed = Date.now()-(state.online.lastSyncAt || 0);
+      const wait = force ? 50 : Math.max(1200,ONLINE_SYNC_INTERVAL-elapsed);
+
+      onlineSyncTimer = setTimeout(() => {
+        syncOnlineRanking({silent:true,refresh:false,force});
+      },wait);
+    }
+
+    async function syncOnlineRanking({silent=false,refresh=true,force=false}={}) {
+      if (onlineSyncBusy) return false;
+      if (!onlineClient || !onlineUser?.id) {
+        await initializeOnlineRanking();
+      }
+      if (!onlineClient || !onlineUser?.id) {
+        if (!silent) toast("온라인 서버에 연결하지 못했습니다.");
+        return false;
+      }
+      if (!state.nickname || !state.classId) {
+        if (!silent) toast("이름과 직업을 선택한 뒤 등록할 수 있습니다.");
+        return false;
+      }
+
+      const elapsed = Date.now()-(state.online.lastSyncAt || 0);
+      if (!force && elapsed < ONLINE_SYNC_INTERVAL-1000) return true;
+
+      onlineSyncBusy = true;
+      onlineStatus("syncing","기록 동기화 중");
+      if (els.rankingSyncBtn) els.rankingSyncBtn.disabled = true;
+
+      try {
+        const payload = buildOnlinePayload(onlineUser.id);
+        const {error} = await onlineClient
+          .from("leaderboard")
+          .upsert(payload,{onConflict:"user_id"});
+
+        if (error) throw error;
+
+        state.online.connected = true;
+        state.online.lastError = "";
+        state.online.lastSyncAt = Date.now();
+        saveState({skipOnline:true});
+        onlineStatus("connected","온라인 연결됨");
+        if (!silent) toast("온라인 랭킹 기록을 갱신했습니다.");
+
+        if (refresh) await fetchOnlineRanking({silent:true});
+        return true;
+      } catch (error) {
+        state.online.connected = false;
+        state.online.lastError = error?.message || "기록 동기화 실패";
+        saveState({skipOnline:true});
+        onlineStatus("error","동기화 실패");
+        if (!silent) toast("랭킹 기록을 전송하지 못했습니다.");
+        renderOnlineRanking();
+        return false;
+      } finally {
+        onlineSyncBusy = false;
+        if (els.rankingSyncBtn) els.rankingSyncBtn.disabled = false;
+      }
+    }
+
+    async function fetchOnlineRanking({silent=false}={}) {
+      if (onlineFetchBusy) return false;
+      if (!onlineClient || !onlineUser?.id) {
+        await initializeOnlineRanking();
+      }
+      if (!onlineClient) return false;
+
+      onlineFetchBusy = true;
+      if (els.rankingRefreshBtn) els.rankingRefreshBtn.disabled = true;
+      if (els.rankingList) {
+        els.rankingList.innerHTML = `<div class="ranking-loading">서버에서 순위를 불러오는 중입니다.</div>`;
+      }
+
+      try {
+        const metric = onlineMetric();
+        let query = onlineClient
+          .from("leaderboard")
+          .select("user_id,nickname,class_id,level,power,gold,kills,baseball_best,rift_clears,abyss_floor,final_boss_cleared,final_boss_turns,game_version,updated_at");
+
+        if (metric.requirePositive) query = query.gte(metric.column,1);
+        if (metric.finalOnly) query = query.eq("final_boss_cleared",true);
+
+        const {data,error} = await query
+          .order(metric.column,{ascending:metric.ascending,nullsFirst:false})
+          .order("updated_at",{ascending:true})
+          .limit(ONLINE_RANKING_LIMIT);
+
+        if (error) throw error;
+
+        onlineRankingRows = Array.isArray(data) ? data : [];
+        state.online.connected = true;
+        state.online.lastError = "";
+        state.online.lastFetchAt = Date.now();
+        saveState({skipOnline:true});
+        onlineStatus("connected","온라인 연결됨");
+        renderOnlineRanking();
+
+        if (!silent) toast("온라인 순위를 새로 불러왔습니다.");
+        return true;
+      } catch (error) {
+        state.online.connected = false;
+        state.online.lastError = error?.message || "순위 조회 실패";
+        saveState({skipOnline:true});
+        onlineStatus("error","조회 실패");
+        renderOnlineRanking();
+        if (!silent) toast("온라인 순위를 불러오지 못했습니다.");
+        return false;
+      } finally {
+        onlineFetchBusy = false;
+        if (els.rankingRefreshBtn) els.rankingRefreshBtn.disabled = false;
+      }
+    }
+
+    function onlineTimeLabel(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "-";
+      const elapsed = Date.now()-date.getTime();
+      if (elapsed < 60000) return "방금";
+      if (elapsed < 3600000) return `${Math.max(1,Math.floor(elapsed/60000))}분 전`;
+      if (elapsed < 86400000) return `${Math.floor(elapsed/3600000)}시간 전`;
+      return date.toLocaleDateString("ko-KR",{month:"2-digit",day:"2-digit"});
+    }
+
+    function renderOnlineMyRecord() {
+      if (!els.rankingMyRecord) return;
+      const metric = onlineMetric();
+      const currentValue = buildOnlinePayload(onlineUser?.id || "00000000-0000-0000-0000-000000000000")[metric.column];
+      const myIndex = onlineUser?.id
+        ? onlineRankingRows.findIndex(row => row.user_id === onlineUser.id)
+        : -1;
+      const rankText = myIndex >= 0 ? `${myIndex+1}위` : onlineRankingRows.length >= ONLINE_RANKING_LIMIT ? "100위 밖" : "집계 대기";
+      const synced = state.online.lastSyncAt
+        ? new Date(state.online.lastSyncAt).toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})
+        : "아직 없음";
+
+      els.rankingMyRecord.innerHTML = `
+        <div class="ranking-my-title">
+          <span>MY ONLINE RECORD</span>
+          <h3>${escapeOnlineHtml(state.nickname || "무명의 사냥꾼")}</h3>
+          <p>${escapeOnlineHtml(classes[state.classId]?.name || "직업 미선택")} · Lv.${fmt(state.level)}</p>
+        </div>
+        <div class="ranking-my-stat">
+          <span>${metric.myLabel}</span>
+          <strong>${metric.format(currentValue)}</strong>
+        </div>
+        <div class="ranking-my-stat">
+          <span>현재 순위</span>
+          <strong>${rankText}</strong>
+        </div>
+        <div class="ranking-my-stat">
+          <span>마지막 전송</span>
+          <strong>${synced}</strong>
+        </div>
+      `;
+    }
+
+    function renderOnlineRanking() {
+      if (!els.rankingList) return;
+      const metric = onlineMetric();
+
+      if (els.rankingMetricTitle) els.rankingMetricTitle.textContent = metric.title;
+      if (els.rankingMetricKicker) els.rankingMetricKicker.textContent = metric.kicker;
+      if (els.rankingUserId) {
+        els.rankingUserId.textContent = shortOnlineUserId(onlineUser?.id);
+        els.rankingUserId.title = onlineUser?.id || "";
+      }
+
+      els.rankingMetricTabs?.querySelectorAll("[data-ranking-metric]").forEach(button => {
+        button.classList.toggle("active",button.dataset.rankingMetric === (state.online.metric || "power"));
+      });
+
+      renderOnlineMyRecord();
+
+      if (!state.online.connected && state.online.lastError) {
+        els.rankingList.innerHTML = `
+          <div class="ranking-error">
+            <strong>온라인 서버에 연결하지 못했습니다.</strong>
+            <span>${escapeOnlineHtml(state.online.lastError)}</span>
+            <button data-ranking-retry>다시 연결</button>
+          </div>
+        `;
+        const retry = els.rankingList.querySelector("[data-ranking-retry]");
+        if (retry) retry.onclick = async () => {
+          onlineInitPromise = null;
+          await initializeOnlineRanking();
+        };
+        return;
+      }
+
+      if (!onlineRankingRows.length) {
+        els.rankingList.innerHTML = `
+          <div class="ranking-empty">
+            <strong>아직 이 부문의 등록 기록이 없습니다.</strong>
+            <span>내 기록 동기화를 누르면 첫 번째 사냥꾼으로 등록될 수 있습니다.</span>
+          </div>
+        `;
+        return;
+      }
+
+      els.rankingList.innerHTML = onlineRankingRows.map((row,index) => {
+        const isMe = row.user_id === onlineUser?.id;
+        const rank = index+1;
+        const podium = rank <= 3 ? `podium rank-${rank}` : "";
+        const className = classes[row.class_id]?.name || "기억 미상";
+        return `
+          <div class="ranking-row ${podium} ${isMe ? "mine" : ""}">
+            <div class="ranking-position">
+              <strong>${rank}</strong>
+              <span>${rank === 1 ? "FIRST" : rank === 2 ? "SECOND" : rank === 3 ? "THIRD" : "RANK"}</span>
+            </div>
+            <div class="ranking-hunter">
+              <strong>${escapeOnlineHtml(row.nickname || "무명의 사냥꾼")}${isMe ? `<em>나</em>` : ""}</strong>
+              <span>${escapeOnlineHtml(shortOnlineUserId(row.user_id))}</span>
+            </div>
+            <div class="ranking-class">
+              <strong>${escapeOnlineHtml(className)}</strong>
+              <span>Lv.${fmt(Number(row.level || 1))}</span>
+            </div>
+            <div class="ranking-score">${metric.format(row[metric.column])}</div>
+            <div class="ranking-updated">${onlineTimeLabel(row.updated_at)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function selectOnlineMetric(metricId) {
+      if (!onlineRankingMetrics[metricId]) return;
+      state.online.metric = metricId;
+      onlineRankingRows = [];
+      saveState({skipOnline:true});
+      renderOnlineRanking();
+      fetchOnlineRanking({silent:true});
+    }
+
+    function storyChapterById(id) {
+      return storyChapters.find(chapter => chapter.id === id) || null;
+    }
+
+    function storyUnlocked(id) {
+      return (state.story?.unlocked || []).includes(id);
+    }
+
+    function storyUnreadIds() {
+      const read = new Set(state.story?.read || []);
+      return (state.story?.unlocked || []).filter(id => !read.has(id));
+    }
+
+    function synchronizeStoryProgress(notify=true) {
+      state.story = {
+        introSeen:false,
+        unlocked:[],
+        read:[],
+        activeChapter:"",
+        lastUnlockAt:0,
+        ...(state.story || {})
+      };
+
+      const unlocked = new Set(state.story.unlocked || []);
+      const newlyUnlocked = [];
+      let previousUnlocked = true;
+
+      for (const chapter of storyChapters) {
+        const eligible = previousUnlocked && !!chapter.condition();
+        if (eligible && !unlocked.has(chapter.id)) {
+          unlocked.add(chapter.id);
+          newlyUnlocked.push(chapter);
+        }
+        previousUnlocked = unlocked.has(chapter.id);
+      }
+
+      if (!newlyUnlocked.length) return false;
+
+      state.story.unlocked = storyChapters
+        .filter(chapter => unlocked.has(chapter.id))
+        .map(chapter => chapter.id);
+      state.story.lastUnlockAt = Date.now();
+
+      newlyUnlocked.forEach(chapter => {
+        log(`[이야기 해금] ${chapter.act} · ${chapter.title}`,chapter.id === "prologue" ? "rarity-epic" : "rarity-legendary");
+      });
+
+      if (notify) {
+        const latest = newlyUnlocked[newlyUnlocked.length-1];
+        toast(`새 이야기 해금 · ${latest.title}`);
+      }
+
+      saveState();
+      return true;
+    }
+
+    function markStoryRead(id) {
+      if (!storyUnlocked(id)) return;
+      const read = new Set(state.story.read || []);
+      if (read.has(id)) return;
+      read.add(id);
+      state.story.read = [...read];
+      saveState();
+    }
+
+    function showStoryIntroModal(replay=false) {
+      storyIntroIndex = 0;
+      storyIntroReplay = replay;
+      renderStoryIntroScene();
+      els.storyIntroModal.classList.remove("hidden");
+    }
+
+    function renderStoryIntroScene() {
+      const scene = storyIntroScenes[storyIntroIndex] || storyIntroScenes[0];
+      const name = state.nickname || "무명의 사냥꾼";
+      els.storyIntroKicker.textContent = scene.kicker;
+      els.storyIntroTitle.textContent = scene.title;
+      els.storyIntroProgress.innerHTML = storyIntroScenes.map((_,index) =>
+        `<i class="${index < storyIntroIndex ? "complete" : index === storyIntroIndex ? "active" : ""}"></i>`
+      ).join("");
+      els.storyIntroScene.innerHTML = scene.paragraphs
+        .map(paragraph => `<p>${paragraph.replaceAll("{name}",name)}</p>`)
+        .join("");
+      els.storyIntroNextBtn.textContent = storyIntroIndex === storyIntroScenes.length-1
+        ? "첫 번째 기억을 선택한다"
+        : "다음";
+      els.storyIntroSkipBtn.textContent = replay ? "닫기" : "장면 건너뛰기";
+    }
+
+    function finishStoryIntro() {
+      els.storyIntroModal.classList.add("hidden");
+      state.story.introSeen = true;
+      markStoryRead("prologue");
+      saveState();
+      renderAll();
+
+      if (!storyIntroReplay && !state.classId) {
+        showClassModal();
+      }
+      storyIntroReplay = false;
+    }
+
+    function advanceStoryIntro() {
+      if (storyIntroIndex < storyIntroScenes.length-1) {
+        storyIntroIndex++;
+        renderStoryIntroScene();
+        return;
+      }
+      finishStoryIntro();
+    }
+
+    function factionRelationship(id) {
+      if (id === "camp") {
+        const guide = state.records.guideMissionsClaimed || 0;
+        return guide >= 6 ? "신뢰받는 회귀자" : state.classId ? "보호받는 원정대원" : "정체불명의 귀환자";
+      }
+      if (id === "ledger") {
+        const trades = (state.market?.trades || 0)+(state.records.gambleCount || 0);
+        return trades >= 20 ? "중요 거래 고객" : trades >= 1 ? "거래 관계" : "관찰 대상";
+      }
+      if (id === "remnant") {
+        return storyUnlocked("chapter3") ? "소유권 회수 대상" : "아직 접촉하지 않음";
+      }
+      if (id === "cult") {
+        return storyUnlocked("chapter4") ? "회백의 왕을 훼손한 적대자" : storyUnlocked("chapter2") ? "불씨를 노리는 세력" : "소문만 알려짐";
+      }
+      return "알 수 없음";
+    }
+
+    function factionKnowledge(definition) {
+      if (!definition.secretChapter) return true;
+      return storyUnlocked(definition.secretChapter);
+    }
+
+    function renderStoryInfo() {
+      synchronizeStoryProgress(false);
+      const unlockedIds = state.story.unlocked || [];
+      const unreadIds = storyUnreadIds();
+      const selectedId = storyUnlocked(state.story.activeChapter)
+        ? state.story.activeChapter
+        : unreadIds[0] || unlockedIds[unlockedIds.length-1] || "";
+      const selected = storyChapterById(selectedId);
+      const nextLocked = storyChapters.find(chapter => !storyUnlocked(chapter.id));
+      const unlockedCount = unlockedIds.length;
+
+      if (selected) {
+        state.story.activeChapter = selected.id;
+        markStoryRead(selected.id);
+      }
+
+      els.infoContent.innerHTML = `
+        <div class="story-archive-hero">
+          <div>
+            <span>THE ASHEN CHRONICLE</span>
+            <h3>${state.nickname || "무명의 사냥꾼"}의 잃어버린 연대기</h3>
+            <p>죽은 자의 전리품에서 되찾은 기억이 메인 스토리로 기록됩니다.</p>
+          </div>
+          <div class="story-progress-box">
+            <strong>${unlockedCount} / ${storyChapters.length}</strong>
+            <span>이야기 해금</span>
+          </div>
+        </div>
+
+        <div class="story-next-objective ${nextLocked ? "" : "complete"}">
+          <span>${nextLocked ? "다음 이야기 조건" : "현재 공개된 이야기 완료"}</span>
+          <strong>${nextLocked ? nextLocked.unlockHint : "최종 선택의 봉인은 추후 메인 스토리에서 열립니다."}</strong>
+        </div>
+
+        <div class="story-archive-layout">
+          <aside class="story-chapter-list">
+            ${storyChapters.map(chapter => {
+              const unlocked = storyUnlocked(chapter.id);
+              const unread = unlocked && !(state.story.read || []).includes(chapter.id);
+              return `
+                <button class="${selected?.id === chapter.id ? "active" : ""} ${unlocked ? "unlocked" : "locked"}"
+                  data-story-chapter="${chapter.id}" ${unlocked ? "" : "disabled"}>
+                  <span>${chapter.act}${unread ? " · 새 기록" : ""}</span>
+                  <strong>${unlocked ? chapter.title : "봉인된 기억"}</strong>
+                  <small>${unlocked ? chapter.subtitle : chapter.unlockHint}</small>
+                </button>
+              `;
+            }).join("")}
+          </aside>
+
+          <article class="story-reader">
+            ${selected ? `
+              <div class="story-reader-heading">
+                <span>${selected.act}</span>
+                <h2>${selected.title}</h2>
+                <p>${selected.subtitle}</p>
+              </div>
+              <blockquote>${selected.quote}</blockquote>
+              <div class="story-reader-body">
+                ${selected.body.map(paragraph => `<p>${paragraph}</p>`).join("")}
+              </div>
+              ${selected.id === "prologue" ? `<button class="story-replay-button" id="storyReplayIntroBtn">시작 장면 다시 보기</button>` : ""}
+            ` : `
+              <div class="story-reader-locked">
+                <strong>아직 되찾은 이야기가 없습니다.</strong>
+                <span>이름과 첫 번째 기억을 선택하면 연대기가 시작됩니다.</span>
+              </div>
+            `}
+          </article>
+        </div>
+      `;
+
+      els.infoContent.querySelectorAll("[data-story-chapter]").forEach(button => {
+        button.onclick = () => {
+          state.story.activeChapter = button.dataset.storyChapter;
+          markStoryRead(button.dataset.storyChapter);
+          renderInfo();
+        };
+      });
+
+      const replayButton = document.getElementById("storyReplayIntroBtn");
+      if (replayButton) replayButton.onclick = () => showStoryIntroModal(true);
+
+      if (els.storyInfoMark) {
+        const unread = storyUnreadIds().length;
+        els.storyInfoMark.textContent = unread ? String(unread) : "";
+      }
+    }
+
+    function renderFactionInfo() {
+      els.infoContent.innerHTML = `
+        <div class="faction-hero">
+          <div>
+            <span>POWERS OF THE ASHEN WORLD</span>
+            <h3>대소각 이후의 네 세력</h3>
+            <p>모두 균열을 이용하지만, 기억과 인간의 가치를 서로 다르게 정의합니다.</p>
+          </div>
+          <strong>관계는 플레이 기록에 따라 변합니다.</strong>
+        </div>
+        <div class="faction-grid">
+          ${factionDefinitions.map(faction => {
+            const known = factionKnowledge(faction);
+            return `
+              <article class="faction-card faction-${faction.id}">
+                <div class="faction-card-top">
+                  <b>${faction.mark}</b>
+                  <div>
+                    <span>${faction.type}</span>
+                    <h3>${faction.name}</h3>
+                    <small>${faction.leader}</small>
+                  </div>
+                  <em>${factionRelationship(faction.id)}</em>
+                </div>
+                <blockquote>${faction.motto}</blockquote>
+                <div class="faction-section">
+                  <span>공개된 목적</span>
+                  <p>${faction.publicGoal}</p>
+                </div>
+                <div class="faction-section secret ${known ? "known" : "locked"}">
+                  <span>${known ? "확인된 비밀" : "봉인된 정보"}</span>
+                  <p>${known ? faction.hidden : `${storyChapterById(faction.secretChapter)?.title || "메인 이야기"}를 진행하면 진실이 드러납니다.`}</p>
+                </div>
+                <div class="faction-threads">
+                  ${faction.threads.map(thread => `<span>${thread}</span>`).join("")}
+                </div>
+              </article>
+            `;
+          }).join("")}
+        </div>
+      `;
     }
 
     function cleanNickname(value) {
@@ -1189,12 +2476,18 @@ const VERSION = 30;
         els.nicknameError.textContent = "닉네임은 공백을 제외하고 2~12자로 정해 주세요.";
         return;
       }
+      const openingNeeded = !state.story?.introSeen && !state.classId;
       state.nickname = nickname;
       els.nicknameModal.classList.add("hidden");
-      log(`${nickname}, 잿빛 균열에 이름을 새겼다.`, "rarity-epic");
+      log(`${nickname}, 잿더미 위의 명패에 이름을 다시 새겼다.`, "rarity-epic");
       saveState();
       renderAll();
-      if (!state.classId) showClassModal();
+
+      if (openingNeeded) {
+        showStoryIntroModal(false);
+      } else if (!state.classId) {
+        showClassModal();
+      }
     }
 
     function updateNickname() {
@@ -1253,7 +2546,9 @@ const VERSION = 30;
       if (autoTimer) toggleAuto();
       localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot.state));
       state = loadState();
+      storyBootComplete = false;
       isBusy = false;
+      onlineRankingRows = [];
       log(`${sourceLabel}에서 기록을 불러왔다.`, "rarity-epic");
       saveState();
       renderAll();
@@ -2711,9 +4006,14 @@ const VERSION = 30;
       if (page === "daily") renderDailyDungeon();
       if (page === "dailyboss") renderDailyBoss();
       if (page === "abyss") renderAbyss();
+      if (page === "finale") renderFinale();
       if (page === "collection") renderCollectionHall();
       if (page === "mercenary") renderMercenaries();
       if (page === "arena") renderArena();
+      if (page === "ranking") {
+        renderOnlineRanking();
+        fetchOnlineRanking({silent:true});
+      }
       if (page === "savevault") renderSaveVault();
       if (page === "gamble") renderGambleShop();
       if (page === "market") renderMarket();
@@ -3213,18 +4513,36 @@ const VERSION = 30;
 
     function renderInfo() {
       document.querySelectorAll(".info-tab").forEach(btn => btn.classList.toggle("active", btn.dataset.infoTarget === activeInfoTab));
-      if (activeInfoTab === "zones") {
+      if (els.storyInfoMark) {
+        const unread = storyUnreadIds().length;
+        els.storyInfoMark.textContent = unread ? String(unread) : "";
+      }
+
+      if (activeInfoTab === "story") {
+        renderStoryInfo();
+      } else if (activeInfoTab === "factions") {
+        renderFactionInfo();
+      } else if (activeInfoTab === "zones") {
         els.infoContent.innerHTML = `<div class="info-grid">${zones.map(z => `
-          <div class="info-card">
-            <h3>${z.name}</h3>
+          <div class="info-card zone-lore-card">
+            <div class="zone-lore-heading">
+              <div>
+                <span>${zoneLore[z.id]?.faction || "세력 불명"}</span>
+                <h3>${z.name}</h3>
+              </div>
+              <b>${state.zonesVisited[z.id] ? "발견 완료" : "미탐사"}</b>
+            </div>
+            <p class="zone-lore-title">${zoneLore[z.id]?.title || ""}</p>
+            <p>${zoneLore[z.id]?.lore || ""}</p>
             <p>권장 전투력 ${fmt(z.rec)} · 현재 과열도 ${Math.round(state.heat[z.id] || 0)}%</p>
-            <p>출현 몬스터: ${z.enemies.join(", ")}</p>
+            <p>출현 잔향: ${z.enemies.join(", ")}</p>
             <p>기본 보상 배율 ×${z.mult.toFixed(2)} · 입장 제한 없음</p>
           </div>`).join("")}</div>`;
       } else if (activeInfoTab === "classes") {
         els.infoContent.innerHTML = `<div class="info-grid">${Object.values(classes).map(cls => `
-          <div class="info-card">
+          <div class="info-card class-memory-card">
             <h3>${cls.name} <span class="badge">${cls.line}</span></h3>
+            <p class="class-memory-line"><strong>과거의 잔향:</strong> ${classMemoryLines[Object.keys(classes).find(id => classes[id] === cls)] || "알 수 없는 기억"}</p>
             <p>${cls.desc}</p>
             <p><strong>주 능력치:</strong> ${attributeInfo[cls.main].name}</p>
             <p>${cls.passive}</p>
@@ -3267,7 +4585,8 @@ const VERSION = 30;
             <div class="info-card"><h3>변이 몬스터</h3><p>황금빛·거대한·광폭한·보물에 홀린 몬스터가 낮은 확률로 출현합니다.</p><p>각 변이는 위험도와 보상 구조가 다르며 도감에도 기록됩니다.</p></div>
             <div class="info-card"><h3>느린 성장 곡선</h3><p>레벨업 요구 경험치가 크게 증가했고 일반 사냥 경험치와 골드가 감소했습니다.</p><p>레벨당 능력치 포인트는 2이며, 3레벨마다 스킬 포인트를 1 얻습니다.</p></div>
             <div class="info-card"><h3>직업 스킬</h3><p>직업별 기술 3개가 전투 턴에 맞춰 자동 사용됩니다.</p><p>기술서 포인트로 최대 10레벨까지 강화할 수 있습니다.</p></div>
-            <div class="info-card"><h3>일일 던전과 아레나</h3><p>일일 던전은 하루 3회 도전·1회 클리어 제한이며, 아레나는 하루 입장권 5장을 제공합니다.</p><p>아레나는 다른 사냥꾼의 기록을 본뜬 잔영과 겨루는 비동기 결투입니다.</p></div>
+            <div class="info-card"><h3>오늘의 균열과 모험 최종장</h3><p>오늘의 균열은 퍼즐 없이 빠르게 진행하는 5단계 일일 파밍 던전입니다.</p><p>삼중 낙인과 회백의 왕 본체, 최초 정복자 기록은 모험 최종장에만 등장합니다.</p></div>
+            <div class="info-card"><h3>아레나</h3><p>아레나는 하루 입장권 5장을 제공하며 다른 사냥꾼의 기록을 본뜬 잔영과 겨루는 비동기 결투입니다.</p></div>
           </div>`;
       } else {
         const r = state.records;
@@ -3290,6 +4609,8 @@ const VERSION = 30;
           ["자동 판매 / 자동 분해", `${fmt(r.autoSoldItems || 0)} / ${fmt(r.autoSalvagedItems || 0)}`],
           ["접사 추출 / 성공 / 계승", `${fmt(r.affixExtractionAttempts || 0)} / ${fmt(r.affixExtractionSuccesses || 0)} / ${fmt(r.affixInheritances || 0)}`],
           ["심연 최고 / 승리", `${fmt(r.abyssBestFloor || 0)}층 / ${fmt(r.abyssWins || 0)}`],
+          ["모험 최종장 승리 / 도전", `${fmt(r.finalBossWins || 0)} / ${fmt(r.finalBossAttempts || 0)}`],
+          ["최종장 최고 기록", r.finalBossBestTurns ? `${fmt(r.finalBossBestTurns)}막` : "미정복"],
           ["일일 보스 승리 / 도전", `${fmt(r.dailyBossWins || 0)} / ${fmt(r.dailyBossAttempts || 0)}`],
           ["희귀 몬스터 처치 / 도주", `${fmt(r.rareMonsterKills || 0)} / ${fmt(r.rareMonsterEscapes || 0)}`],
           ["용병 고용 / 유니크 진화", `${fmt(r.mercenariesHired || 0)} / ${fmt(r.uniqueEvolutions || 0)}`],
@@ -4058,20 +5379,32 @@ const VERSION = 30;
       `;
     }
 
+    function freshDailyDungeonState(date=localDateKey()) {
+      return {
+        date,
+        attempts:3,
+        cleared:false,
+        best:null,
+        history:[],
+        runLog:[],
+        running:false,
+        activeRun:false,
+        selectedDifficulty:"",
+        currentWave:0,
+        completedStages:0,
+        runHp:0,
+        runMp:0,
+        runMaxHp:0,
+        runMaxMp:0,
+        totalTurns:0,
+        lastResult:""
+      };
+    }
+
     function ensureDailyDungeon() {
       const today = localDateKey();
       if (state.dailyDungeon.date !== today) {
-        state.dailyDungeon = {
-          date:today,
-          attempts:3,
-          cleared:false,
-          best:null,
-          history:[],
-          runLog:[],
-          running:false,
-          currentWave:0,
-          lastResult:""
-        };
+        state.dailyDungeon = freshDailyDungeonState(today);
       }
     }
 
@@ -4080,24 +5413,34 @@ const VERSION = 30;
       return dailyDungeonThemes[seed % dailyDungeonThemes.length];
     }
 
+    function currentDailyDifficulty() {
+      return dailyDifficulties.find(d => d.id === state.dailyDungeon.selectedDifficulty) || null;
+    }
+
     function createDungeonEnemy(wave, difficulty) {
       const s = totalStats();
+      const stage = dailyRiftStages[wave-1] || dailyRiftStages[0];
       const ratio = difficulty.mult * (1 + (wave-1) * .10);
       const baseDamage = Math.max(s.attack, s.magicPower);
+      const boss = wave === 5;
       return {
-        name:`${currentDailyTheme().name} 수호자 ${wave}`,
-        baseName:`균열 수호자 ${wave}`,
+        name:boss ? stage.guardian : `${currentDailyTheme().name}의 ${stage.guardian}`,
+        baseName:stage.guardian,
         zoneId:"daily",
-        rank: wave === 5 ? "던전 보스" : wave >= 3 ? "던전 정예" : "던전 몬스터",
+        rank:boss ? "오늘의 균열 수호자" : wave >= 4 ? "던전 정예" : "던전 몬스터",
         mutation:null,
-        attack: Math.max(5, (s.defense * .55 + s.maxHp / 15) * ratio),
-        defense: Math.max(2, baseDamage * .18 * ratio),
-        hp: Math.max(45, s.maxHp * (.62 + wave*.12) * ratio),
-        xp:0, gold:0, drop:0, mapMult:1
+        attack:Math.max(5,(s.defense*.52+s.maxHp/16)*ratio*(boss ? 1.04 : 1)),
+        defense:Math.max(2,baseDamage*.18*ratio*(boss ? 1.06 : 1)),
+        hp:Math.max(45,s.maxHp*(.60+wave*.115)*ratio*(boss ? 1.08 : 1)),
+        xp:0,
+        gold:0,
+        drop:0,
+        mapMult:1,
+        turnLimit:boss ? 65 : 55
       };
     }
 
-    function dailyDungeonPause(ms=260) {
+    function dailyDungeonPause(ms=180) {
       return new Promise(resolve => setTimeout(resolve,ms));
     }
 
@@ -4117,25 +5460,87 @@ const VERSION = 30;
       if (!Array.isArray(events) || !events.length) return [];
       const chosen = [];
       const used = new Set();
-
       const add = event => {
-        if (!event || used.has(event.text) || chosen.length >= 10) return;
+        if (!event || used.has(event.text) || chosen.length >= 7) return;
         used.add(event.text);
         chosen.push(event);
       };
-
       add(events[0]);
-      events.slice(1,5).forEach(add);
-
-      events
-        .filter(event =>
-          /rarity-unique|rarity-legendary|battle-heal|battle-effect|positive/.test(event.cls || "")
-        )
-        .slice(0,3)
-        .forEach(add);
-
-      events.slice(-3).forEach(add);
+      events.slice(1,4).forEach(add);
+      events.filter(event => /battle-heal|battle-effect|positive/.test(event.cls || "")).slice(0,2).forEach(add);
+      events.slice(-2).forEach(add);
       return chosen;
+    }
+
+    function dailyRunHealthHtml() {
+      const dungeon = state.dailyDungeon;
+      if (!dungeon.activeRun) return "";
+      const hpRate = dungeon.runMaxHp ? Math.max(0,Math.min(100,dungeon.runHp/dungeon.runMaxHp*100)) : 0;
+      const mpRate = dungeon.runMaxMp ? Math.max(0,Math.min(100,dungeon.runMp/dungeon.runMaxMp*100)) : 0;
+      return `
+        <div class="rift-run-resources">
+          <div>
+            <span>원정 HP</span>
+            <strong>${fmt(dungeon.runHp)} / ${fmt(dungeon.runMaxHp)}</strong>
+            <i><b style="width:${hpRate}%"></b></i>
+          </div>
+          <div>
+            <span>원정 MP</span>
+            <strong>${fmt(dungeon.runMp)} / ${fmt(dungeon.runMaxMp)}</strong>
+            <i class="mp"><b style="width:${mpRate}%"></b></i>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDailyRunActions() {
+      const dungeon = state.dailyDungeon;
+      if (!els.dailyRunActions) return;
+
+      if (dungeon.cleared) {
+        els.dailyRunActions.innerHTML = `
+          <div class="rift-action-message cleared">
+            <strong>오늘의 균열 보상을 모두 회수했습니다.</strong>
+            <span>내일 새로운 테마와 입장권이 갱신됩니다.</span>
+          </div>
+        `;
+        return;
+      }
+
+      if (!dungeon.activeRun) {
+        els.dailyRunActions.innerHTML = `
+          <div class="rift-action-message">
+            <strong>${dungeon.lastResult === "failed" ? "원정이 종료되었습니다." : "빠른 원정 준비"}</strong>
+            <span>난이도를 선택한 뒤 다섯 단계를 차례로 돌파합니다. 최종장 퍼즐은 등장하지 않습니다.</span>
+          </div>
+        `;
+        return;
+      }
+
+      const stageNumber = Math.max(1,Math.min(5,dungeon.currentWave || 1));
+      const stage = dailyRiftStages[stageNumber-1];
+      const difficulty = currentDailyDifficulty();
+
+      els.dailyRunActions.innerHTML = `
+        ${dailyRunHealthHtml()}
+        <div class="rift-stage-brief ${stageNumber === 5 ? "boss" : ""}">
+          <span>${stageNumber}단계 · ${stage.name}</span>
+          <strong>${stageNumber === 5 ? "오늘의 균열핵 파괴" : `${stage.name} 돌파`}</strong>
+          <p>${stage.desc}</p>
+          <small>${difficulty?.name || "선택"} 난이도 · 누적 ${fmt(dungeon.totalTurns || 0)}막</small>
+        </div>
+        <div class="rift-action-buttons">
+          <button class="primary" data-rift-stage-run ${dungeon.running ? "disabled" : ""}>
+            ${dungeon.running ? "전투 진행 중…" : stageNumber === 5 ? "균열핵 수호자 처치" : `${stageNumber}단계 돌파하기`}
+          </button>
+          <button data-rift-abandon ${dungeon.running ? "disabled" : ""}>원정 포기</button>
+        </div>
+      `;
+
+      const stageButton = els.dailyRunActions.querySelector("[data-rift-stage-run]");
+      if (stageButton) stageButton.onclick = runDailyDungeonStage;
+      const abandonButton = els.dailyRunActions.querySelector("[data-rift-abandon]");
+      if (abandonButton) abandonButton.onclick = abandonDailyDungeonRun;
     }
 
     function renderDailyRunLog() {
@@ -4143,32 +5548,37 @@ const VERSION = 30;
       if (!els.dailyRunLog || !els.dailyRunProgress || !els.dailyRunStatus) return;
 
       let status = "공략 대기";
-      if (dungeon.running) status = `${Math.max(1,dungeon.currentWave || 1)}/5 웨이브 진행 중`;
-      else if (dungeon.lastResult === "cleared") status = "균열 정복 완료";
-      else if (dungeon.lastResult === "failed") status = `${dungeon.currentWave || 1}웨이브에서 실패`;
+      if (dungeon.running) status = `${Math.max(1,dungeon.currentWave || 1)}단계 전투 중`;
+      else if (dungeon.activeRun) status = `${Math.max(1,dungeon.currentWave || 1)}단계 진입 대기`;
+      else if (dungeon.lastResult === "cleared") status = "오늘 정복 완료";
+      else if (dungeon.lastResult === "failed") status = `${Math.max(1,dungeon.currentWave || 1)}단계에서 종료`;
 
       els.dailyRunStatus.textContent = status;
       els.dailyRunStatus.className = dungeon.running
         ? "running"
         : dungeon.lastResult === "cleared"
           ? "cleared"
-          : dungeon.lastResult === "failed"
+          : dungeon.lastResult === "failed" && !dungeon.activeRun
             ? "failed"
-            : "";
+            : dungeon.activeRun
+              ? "ready"
+              : "";
 
-      els.dailyRunProgress.innerHTML = Array.from({length:5},(_,index) => {
+      els.dailyRunProgress.innerHTML = dailyRiftStages.map((stage,index) => {
         const wave = index+1;
         let cls = "";
-        if (dungeon.lastResult === "cleared" || wave < dungeon.currentWave) cls = "complete";
-        if (dungeon.running && wave === dungeon.currentWave) cls = "current";
-        if (!dungeon.running && dungeon.lastResult === "failed" && wave === dungeon.currentWave) cls = "failed";
+        if (dungeon.lastResult === "cleared" || wave <= (dungeon.completedStages || 0)) cls = "complete";
+        if (dungeon.activeRun && wave === dungeon.currentWave) cls = dungeon.running ? "current" : "ready";
+        if (!dungeon.activeRun && dungeon.lastResult === "failed" && wave === dungeon.currentWave) cls = "failed";
         return `
           <div class="daily-wave-step ${cls}">
             <span>${wave}</span>
-            <strong>${wave === 5 ? "균열핵" : `${wave}웨이브`}</strong>
+            <strong>${stage.short}</strong>
           </div>
         `;
       }).join("");
+
+      renderDailyRunActions();
 
       const logEntries = dungeon.runLog || [];
       els.dailyRunLog.innerHTML = logEntries.length
@@ -4178,257 +5588,1186 @@ const VERSION = 30;
               <p>${entry.text}</p>
             </div>
           `).join("")
-        : `<div class="daily-run-empty">난이도를 고르고 도전하면 입장부터 보상 획득까지 전투 기록이 이곳에 남습니다.</div>`;
+        : `<div class="daily-run-empty">난이도를 선택하면 외곽층부터 균열핵까지 단계별 공략 기록이 이곳에 남습니다.</div>`;
 
-      if (dungeon.running) {
+      if (dungeon.running || dungeon.activeRun) {
         requestAnimationFrame(() => {
           els.dailyRunLog.scrollTop = els.dailyRunLog.scrollHeight;
         });
       }
     }
 
-    async function runDailyDungeon(difficultyId) {
+    function startDailyDungeonRun(difficultyId) {
       ensureDailyDungeon();
-      if (state.dailyDungeon.cleared) return toast("오늘의 던전은 이미 클리어했습니다.");
-      if (state.dailyDungeon.attempts <= 0) return toast("오늘의 도전 횟수를 모두 사용했습니다.");
-      if (isBusy || state.dailyDungeon.running) return;
+      const dungeon = state.dailyDungeon;
+      if (dungeon.cleared) return toast("오늘의 균열은 이미 정복했습니다.");
+      if (dungeon.activeRun) return toast("진행 중인 균열 원정이 있습니다.");
+      if (dungeon.attempts <= 0) return toast("오늘의 입장권을 모두 사용했습니다.");
+      if (isBusy || dungeon.running) return;
 
-      const difficulty = dailyDifficulties.find(d => d.id === difficultyId);
+      const difficulty = dailyDifficulties.find(diff => diff.id === difficultyId);
       if (!difficulty) return;
-
       if (autoTimer) toggleAuto();
-      isBusy = true;
-      state.dailyDungeon.running = true;
-      state.dailyDungeon.currentWave = 0;
-      state.dailyDungeon.lastResult = "";
-      state.dailyDungeon.runLog = [];
-      state.dailyDungeon.attempts--;
+
+      const stats = totalStats();
+      dungeon.attempts--;
+      dungeon.activeRun = true;
+      dungeon.running = false;
+      dungeon.selectedDifficulty = difficulty.id;
+      dungeon.currentWave = 1;
+      dungeon.completedStages = 0;
+      dungeon.runMaxHp = stats.maxHp;
+      dungeon.runMaxMp = stats.maxMp;
+      dungeon.runHp = stats.maxHp;
+      dungeon.runMp = stats.maxMp;
+      dungeon.totalTurns = 0;
+      dungeon.lastResult = "";
+      dungeon.runLog = [];
 
       const theme = currentDailyTheme();
+      pushDailyRunLog(
+        `[균열 개방] ${theme.name} · ${difficulty.name} 원정 시작 · 입장권 1장 소모.`,
+        "rarity-epic",
+        1
+      );
+      pushDailyRunLog(
+        `오늘의 목표 · 다섯 단계를 빠르게 돌파하고 균열핵 보상을 회수한다.`,
+        "battle-start",
+        1
+      );
+      log(`[오늘의 균열] ${theme.name} · ${difficulty.name} 원정 시작`,"rarity-epic");
+      saveState();
+      renderDailyDungeon();
+      requestAnimationFrame(() => {
+        els.dailyRunPanel?.scrollIntoView({behavior:"smooth",block:"start"});
+      });
+    }
+
+    async function runDailyDungeonStage() {
+      ensureDailyDungeon();
+      const dungeon = state.dailyDungeon;
+      if (!dungeon.activeRun || dungeon.running || isBusy) return;
+
+      const stageNumber = Math.max(1,Math.min(5,dungeon.currentWave || 1));
+      const difficulty = currentDailyDifficulty();
+      if (!difficulty) return toast("원정 난이도 정보가 없습니다.");
+
+      const stage = dailyRiftStages[stageNumber-1];
+      const enemy = createDungeonEnemy(stageNumber,difficulty);
       const originalHp = state.hp;
       const originalMp = state.mp;
-      const s = totalStats();
-      state.hp = s.maxHp;
-      state.mp = s.maxMp;
 
-      let cleared = true;
-      let totalTurns = 0;
-      let waveReached = 0;
-      const rewardItems = [];
+      dungeon.running = true;
+      isBusy = true;
+      state.hp = dungeon.runHp;
+      state.mp = dungeon.runMp;
 
       pushDailyRunLog(
-        `[균열 개방] ${theme.name} · ${difficulty.name} 난이도에 입장했다. 입장권이 1장 소모되었다.`,
-        "rarity-epic"
+        `[${stageNumber}/5 · ${stage.name}] ${enemy.name} 출현 · HP ${fmt(enemy.hp)} · 공격 ${fmt(enemy.attack)} · 방어 ${fmt(enemy.defense)}`,
+        stageNumber === 5 ? "rarity-legendary" : "battle-start",
+        stageNumber
       );
-      pushDailyRunLog(
-        `공략 시작 상태 · HP ${fmt(state.hp)}/${fmt(s.maxHp)} · MP ${fmt(state.mp)}/${fmt(s.maxMp)} · 5연전`,
-        "battle-start"
-      );
-      log(`[일일 던전] ${theme.name} · ${difficulty.name} 난이도 입장`, "rarity-epic");
       renderDailyDungeon();
+      saveState();
+      await dailyDungeonPause(stageNumber === 5 ? 300 : 180);
 
-      requestAnimationFrame(() => {
-        els.dailyRunPanel?.scrollIntoView({behavior:"smooth",block:"nearest"});
-      });
-      await dailyDungeonPause(420);
-
-      for (let wave=1; wave<=5; wave++) {
-        state.dailyDungeon.currentWave = wave;
-        const enemy = createDungeonEnemy(wave,difficulty);
-
-        pushDailyRunLog(
-          `[${wave}/5] ${enemy.name} 출현 · ${enemy.rank} · HP ${fmt(enemy.hp)} · 공격 ${fmt(enemy.attack)} · 방어 ${fmt(enemy.defense)}`,
-          wave === 5 ? "rarity-legendary" : "battle-start",
-          wave
-        );
-        renderDailyDungeon();
-        await dailyDungeonPause(wave === 5 ? 520 : 320);
-
-        const result = simulateBattle(enemy);
-        const highlights = dailyBattleHighlights(result.events);
-
-        for (const event of highlights) {
-          pushDailyRunLog(`[${wave}/5] ${event.text}`,event.cls || "neutral",wave);
-          await dailyDungeonPause(70);
-        }
-
-        totalTurns += result.turns;
-        waveReached = wave;
-        state.hp = result.heroHp;
-        state.mp = result.heroMp;
-
-        if (!result.won) {
-          cleared = false;
-          pushDailyRunLog(
-            `[${wave}/5] 전투 불능 · ${result.turns}막 · 균열 수호자를 돌파하지 못했다.`,
-            "negative",
-            wave
-          );
-          break;
-        }
-
-        pushDailyRunLog(
-          `[${wave}/5] 돌파 성공 · ${result.turns}막 · 남은 HP ${fmt(state.hp)} · MP ${fmt(state.mp)}`,
-          wave === 5 ? "rarity-legendary" : "positive",
-          wave
-        );
-
-        if (wave < 5) {
-          const currentStats = totalStats();
-          const beforeHp = state.hp;
-          const beforeMp = state.mp;
-          state.hp = Math.min(currentStats.maxHp,state.hp+Math.round(currentStats.maxHp*.12));
-          state.mp = Math.min(currentStats.maxMp,state.mp+Math.round(currentStats.maxMp*.10));
-          pushDailyRunLog(
-            `균열 사이의 짧은 휴식 · HP +${fmt(state.hp-beforeHp)} · MP +${fmt(state.mp-beforeMp)}`,
-            "battle-heal",
-            wave
-          );
-        }
-
-        renderDailyDungeon();
-        await dailyDungeonPause(300);
+      const result = simulateBattle(enemy);
+      const highlights = dailyBattleHighlights(result.events);
+      for (const event of highlights) {
+        pushDailyRunLog(`[${stage.name}] ${event.text}`,event.cls || "neutral",stageNumber);
+        await dailyDungeonPause(45);
       }
 
+      dungeon.totalTurns += result.turns;
+      dungeon.runHp = Math.max(0,result.heroHp);
+      dungeon.runMp = Math.max(0,result.heroMp);
       state.hp = originalHp;
       state.mp = originalMp;
 
-      if (cleared) {
-        state.dailyDungeon.cleared = true;
-        state.dailyDungeon.best = {difficulty:difficulty.id,turns:totalTurns};
-        state.records.dailyClears = (state.records.dailyClears || 0)+1;
-
-        const rewardMult = difficulty.rewardMult;
-        const goldReward = Math.round(260*rewardMult*theme.gold);
-        const dustReward = Math.round(7*rewardMult*theme.dust);
-        const skillReward = Math.round((difficulty.id === "nightmare" ? 1 : 0)+theme.skill);
-        const tierStoneReward =
-          (difficulty.id === "normal" ? 1 : difficulty.id === "hard" ? 2 : 3)+
-          (theme.id === "arcane" ? 1 : 0);
-
-        state.gold += goldReward;
-        state.dust += dustReward;
-        state.skillPoints += skillReward;
-        state.materials.sameTierRunes += tierStoneReward;
-        state.records.totalGold += goldReward;
-
-        pushDailyRunLog(
-          `[균열핵 파괴] ${totalTurns}막에 걸친 5연전이 끝났다. 균열이 안정되기 시작한다.`,
-          "rarity-legendary",
-          5
-        );
-
-        if (theme.id === "supply") {
-          const healthReward = 2+(difficulty.id !== "normal" ? 1 : 0);
-          const manaReward = 2+(difficulty.id === "nightmare" ? 1 : 0);
-          const staminaReward = difficulty.id === "nightmare" ? 2 : 1;
-          const elixirReward = difficulty.id === "nightmare" ? 2 : 1;
-          state.consumables.health += healthReward;
-          state.consumables.mana += manaReward;
-          state.consumables.stamina += staminaReward;
-          state.consumables.elixir += elixirReward;
-          pushDailyRunLog(
-            `보급 균열 회수 · 체력약 +${healthReward} · 마나약 +${manaReward} · 활력약 +${staminaReward} · 영약 +${elixirReward}`,
-            "battle-heal"
-          );
-        }
-
-        const itemCount = theme.items+(difficulty.id === "hard" ? 1 : difficulty.id === "nightmare" ? 2 : 0);
-        for (let i=0; i<itemCount; i++) {
-          const bonus = difficulty.id === "nightmare" ? 8 : difficulty.id === "hard" ? 4 : 2;
-          const dailyZone = [...zones].reverse().find(z => power() >= z.rec*.75) || zones[0];
-          const item = generateItem(dailyZone.mult*(1+difficulty.rewardMult*.18),bonus);
-          storeItem(item);
-          recordDroppedItem(item);
-          rewardItems.push(item);
-        }
-
-        pushDailyRunLog(
-          `핵심 보상 · 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)} · 동급 각인석 +${tierStoneReward}${skillReward ? ` · 스킬 포인트 +${skillReward}` : ""}`,
-          "rarity-set"
-        );
-
-        rewardItems.forEach((item,index) => {
-          pushDailyRunLog(
-            `전리품 ${index+1} · ${item.name} · ${item.rarityName} · 장비 점수 ${fmt(item.score)}`,
-            item.rarityClass || "positive"
-          );
-        });
-
-        const line = `${difficulty.name} 클리어 · ${totalTurns}턴 · 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)} · 동급 각인석 +${tierStoneReward}${skillReward ? ` · 스킬 포인트 +${skillReward}` : ""}`;
-        state.dailyDungeon.history.unshift(line);
-        state.dailyDungeon.history = state.dailyDungeon.history.slice(0,5);
-        state.dailyDungeon.lastResult = "cleared";
-        log(`[일일 던전] ${line}`, "rarity-legendary");
-        toast("오늘의 균열 정복 완료!");
-      } else {
-        const line = `${difficulty.name} 실패 · ${waveReached}웨이브 도달`;
-        state.dailyDungeon.history.unshift(line);
-        state.dailyDungeon.history = state.dailyDungeon.history.slice(0,5);
-        state.dailyDungeon.lastResult = "failed";
-        pushDailyRunLog(
-          `[균열 붕괴] ${waveReached}웨이브에서 후퇴했다. 다음 도전에서는 처음부터 다시 진입한다.`,
-          "negative",
-          waveReached
-        );
-        log(`[일일 던전] ${line}`, "negative");
-        toast(`${waveReached}웨이브에서 공략 실패`);
+      if (!result.won) {
+        dungeon.running = false;
+        isBusy = false;
+        finishDailyDungeonFailure(`${stage.name}의 수호자에게 패배`,stageNumber,result.turns);
+        return;
       }
 
-      state.dailyDungeon.running = false;
+      dungeon.completedStages = stageNumber;
+      pushDailyRunLog(
+        `[${stageNumber}/5] ${stage.name} 돌파 · ${result.turns}막 · HP ${fmt(dungeon.runHp)} · MP ${fmt(dungeon.runMp)}`,
+        stageNumber === 5 ? "rarity-legendary" : "positive",
+        stageNumber
+      );
+
+      if (stageNumber === 5) {
+        dungeon.running = false;
+        isBusy = false;
+        completeDailyDungeon(difficulty);
+        return;
+      }
+
+      const beforeHp = dungeon.runHp;
+      const beforeMp = dungeon.runMp;
+      dungeon.runHp = Math.min(dungeon.runMaxHp,dungeon.runHp+Math.round(dungeon.runMaxHp*.15));
+      dungeon.runMp = Math.min(dungeon.runMaxMp,dungeon.runMp+Math.round(dungeon.runMaxMp*.12));
+      pushDailyRunLog(
+        `층 이동 회복 · HP +${fmt(dungeon.runHp-beforeHp)} · MP +${fmt(dungeon.runMp-beforeMp)}`,
+        "battle-heal",
+        stageNumber
+      );
+
+      dungeon.currentWave = stageNumber+1;
+      dungeon.running = false;
       isBusy = false;
+
+      const nextStage = dailyRiftStages[dungeon.currentWave-1];
+      pushDailyRunLog(
+        `[다음 단계] ${nextStage.name} 진입 준비 완료.`,
+        "rarity-epic",
+        dungeon.currentWave
+      );
       saveState();
       renderAll();
     }
 
+    function abandonDailyDungeonRun() {
+      const dungeon = state.dailyDungeon;
+      if (!dungeon.activeRun || dungeon.running) return;
+      finishDailyDungeonFailure("원정대가 자진 후퇴",Math.max(1,dungeon.currentWave || 1),0);
+    }
+
+    function finishDailyDungeonFailure(reason,wave,turns=0) {
+      const dungeon = state.dailyDungeon;
+      const stage = dailyRiftStages[Math.max(0,wave-1)] || dailyRiftStages[0];
+      dungeon.activeRun = false;
+      dungeon.running = false;
+      dungeon.lastResult = "failed";
+      dungeon.currentWave = wave;
+
+      pushDailyRunLog(
+        `[원정 종료] ${stage.name} · ${reason}${turns ? ` · ${turns}막` : ""}.`,
+        "negative",
+        wave
+      );
+
+      const difficulty = currentDailyDifficulty();
+      const line = `${difficulty?.name || "미상"} 실패 · ${stage.name} 도달`;
+      dungeon.history.unshift(line);
+      dungeon.history = dungeon.history.slice(0,5);
+      log(`[오늘의 균열] ${line}`,"negative");
+      isBusy = false;
+      saveState();
+      renderAll();
+      toast(`${stage.name}에서 원정 종료`);
+    }
+
+    function completeDailyDungeon(difficulty) {
+      const dungeon = state.dailyDungeon;
+      const theme = currentDailyTheme();
+      const rewardItems = [];
+
+      dungeon.activeRun = false;
+      dungeon.running = false;
+      dungeon.cleared = true;
+      dungeon.completedStages = 5;
+      dungeon.currentWave = 5;
+      dungeon.lastResult = "cleared";
+      dungeon.best = {difficulty:difficulty.id,turns:dungeon.totalTurns};
+      state.records.dailyClears = (state.records.dailyClears || 0)+1;
+
+      const rewardMult = difficulty.rewardMult;
+      const goldReward = Math.round(260*rewardMult*theme.gold);
+      const dustReward = Math.round(7*rewardMult*theme.dust);
+      const skillReward = Math.round((difficulty.id === "nightmare" ? 1 : 0)+theme.skill);
+      const tierStoneReward =
+        (difficulty.id === "normal" ? 1 : difficulty.id === "hard" ? 2 : 3)+
+        (theme.id === "arcane" ? 1 : 0);
+
+      state.gold += goldReward;
+      state.dust += dustReward;
+      state.skillPoints += skillReward;
+      state.materials.sameTierRunes += tierStoneReward;
+      state.records.totalGold += goldReward;
+
+      pushDailyRunLog(
+        `[균열핵 파괴] ${dungeon.totalTurns}막의 일일 원정 완료.`,
+        "rarity-legendary",
+        5
+      );
+
+      if (theme.id === "supply") {
+        const healthReward = 2+(difficulty.id !== "normal" ? 1 : 0);
+        const manaReward = 2+(difficulty.id === "nightmare" ? 1 : 0);
+        const staminaReward = difficulty.id === "nightmare" ? 2 : 1;
+        const elixirReward = difficulty.id === "nightmare" ? 2 : 1;
+        state.consumables.health += healthReward;
+        state.consumables.mana += manaReward;
+        state.consumables.stamina += staminaReward;
+        state.consumables.elixir += elixirReward;
+        pushDailyRunLog(
+          `보급품 · 체력약 +${healthReward} · 마나약 +${manaReward} · 활력약 +${staminaReward} · 영약 +${elixirReward}`,
+          "battle-heal",
+          5
+        );
+      }
+
+      const itemCount = theme.items+(difficulty.id === "hard" ? 1 : difficulty.id === "nightmare" ? 2 : 0);
+      for (let i=0; i<itemCount; i++) {
+        const bonus = difficulty.id === "nightmare" ? 8 : difficulty.id === "hard" ? 4 : 2;
+        const dailyZone = [...zones].reverse().find(zone => power() >= zone.rec*.75) || zones[0];
+        const item = generateItem(dailyZone.mult*(1+difficulty.rewardMult*.18),bonus);
+        storeItem(item);
+        recordDroppedItem(item);
+        rewardItems.push(item);
+      }
+
+      pushDailyRunLog(
+        `보상 · 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)} · 동급 각인석 +${tierStoneReward}${skillReward ? ` · 스킬 포인트 +${skillReward}` : ""}`,
+        "rarity-set",
+        5
+      );
+
+      rewardItems.forEach((item,index) => {
+        pushDailyRunLog(
+          `전리품 ${index+1} · ${item.name} · ${item.rarityName} · 장비 점수 ${fmt(item.score)}`,
+          item.rarityClass || "positive",
+          5
+        );
+      });
+
+      const line = `${difficulty.name} 정복 · ${dungeon.totalTurns}막 · 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)}`;
+      dungeon.history.unshift(line);
+      dungeon.history = dungeon.history.slice(0,5);
+      log(`[오늘의 균열] ${line}`,"rarity-legendary");
+      isBusy = false;
+      saveState();
+      renderAll();
+      toast("오늘의 균열 보상 회수 완료");
+    }
+
     function resetDailyDungeonDemo() {
-      state.dailyDungeon = {
-        date:localDateKey(),
-        attempts:3,
-        cleared:false,
-        best:null,
-        history:[],
-        runLog:[],
-        running:false,
-        currentWave:0,
-        lastResult:""
-      };
-      log("오늘의 균열 입장권을 시험용으로 복구했다.", "neutral");
+      state.dailyDungeon = freshDailyDungeonState(localDateKey());
+      log("오늘의 균열 입장권과 원정 상태를 시험용으로 복구했다.","neutral");
       saveState();
       renderAll();
     }
 
     function renderDailyDungeon() {
       ensureDailyDungeon();
+      const dungeon = state.dailyDungeon;
       const theme = currentDailyTheme();
-      els.dailyTicketBadge.textContent = state.dailyDungeon.running
-        ? `공략 중 · ${Math.max(1,state.dailyDungeon.currentWave || 1)}/5`
-        : state.dailyDungeon.cleared
-          ? "오늘 클리어 완료"
-          : `도전 ${state.dailyDungeon.attempts} / 3`;
-      els.dailyTicketBadge.classList.toggle("running",!!state.dailyDungeon.running);
+      const activeDifficulty = currentDailyDifficulty();
+
+      els.dailyTicketBadge.textContent = dungeon.running
+        ? `${Math.max(1,dungeon.currentWave || 1)}단계 전투 중`
+        : dungeon.activeRun
+          ? `${Math.max(1,dungeon.currentWave || 1)}/5 단계 · 입장권 ${dungeon.attempts}`
+          : dungeon.cleared
+            ? "오늘 보상 완료"
+            : `입장권 ${dungeon.attempts} / 3`;
+      els.dailyTicketBadge.classList.toggle("running",!!dungeon.running);
+      els.dailyTicketBadge.classList.toggle("active-run",!!dungeon.activeRun && !dungeon.running);
       els.dailyTierStoneBadge.textContent = `동급 각인석 ${fmt(state.materials.sameTierRunes || 0)}`;
+
       els.dailyTheme.innerHTML = `
         <h3>${theme.name}</h3>
         <div class="daily-desc">${theme.desc}</div>
+        <div class="daily-layer-line">외곽층 → 잔향층 → 기억층 → 심층 → <strong>오늘의 균열핵</strong></div>
         <div class="daily-reward">오늘의 특수 보상: ${theme.id === "gold" ? "골드 ×2" : theme.id === "arcane" ? "스킬 포인트 +1" : theme.id === "supply" ? "회복품 대량 지급" : "장비 추가 드롭"}</div>
       `;
-      els.dailyGrid.innerHTML = dailyDifficulties.map(diff => `
-        <article class="daily-card ${state.dailyDungeon.cleared && state.dailyDungeon.best?.difficulty === diff.id ? "cleared" : ""}">
-          <div class="rarity ${diff.id === "nightmare" ? "rarity-legendary" : diff.id === "hard" ? "rarity-epic" : "rarity-rare"}">${diff.name}</div>
-          <div class="daily-name">5연전 ${diff.name}</div>
-          <div class="daily-desc">${diff.recText}<br>보상 배율 ×${diff.rewardMult}</div>
-          <div class="daily-reward">골드 ${fmt(Math.round(260*diff.rewardMult*theme.gold))} · 별가루 ${fmt(Math.round(7*diff.rewardMult*theme.dust))}<br>동급 각인석 ${diff.id === "normal" ? 1 : diff.id === "hard" ? 2 : 3}${theme.id === "arcane" ? " +1" : ""}</div>
-          <div class="mini-buttons">
-            <button class="primary" data-daily-run="${diff.id}" ${state.dailyDungeon.running || state.dailyDungeon.cleared || state.dailyDungeon.attempts<=0 ? "disabled" : ""}>${state.dailyDungeon.running ? "공략 진행 중" : "도전하기"}</button>
-          </div>
-        </article>
-      `).join("");
-      els.dailyGrid.querySelectorAll("[data-daily-run]").forEach(btn => btn.onclick = () => runDailyDungeon(btn.dataset.dailyRun));
+
+      els.dailyGrid.innerHTML = dailyDifficulties.map(diff => {
+        const selected = dungeon.activeRun && activeDifficulty?.id === diff.id;
+        return `
+          <article class="daily-card ${dungeon.cleared && dungeon.best?.difficulty === diff.id ? "cleared" : ""} ${selected ? "active-run" : ""}">
+            <div class="rarity ${diff.id === "nightmare" ? "rarity-legendary" : diff.id === "hard" ? "rarity-epic" : "rarity-rare"}">${diff.name}</div>
+            <div class="daily-name">빠른 5단계 원정 · ${diff.name}</div>
+            <div class="daily-desc">${diff.recText}<br>퍼즐 없이 단계별 전투만 진행합니다.</div>
+            <div class="daily-reward">골드 ${fmt(Math.round(260*diff.rewardMult*theme.gold))} · 별가루 ${fmt(Math.round(7*diff.rewardMult*theme.dust))}<br>동급 각인석 ${diff.id === "normal" ? 1 : diff.id === "hard" ? 2 : 3}${theme.id === "arcane" ? " +1" : ""}</div>
+            <div class="mini-buttons">
+              <button class="primary" data-daily-run="${diff.id}" ${dungeon.activeRun || dungeon.cleared || dungeon.attempts<=0 || dungeon.running ? "disabled" : ""}>
+                ${selected ? "현재 원정" : dungeon.activeRun ? "다른 원정 진행 중" : "원정 시작"}
+              </button>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      els.dailyGrid.querySelectorAll("[data-daily-run]").forEach(button => {
+        button.onclick = () => startDailyDungeonRun(button.dataset.dailyRun);
+      });
+
       renderDailyRunLog();
-      els.dailyHistory.innerHTML = state.dailyDungeon.history.length
-        ? `<strong>오늘의 결과 요약</strong><br>${state.dailyDungeon.history.map(x => `• ${x}`).join("<br>")}`
-        : "아직 오늘의 도전 결과가 없습니다.";
+
+      els.dailyHistory.innerHTML = dungeon.history.length
+        ? `<strong>오늘의 결과 요약</strong><br>${dungeon.history.map(entry => `• ${entry}`).join("<br>")}`
+        : "아직 오늘의 원정 결과가 없습니다.";
+    }
+
+    function finaleRequirementRows() {
+      const factionSecrets = ["chapter2","chapter3","chapter5","chapter6"].every(storyUnlocked);
+      return [
+        {id:"story",label:"메인 스토리 제7장 해금",done:storyUnlocked("chapter7"),value:storyUnlocked("chapter7") ? "완료" : "미완료"},
+        {id:"level",label:"레벨 40 이상",done:state.level >= 40,value:`Lv.${fmt(state.level)} / 40`},
+        {id:"power",label:"전투력 16,000 이상",done:power() >= 16000,value:`${fmt(power())} / 16,000`},
+        {id:"throne",label:"재의 왕좌 발견",done:!!state.zonesVisited?.throne,value:state.zonesVisited?.throne ? "발견 완료" : "미발견"},
+        {id:"daily",label:"오늘의 균열 누적 5회 정복",done:(state.records.dailyClears || 0) >= 5,value:`${fmt(state.records.dailyClears || 0)} / 5`},
+        {id:"abyss",label:"끝없는 심연 10층 돌파",done:(state.records.abyssBestFloor || 0) >= 10,value:`${fmt(state.records.abyssBestFloor || 0)}층 / 10층`},
+        {id:"unique",label:"유니크 전리품 1개 발견",done:(state.records.uniqueItems || 0) >= 1,value:`${fmt(state.records.uniqueItems || 0)} / 1`},
+        {id:"factions",label:"네 세력의 숨겨진 정보 확인",done:factionSecrets,value:factionSecrets ? "4 / 4" : "기록 미완성"}
+      ];
+    }
+
+    function finaleReady() {
+      return finaleRequirementRows().every(row => row.done);
+    }
+
+    function finalePhaseName(phase=state.finale.phase) {
+      return {
+        0:"봉인",
+        1:"1페이즈 · 이름 없는 군대",
+        2:"2페이즈 · 기억 재판",
+        3:"3페이즈 · 삼중 낙인",
+        4:"4페이즈 · 회백의 왕"
+      }[phase] || "봉인";
+    }
+
+    function pushFinaleLog(text,cls="neutral") {
+      const finale = state.finale;
+      finale.log = finale.log || [];
+      finale.log.push({
+        order:finale.log.length+1,
+        text,
+        cls
+      });
+      finale.log = finale.log.slice(-150);
+      renderFinaleLog();
+    }
+
+    function renderFinaleLog() {
+      if (!els.finaleLog || !els.finalePhaseBadge) return;
+      const finale = state.finale;
+      els.finalePhaseBadge.textContent = finale.completed && !finale.active
+        ? "정복 완료"
+        : finalePhaseName();
+      els.finalePhaseBadge.className = finale.active
+        ? "active"
+        : finale.completed
+          ? "cleared"
+          : "";
+
+      els.finaleLog.innerHTML = finale.log?.length
+        ? finale.log.map(entry => `
+            <div class="finale-log-line ${entry.cls || "neutral"}">
+              <span>${String(entry.order || 0).padStart(2,"0")}</span>
+              <p>${entry.text}</p>
+            </div>
+          `).join("")
+        : `<div class="finale-log-empty">왕좌 원정을 시작하면 실패 원인과 기믹 대응법이 여기에 기록됩니다.</div>`;
+
+      if (finale.active) {
+        requestAnimationFrame(() => {
+          els.finaleLog.scrollTop = els.finaleLog.scrollHeight;
+        });
+      }
+    }
+
+    function finalRuneById(id) {
+      return dailyRiftRunes.find(rune => rune.id === id) || dailyRiftRunes[0];
+    }
+
+    function createFinaleRuneOrder() {
+      const permutations = [
+        ["ash","ember","name"],
+        ["ash","name","ember"],
+        ["ember","ash","name"],
+        ["ember","name","ash"],
+        ["name","ash","ember"],
+        ["name","ember","ash"]
+      ];
+      const seed = (state.finale.attempts || 1)*13 + Number(localDateKey().replaceAll("-",""));
+      return [...permutations[seed % permutations.length]];
+    }
+
+    function finaleRuneHints() {
+      const order = state.finale.runeOrder;
+      const first = finalRuneById(order[0]).label;
+      const middle = finalRuneById(order[1]).label;
+      const last = finalRuneById(order[2]).label;
+      return [
+        `“${first}”은 “${last}”보다 먼저 새겨졌다.`,
+        `“${middle}”은 첫 번째 낙인이 아니다.`,
+        `마지막 낙인은 “${last}”이다.`
+      ];
+    }
+
+    function createFinaleQuestionIds() {
+      const offset = ((state.finale.attempts || 1)-1) % finaleMemoryQuestions.length;
+      const ids = [];
+      for (let index=0; index<3; index++) {
+        ids.push(finaleMemoryQuestions[(offset+index*3) % finaleMemoryQuestions.length].id);
+      }
+      return ids;
+    }
+
+    function finaleQuestionById(id) {
+      return finaleMemoryQuestions.find(question => question.id === id) || finaleMemoryQuestions[0];
+    }
+
+    function finaleCurrentQuestion() {
+      return finaleQuestionById(state.finale.memoryQuestionIds[state.finale.memoryIndex]);
+    }
+
+    function finaleBossPatternForTurn() {
+      const finale = state.finale;
+      const normal = ["wave","core","steal","prison","core","wave","steal","core","prison","wave","core","steal"];
+      const enrage = ["core","wave","core","steal","core","prison"];
+      const sequence = finale.deleteCountdown > 0 ? enrage : normal;
+      const offset = (finale.attempts || 1) % sequence.length;
+      return sequence[(finale.bossTurn+offset) % sequence.length];
+    }
+
+    function finaleResourceHtml() {
+      const finale = state.finale;
+      const hpRate = finale.runMaxHp ? clamp(finale.runHp/finale.runMaxHp*100,0,100) : 0;
+      const mpRate = finale.runMaxMp ? clamp(finale.runMp/finale.runMaxMp*100,0,100) : 0;
+      return `
+        <div class="finale-resource-grid">
+          <div>
+            <span>왕좌 원정 HP</span>
+            <strong>${fmt(finale.runHp)} / ${fmt(finale.runMaxHp)}</strong>
+            <i><b style="width:${hpRate}%"></b></i>
+          </div>
+          <div>
+            <span>왕좌 원정 MP</span>
+            <strong>${fmt(finale.runMp)} / ${fmt(finale.runMaxMp)}</strong>
+            <i class="mp"><b style="width:${mpRate}%"></b></i>
+          </div>
+          <div class="finale-resource-meta">
+            <span>누적 전투</span>
+            <strong>${fmt(finale.totalTurns)}막</strong>
+          </div>
+          <div class="finale-resource-meta">
+            <span>망각 / 낙인 실수</span>
+            <strong>${fmt(finale.forgetStacks)} / ${fmt(finale.runeMistakes)}</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    function finaleLearnedHintsHtml() {
+      const learned = Object.keys(state.finale.learnedPatterns || {}).filter(id => state.finale.learnedPatterns[id]);
+      if (!learned.length) return "";
+      return `
+        <div class="finale-learned">
+          <span>실패에서 되찾은 공략 기록</span>
+          ${learned.map(id => `<p>• ${finalePatterns[id].lesson}</p>`).join("")}
+        </div>
+      `;
+    }
+
+    function startFinaleRun() {
+      if (!finaleReady()) return toast("최종장 입장 조건이 아직 부족합니다.");
+      if (state.finale.active || isBusy) return;
+      if (autoTimer) toggleAuto();
+
+      const old = state.finale;
+      const stats = totalStats();
+      state.finale = {
+        ...defaultState().finale,
+        completed:!!old.completed,
+        attempts:(old.attempts || 0)+1,
+        failures:old.failures || 0,
+        learnedPatterns:{...(old.learnedPatterns || {})},
+        archive:[...(old.archive || [])],
+        best:old.best || null,
+        localFirstClear:old.localFirstClear || null,
+        rewardClaimed:!!old.rewardClaimed,
+        active:true,
+        phase:1,
+        phaseOneIndex:0,
+        runHp:stats.maxHp,
+        runMp:stats.maxMp,
+        runMaxHp:stats.maxHp,
+        originalMaxHp:stats.maxHp,
+        runMaxMp:stats.maxMp,
+        totalTurns:0,
+        log:[]
+      };
+      state.records.finalBossAttempts = (state.records.finalBossAttempts || 0)+1;
+
+      pushFinaleLog(`[왕좌 개방] ${state.nickname || "무명의 사냥꾼"}가 모든 이름의 무덤에 진입했다.`,"rarity-legendary");
+      pushFinaleLog("이 원정에는 중간 부활 지점이 없다. 어느 페이즈에서든 패배하면 이름 없는 군대부터 다시 시작한다.","negative");
+      pushFinaleLog("제1페이즈 · 실패한 회귀자 세 명이 왕좌로 향하는 길을 막았다.","battle-start");
+      log(`[모험 최종장] ${state.nickname || "무명의 사냥꾼"} 왕좌 원정 시작`,"rarity-legendary");
+      saveState();
+      renderAll();
+    }
+
+    async function fightFinaleEcho() {
+      const finale = state.finale;
+      if (!finale.active || finale.phase !== 1 || isBusy) return;
+      const echo = finaleEchoes[finale.phaseOneIndex];
+      if (!echo) return;
+
+      isBusy = true;
+      const enemy = scaledExpeditionEnemy(echo.name,echo.mult,echo.boss,echo.trait);
+      enemy.attack *= echo.attack;
+      enemy.defense *= echo.defense;
+      enemy.hp *= echo.hp;
+      enemy.turnLimit = 75;
+
+      pushFinaleLog(
+        `[${finale.phaseOneIndex+1}/3] ${echo.name} 출현 · ${echo.trait} · HP ${fmt(enemy.hp)}`,
+        echo.boss ? "rarity-legendary" : "battle-start"
+      );
+      renderFinale();
+      await dailyDungeonPause(300);
+
+      const result = simulateExpedition(enemy,finale.runHp,finale.runMp);
+      dailyBattleHighlights(result.events).forEach(event => {
+        pushFinaleLog(`[${echo.name}] ${event.text}`,event.cls || "neutral");
+      });
+      finale.totalTurns += result.turns;
+      finale.runHp = Math.max(0,result.heroHp);
+      finale.runMp = Math.max(0,result.heroMp);
+
+      if (!result.won) {
+        isBusy = false;
+        failFinaleRun(`${echo.name}에게 패배`,echo.name,result.turns);
+        return;
+      }
+
+      pushFinaleLog(
+        `${echo.name} 격파 · ${result.turns}막 · HP ${fmt(finale.runHp)} · MP ${fmt(finale.runMp)}`,
+        "positive"
+      );
+
+      finale.phaseOneIndex++;
+      if (finale.phaseOneIndex >= finaleEchoes.length) {
+        finale.phase = 2;
+        finale.memoryQuestionIds = createFinaleQuestionIds();
+        finale.memoryIndex = 0;
+        const beforeHp = finale.runHp;
+        const beforeMp = finale.runMp;
+        finale.runHp = Math.min(finale.runMaxHp,finale.runHp+Math.round(finale.runMaxHp*.10));
+        finale.runMp = Math.min(finale.runMaxMp,finale.runMp+Math.round(finale.runMaxMp*.08));
+        pushFinaleLog(
+          `제1페이즈 돌파 · 짧은 회복 HP +${fmt(finale.runHp-beforeHp)} · MP +${fmt(finale.runMp-beforeMp)}.`,
+          "rarity-epic"
+        );
+        pushFinaleLog("제2페이즈 · 네 세력이 남긴 기록 가운데 진실과 거짓을 판별해야 한다.","battle-start");
+      } else {
+        const beforeHp = finale.runHp;
+        const beforeMp = finale.runMp;
+        finale.runHp = Math.min(finale.runMaxHp,finale.runHp+Math.round(finale.runMaxHp*.07));
+        finale.runMp = Math.min(finale.runMaxMp,finale.runMp+Math.round(finale.runMaxMp*.05));
+        pushFinaleLog(
+          `잔영 사이 회복 · HP +${fmt(finale.runHp-beforeHp)} · MP +${fmt(finale.runMp-beforeMp)}.`,
+          "battle-heal"
+        );
+      }
+
+      isBusy = false;
+      saveState();
+      renderAll();
+    }
+
+    function answerFinaleMemory(answer) {
+      const finale = state.finale;
+      if (!finale.active || finale.phase !== 2 || isBusy) return;
+      const question = finaleCurrentQuestion();
+      if (!question) return;
+
+      finale.totalTurns++;
+      const correct = answer === question.answer;
+      if (correct) {
+        finale.memoryCorrect++;
+        const heal = Math.round(finale.runMaxHp*.035);
+        finale.runHp = Math.min(finale.runMaxHp,finale.runHp+heal);
+        pushFinaleLog(`[기억 재판 정답] ${question.truth} · HP +${fmt(heal)}.`,"positive");
+      } else {
+        finale.memoryWrong++;
+        finale.forgetStacks++;
+        const damage = Math.round(finale.runMaxHp*.08);
+        finale.runHp = Math.max(0,finale.runHp-damage);
+        pushFinaleLog(`[기억 재판 오답] ${question.truth} · 망각 ${finale.forgetStacks}중첩 · HP -${fmt(damage)}.`,"negative");
+      }
+
+      if (finale.runHp <= 0) {
+        failFinaleRun("기억 재판에서 이름을 모두 잃음","기억 재판",finale.totalTurns);
+        return;
+      }
+
+      finale.memoryIndex++;
+      if (finale.memoryIndex >= finale.memoryQuestionIds.length) {
+        finale.phase = 3;
+        finale.runeOrder = createFinaleRuneOrder();
+        finale.runeSelection = [];
+        pushFinaleLog(
+          `제2페이즈 종료 · 정답 ${finale.memoryCorrect}/3 · 망각 ${finale.forgetStacks}중첩.`,
+          finale.memoryCorrect === 3 ? "rarity-legendary" : "rarity-epic"
+        );
+        pushFinaleLog("제3페이즈 · 재, 불씨, 이름의 삼중 낙인을 단서에 맞춰 해제하라.","battle-start");
+      }
+
+      saveState();
+      renderAll();
+    }
+
+    function selectFinaleRune(runeId) {
+      const finale = state.finale;
+      if (!finale.active || finale.phase !== 3 || isBusy) return;
+      if (!dailyRiftRunes.some(rune => rune.id === runeId)) return;
+      if (finale.runeSelection.includes(runeId) || finale.runeSelection.length >= 3) return;
+      finale.runeSelection.push(runeId);
+      saveState();
+      renderFinale();
+    }
+
+    function resetFinaleRunes() {
+      if (!state.finale.active || state.finale.phase !== 3 || isBusy) return;
+      state.finale.runeSelection = [];
+      saveState();
+      renderFinale();
+    }
+
+    function confirmFinaleRunes() {
+      const finale = state.finale;
+      if (!finale.active || finale.phase !== 3 || isBusy) return;
+      if (finale.runeSelection.length !== 3) return toast("세 낙인의 순서를 모두 선택하세요.");
+
+      finale.totalTurns++;
+      const chosen = finale.runeSelection.map(id => finalRuneById(id).label).join(" → ");
+      const correct = finale.runeSelection.join("|") === finale.runeOrder.join("|");
+
+      if (!correct) {
+        finale.runeMistakes++;
+        const damage = Math.round(finale.runMaxHp*.20);
+        finale.runHp = Math.max(0,finale.runHp-damage);
+        finale.runeSelection = [];
+        pushFinaleLog(
+          `[삼중 낙인 실패] ${chosen} · HP -${fmt(damage)} · 실수 ${finale.runeMistakes}/3.`,
+          "negative"
+        );
+
+        if (finale.runHp <= 0 || finale.runeMistakes >= 3) {
+          failFinaleRun("삼중 낙인의 역류로 불씨가 붕괴","기억의 삼중 낙인",finale.totalTurns);
+          return;
+        }
+
+        saveState();
+        renderAll();
+        return;
+      }
+
+      const stats = totalStats();
+      const offense = Math.max(stats.attack,stats.magicPower);
+      finale.phase = 4;
+      finale.bossMaxHp = Math.round(Math.max(5000,offense*18+finale.originalMaxHp*1.7));
+      finale.bossHp = finale.bossMaxHp;
+      finale.bossTurn = 0;
+      finale.bossPattern = finaleBossPatternForTurn();
+      finale.patternSuccess = 0;
+      finale.patternFails = 0;
+      finale.patternStreak = 0;
+      finale.memoryBound = 0;
+      finale.deleteCountdown = 0;
+
+      pushFinaleLog(`[삼중 낙인 해제] ${chosen} · 회백의 왕을 감싸던 무적 장막이 붕괴했다.`,"rarity-legendary");
+      pushFinaleLog("제4페이즈 · 보스의 징조를 읽고 공격, 방어, 불씨 고정, 기억 해방 중 하나를 선택하라.","battle-start");
+      saveState();
+      renderAll();
+    }
+
+    function resolveFinaleBossAction(action) {
+      const finale = state.finale;
+      if (!finale.active || finale.phase !== 4 || isBusy) return;
+
+      const pattern = finalePatterns[finale.bossPattern];
+      if (!pattern) return;
+      const stats = totalStats();
+      const correct = action === pattern.answer;
+      const runePower = 1+finale.runeMistakes*.10;
+      const memoryDefense = Math.max(.72,1-finale.memoryCorrect*.03);
+      const justTriggered = finale.deleteCountdown === 0 && finale.bossHp/finale.bossMaxHp <= .20;
+
+      finale.bossTurn++;
+      finale.totalTurns++;
+
+      if (correct) {
+        finale.patternSuccess++;
+        finale.patternStreak++;
+
+        if (pattern.id === "core") {
+          const offense = Math.max(stats.attack,stats.magicPower);
+          const memoryBonus = 1+finale.memoryCorrect*.08;
+          const runeBonus = finale.runeMistakes === 0 ? 1.12 : 1;
+          const streakBonus = finale.patternStreak >= 3 ? 1.25 : 1;
+          const boundPenalty = finale.memoryBound > 0 ? .60 : 1;
+          const enrageBonus = finale.deleteCountdown > 0 ? 1.15 : 1;
+          const variance = .93+Math.random()*.14;
+          const damage = Math.round(offense*2.35*memoryBonus*runeBonus*streakBonus*boundPenalty*enrageBonus*variance);
+          finale.bossHp = Math.max(0,finale.bossHp-damage);
+          pushFinaleLog(
+            `[패턴 대응 성공] 열린 균열핵 공격 · ${fmt(damage)} 피해 · 왕 HP ${fmt(finale.bossHp)}/${fmt(finale.bossMaxHp)}.`,
+            "rarity-legendary"
+          );
+          if (finale.patternStreak >= 3) finale.patternStreak = 0;
+        } else {
+          const chipRate = pattern.id === "wave" ? .010 : .022;
+          const chip = Math.max(1,Math.round(finale.runMaxHp*chipRate*runePower*memoryDefense));
+          finale.runHp = Math.max(0,finale.runHp-chip);
+          if (pattern.id === "prison") finale.memoryBound = 0;
+          pushFinaleLog(
+            `[패턴 대응 성공] ${pattern.name} → ${pattern.answerLabel} · 잔여 피해 ${fmt(chip)}.`,
+            "positive"
+          );
+        }
+      } else {
+        finale.patternFails++;
+        finale.patternStreak = 0;
+        finale.learnedPatterns[pattern.id] = true;
+
+        if (pattern.id === "wave") {
+          const damage = Math.round(finale.runMaxHp*.24*runePower*memoryDefense);
+          finale.runHp = Math.max(0,finale.runHp-damage);
+          pushFinaleLog(`[패턴 실패] 회백의 파도에 방어하지 못했다 · HP -${fmt(damage)}.`,"negative");
+        } else if (pattern.id === "steal") {
+          const damage = Math.round(finale.runMaxHp*.14*runePower*memoryDefense);
+          const lostMax = Math.max(1,Math.round(finale.runMaxHp*.07));
+          finale.runMaxHp = Math.max(Math.round(finale.originalMaxHp*.60),finale.runMaxHp-lostMax);
+          finale.runHp = Math.min(finale.runMaxHp,Math.max(0,finale.runHp-damage));
+          pushFinaleLog(`[패턴 실패] 이름 강탈 · HP -${fmt(damage)} · 최대 HP -${fmt(lostMax)}.`,"negative");
+        } else if (pattern.id === "prison") {
+          const damage = Math.round(finale.runMaxHp*.18*runePower*memoryDefense);
+          finale.runHp = Math.max(0,finale.runHp-damage);
+          finale.memoryBound = 2;
+          pushFinaleLog(`[패턴 실패] 기억 감옥에 붙잡혔다 · HP -${fmt(damage)} · 다음 핵 공격 피해 감소.`,"negative");
+        } else {
+          const damage = Math.round(finale.runMaxHp*.10*runePower*memoryDefense);
+          const heal = Math.round(finale.bossMaxHp*.05);
+          finale.runHp = Math.max(0,finale.runHp-damage);
+          finale.bossHp = Math.min(finale.bossMaxHp,finale.bossHp+heal);
+          pushFinaleLog(`[패턴 실패] 열린 핵을 놓쳤다 · HP -${fmt(damage)} · 회백의 왕 HP +${fmt(heal)}.`,"negative");
+        }
+        pushFinaleLog(`[공략 기록] ${pattern.lesson}`,"battle-effect");
+      }
+
+      if (finale.memoryBound > 0 && pattern.id !== "prison") {
+        finale.memoryBound = Math.max(0,finale.memoryBound-1);
+      }
+
+      if (finale.bossHp <= 0) {
+        completeFinaleRun();
+        return;
+      }
+
+      if (finale.runHp <= 0) {
+        failFinaleRun(`${pattern.name}에 대응하지 못함`,"회백의 왕, 모든 이름의 무덤",finale.totalTurns);
+        return;
+      }
+
+      if (finale.deleteCountdown === 0 && finale.bossHp/finale.bossMaxHp <= .20) {
+        finale.deleteCountdown = 6+(finale.runeMistakes === 0 ? 2 : 0)+(finale.memoryCorrect === 3 ? 1 : 0);
+        pushFinaleLog(
+          `[최후의 기믹] ${finale.deleteCountdown}막 뒤 사냥꾼의 이름이 완전히 삭제된다.`,
+          "rarity-unique"
+        );
+      } else if (finale.deleteCountdown > 0 && !justTriggered) {
+        finale.deleteCountdown--;
+        if (finale.deleteCountdown <= 0) {
+          failFinaleRun("이름 삭제 제한 시간을 넘김","회백의 왕, 모든 이름의 무덤",finale.totalTurns);
+          return;
+        }
+        pushFinaleLog(`[이름 삭제] 남은 시간 ${finale.deleteCountdown}막.`,"negative");
+      }
+
+      finale.bossPattern = finaleBossPatternForTurn();
+      saveState();
+      renderAll();
+    }
+
+    function failFinaleRun(reason,enemyName="회백의 왕",turns=0) {
+      const finale = state.finale;
+      finale.active = false;
+      finale.failures = (finale.failures || 0)+1;
+      finale.archive.unshift({
+        result:"실패",
+        reason,
+        phase:finalePhaseName(finale.phase),
+        turns:finale.totalTurns,
+        at:Date.now()
+      });
+      finale.archive = finale.archive.slice(0,10);
+      pushFinaleLog(`[왕좌 원정 실패] ${reason} · 다음 도전은 이름 없는 군대부터 다시 시작한다.`,"negative");
+      log(`[모험 최종장] 실패 · ${reason}`,"negative");
+      showDefeatLog({
+        enemy:{name:enemyName},
+        result:{turns:turns || finale.totalTurns},
+        autoStopped:false
+      });
+      isBusy = false;
+      saveState();
+      renderAll();
+    }
+
+    function abandonFinaleRun() {
+      if (!state.finale.active || isBusy) return;
+      failFinaleRun("사냥꾼이 왕좌 원정을 포기","재의 왕좌",state.finale.totalTurns);
+    }
+
+    function completeFinaleRun() {
+      const finale = state.finale;
+      const firstClear = !finale.completed;
+      finale.active = false;
+      finale.completed = true;
+      state.records.finalBossWins = (state.records.finalBossWins || 0)+1;
+      state.records.finalBossBestTurns = !state.records.finalBossBestTurns
+        ? finale.totalTurns
+        : Math.min(state.records.finalBossBestTurns,finale.totalTurns);
+
+      finale.best = !finale.best || finale.totalTurns < finale.best.turns
+        ? {
+            turns:finale.totalTurns,
+            memoryCorrect:finale.memoryCorrect,
+            runeMistakes:finale.runeMistakes,
+            patternFails:finale.patternFails,
+            date:localDateKey()
+          }
+        : finale.best;
+
+      finale.archive.unshift({
+        result:"정복",
+        reason:"회백의 왕 처단",
+        phase:"종장 완료",
+        turns:finale.totalTurns,
+        at:Date.now()
+      });
+      finale.archive = finale.archive.slice(0,10);
+
+      if (!finale.localFirstClear) {
+        finale.localFirstClear = {
+          nickname:state.nickname || "무명의 사냥꾼",
+          date:localDateKey(),
+          turns:finale.totalTurns,
+          memoryCorrect:finale.memoryCorrect,
+          runeMistakes:finale.runeMistakes,
+          patternFails:finale.patternFails
+        };
+      }
+
+      if (!finale.rewardClaimed) {
+        const goldReward = 5000;
+        const dustReward = 80;
+        const skillReward = 3;
+        state.gold += goldReward;
+        state.dust += dustReward;
+        state.skillPoints += skillReward;
+        state.records.totalGold += goldReward;
+
+        const slot = randomChoice(slots).key;
+        const item = generateUniqueItem(Math.max(12,1+state.level*.18),slot);
+        storeItem(item);
+        recordDroppedItem(item);
+        finale.rewardClaimed = true;
+
+        pushFinaleLog(
+          `[종장 보상] 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)} · 스킬 포인트 +${skillReward} · 유니크 ${item.name}.`,
+          "rarity-unique"
+        );
+      } else {
+        const goldReward = 1000;
+        const dustReward = 15;
+        state.gold += goldReward;
+        state.dust += dustReward;
+        state.records.totalGold += goldReward;
+        pushFinaleLog(`[회상전 보상] 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)}.`,"rarity-set");
+      }
+
+      pushFinaleLog(
+        `[회백의 왕 처단] ${finale.totalTurns}막 · 기억 재판 ${finale.memoryCorrect}/3 · 낙인 실수 ${finale.runeMistakes} · 패턴 실패 ${finale.patternFails}.`,
+        "rarity-legendary"
+      );
+      pushFinaleLog(
+        firstClear
+          ? `[개인 기록] 이 기기의 첫 정복자로 ${state.nickname || "무명의 사냥꾼"}의 이름이 재의 왕좌에 새겨졌다.`
+          : `[회상전 완료] 기록을 ${fmt(finale.totalTurns)}막으로 갱신했다.`,
+        "rarity-unique"
+      );
+      log(`[모험 최종장] 회백의 왕 처단 · ${fmt(finale.totalTurns)}막`,"rarity-legendary");
+      isBusy = false;
+      saveState();
+      renderAll();
+      toast("모험 최종장 정복 완료");
+    }
+
+    function renderFinaleRequirements() {
+      if (!els.finaleRequirements || !els.finaleGateBadge || !els.finaleNavMark) return;
+      const rows = finaleRequirementRows();
+      const ready = rows.every(row => row.done);
+
+      els.finaleGateBadge.textContent = state.finale.completed
+        ? "종장 정복 완료"
+        : ready
+          ? "왕좌 입장 가능"
+          : `${rows.filter(row => row.done).length} / ${rows.length} 조건`;
+      els.finaleGateBadge.className = `badge ${state.finale.completed ? "finale-cleared-badge" : ready ? "finale-ready-badge" : ""}`;
+      els.finaleNavMark.textContent = state.finale.completed ? "✓" : ready ? "(!)" : "";
+
+      els.finaleRequirements.innerHTML = `
+        <div class="finale-section-heading">
+          <div>
+            <span>ENTRY REQUIREMENTS</span>
+            <h3>왕좌의 봉인</h3>
+          </div>
+          <strong>${rows.filter(row => row.done).length} / ${rows.length}</strong>
+        </div>
+        <div class="finale-requirement-grid">
+          ${rows.map(row => `
+            <div class="finale-requirement ${row.done ? "done" : "locked"}">
+              <b>${row.done ? "✓" : "×"}</b>
+              <span>${row.label}</span>
+              <strong>${row.value}</strong>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderFinaleFirstClear() {
+      if (!els.finaleFirstClear) return;
+      const local = state.finale.localFirstClear;
+      els.finaleFirstClear.innerHTML = `
+        <div class="finale-first-heading">
+          <span>THE FIRST EMBER</span>
+          <h3>최초의 불씨</h3>
+          <p>전체 유저 중 최초 정복자는 Supabase 공용 기록이 연결된 뒤 단 한 명만 확정됩니다.</p>
+        </div>
+        <div class="finale-global-record">
+          <span>세계 최초 정복자</span>
+          <strong>공용 기록 연결 대기</strong>
+          <small>현재는 기기별 개인 저장만 사용 중입니다.</small>
+        </div>
+        <div class="finale-local-record">
+          <span>이 기기의 첫 정복자</span>
+          ${local ? `
+            <strong>${local.nickname}</strong>
+            <p>${local.date} · ${fmt(local.turns)}막</p>
+            <small>기억 ${local.memoryCorrect}/3 · 낙인 실수 ${local.runeMistakes} · 패턴 실패 ${local.patternFails}</small>
+          ` : `
+            <strong>아직 없음</strong>
+            <p>회백의 왕을 쓰러뜨리면 이곳에 이름이 새겨집니다.</p>
+          `}
+        </div>
+      `;
+    }
+
+    function renderFinalePhaseOne() {
+      const finale = state.finale;
+      const echo = finaleEchoes[finale.phaseOneIndex];
+      return `
+        ${finaleResourceHtml()}
+        <div class="finale-phase-card">
+          <span>PHASE 1</span>
+          <h3>이름 없는 군대</h3>
+          <p>세 명의 실패한 회귀자를 연속으로 상대합니다. 전투 사이에는 소량만 회복되며 패배하면 처음부터 다시 시작합니다.</p>
+          <div class="finale-echo-grid">
+            ${finaleEchoes.map((entry,index) => `
+              <div class="${index < finale.phaseOneIndex ? "done" : index === finale.phaseOneIndex ? "current" : "locked"}">
+                <b>${index+1}</b>
+                <strong>${entry.name}</strong>
+                <small>${entry.trait}</small>
+              </div>
+            `).join("")}
+          </div>
+          <button class="finale-primary" data-finale-echo ${isBusy ? "disabled" : ""}>
+            ${isBusy ? "전투 진행 중…" : `${echo?.name || "잔영"} 도전`}
+          </button>
+        </div>
+      `;
+    }
+
+    function renderFinalePhaseTwo() {
+      const finale = state.finale;
+      const question = finaleCurrentQuestion();
+      return `
+        ${finaleResourceHtml()}
+        <div class="finale-phase-card memory-trial">
+          <span>PHASE 2 · ${finale.memoryIndex+1}/3</span>
+          <h3>네 세력의 기억 재판</h3>
+          <p>정보와 메인 스토리에서 확인한 사실을 판별하십시오. 오답마다 망각이 쌓여 최종 보스전의 공격과 방어가 약해집니다.</p>
+          <blockquote>${question?.statement || "기록을 불러오는 중…"}</blockquote>
+          <div class="finale-answer-buttons">
+            <button data-finale-memory="true">진실</button>
+            <button data-finale-memory="false">거짓</button>
+          </div>
+          <div class="finale-trial-score">정답 ${finale.memoryCorrect} · 오답 ${finale.memoryWrong} · 망각 ${finale.forgetStacks}중첩</div>
+        </div>
+      `;
+    }
+
+    function renderFinalePhaseThree() {
+      const finale = state.finale;
+      const selectedNames = finale.runeSelection.map(id => finalRuneById(id).label);
+      return `
+        ${finaleResourceHtml()}
+        <div class="finale-phase-card finale-rune-trial">
+          <span>PHASE 3</span>
+          <h3>기억의 삼중 낙인</h3>
+          <p>세 단서는 모두 참입니다. 잘못된 순서를 세 번 입력하거나 HP를 모두 잃으면 원정이 붕괴합니다.</p>
+          <div class="finale-rune-hints">
+            ${finaleRuneHints().map((hint,index) => `<div><b>${index+1}</b><span>${hint}</span></div>`).join("")}
+          </div>
+          <div class="finale-rune-grid">
+            ${dailyRiftRunes.map(rune => `
+              <button data-finale-rune="${rune.id}" ${finale.runeSelection.includes(rune.id) ? "disabled" : ""}>
+                <b>${rune.mark}</b>
+                <strong>${rune.label}</strong>
+                <small>${rune.desc}</small>
+              </button>
+            `).join("")}
+          </div>
+          <div class="finale-rune-order">
+            <span>선택 순서</span>
+            <strong>${selectedNames.length ? selectedNames.join(" → ") : "낙인을 순서대로 선택하세요."}</strong>
+          </div>
+          <div class="finale-answer-buttons">
+            <button data-finale-rune-reset ${!finale.runeSelection.length ? "disabled" : ""}>초기화</button>
+            <button class="finale-primary" data-finale-rune-confirm ${finale.runeSelection.length !== 3 ? "disabled" : ""}>낙인 해제 시도</button>
+          </div>
+          <div class="finale-trial-score">실수 ${finale.runeMistakes} / 3 · 오답 피해 최대 HP의 20%</div>
+        </div>
+      `;
+    }
+
+    function renderFinalePhaseFour() {
+      const finale = state.finale;
+      const pattern = finalePatterns[finale.bossPattern];
+      const bossRate = finale.bossMaxHp ? clamp(finale.bossHp/finale.bossMaxHp*100,0,100) : 0;
+      return `
+        ${finaleResourceHtml()}
+        <div class="finale-boss-card">
+          <div class="finale-boss-heading">
+            <div>
+              <span>FINAL PHASE</span>
+              <h3>회백의 왕, 모든 이름의 무덤</h3>
+            </div>
+            <strong>${finale.deleteCountdown > 0 ? `이름 삭제 ${finale.deleteCountdown}막` : `${fmt(finale.bossTurn)}막`}</strong>
+          </div>
+          <div class="finale-boss-hp">
+            <div><span>회백의 왕</span><strong>${fmt(finale.bossHp)} / ${fmt(finale.bossMaxHp)}</strong></div>
+            <i><b style="width:${bossRate}%"></b></i>
+          </div>
+          <div class="finale-omen ${finale.deleteCountdown > 0 ? "enraged" : ""}">
+            <span>${pattern?.name || "징조"}</span>
+            <strong>${pattern?.omen || "왕의 움직임을 읽을 수 없다."}</strong>
+            <p>문장을 읽고 아래 네 행동 중 하나를 선택하십시오. 잘못 대응하면 큰 피해와 영구적인 원정 약화가 발생합니다.</p>
+          </div>
+          <div class="finale-action-grid">
+            <button data-finale-action="attack"><b>⚔</b><strong>공격</strong><small>노출된 핵을 타격</small></button>
+            <button data-finale-action="defend"><b>盾</b><strong>방어</strong><small>회백의 파도를 버팀</small></button>
+            <button data-finale-action="anchor"><b>火</b><strong>불씨 고정</strong><small>이름 강탈을 저지</small></button>
+            <button data-finale-action="release"><b>記</b><strong>기억 해방</strong><small>기억 감옥을 해제</small></button>
+          </div>
+          <div class="finale-boss-stats">
+            <span>패턴 성공 ${finale.patternSuccess}</span>
+            <span>패턴 실패 ${finale.patternFails}</span>
+            <span>연속 대응 ${finale.patternStreak}</span>
+            <span>기억 속박 ${finale.memoryBound}</span>
+          </div>
+          ${finaleLearnedHintsHtml()}
+        </div>
+      `;
+    }
+
+    function bindFinaleButtons() {
+      const content = els.finaleContent;
+      if (!content) return;
+
+      const start = content.querySelector("[data-finale-start]");
+      if (start) start.onclick = startFinaleRun;
+
+      const replay = content.querySelector("[data-finale-replay]");
+      if (replay) replay.onclick = startFinaleRun;
+
+      const echo = content.querySelector("[data-finale-echo]");
+      if (echo) echo.onclick = fightFinaleEcho;
+
+      content.querySelectorAll("[data-finale-memory]").forEach(button => {
+        button.onclick = () => answerFinaleMemory(button.dataset.finaleMemory === "true");
+      });
+
+      content.querySelectorAll("[data-finale-rune]").forEach(button => {
+        button.onclick = () => selectFinaleRune(button.dataset.finaleRune);
+      });
+
+      const runeReset = content.querySelector("[data-finale-rune-reset]");
+      if (runeReset) runeReset.onclick = resetFinaleRunes;
+
+      const runeConfirm = content.querySelector("[data-finale-rune-confirm]");
+      if (runeConfirm) runeConfirm.onclick = confirmFinaleRunes;
+
+      content.querySelectorAll("[data-finale-action]").forEach(button => {
+        button.onclick = () => resolveFinaleBossAction(button.dataset.finaleAction);
+      });
+
+      const abandon = content.querySelector("[data-finale-abandon]");
+      if (abandon) abandon.onclick = abandonFinaleRun;
+    }
+
+    function renderFinale() {
+      if (!els.finaleContent) return;
+      renderFinaleRequirements();
+      renderFinaleFirstClear();
+      const finale = state.finale;
+      const ready = finaleReady();
+
+      if (!finale.active) {
+        els.finaleContent.innerHTML = `
+          <div class="finale-entry-card ${ready ? "ready" : "locked"}">
+            <div class="finale-entry-symbol">王</div>
+            <div>
+              <span>${finale.completed ? "THRONE CONQUERED" : ready ? "THE THRONE IS OPEN" : "THE THRONE IS SEALED"}</span>
+              <h3>${finale.completed ? "회백의 왕을 쓰러뜨린 기록" : "회백의 왕, 모든 이름의 무덤"}</h3>
+              <p>${finale.completed
+                ? `최고 기록 ${fmt(finale.best?.turns || 0)}막. 다시 도전하면 회상전으로 진행되며 세계 최초 기록은 변경되지 않습니다.`
+                : ready
+                  ? "모든 준비가 끝났습니다. 네 개의 페이즈를 중간 체크포인트 없이 연속으로 통과해야 합니다."
+                  : "위 입장 조건을 모두 충족해야 재의 왕좌 아래로 내려갈 수 있습니다."}</p>
+            </div>
+            <button class="finale-primary" ${ready ? (finale.completed ? "data-finale-replay" : "data-finale-start") : "disabled"}>
+              ${finale.completed ? "회상전 다시 도전" : ready ? "모든 이름의 무덤 입장" : "입장 조건 미달"}
+            </button>
+          </div>
+          ${finale.archive?.length ? `
+            <div class="finale-archive">
+              <h3>최근 왕좌 원정</h3>
+              ${finale.archive.map(entry => `
+                <div class="${entry.result === "정복" ? "clear" : "fail"}">
+                  <strong>${entry.result}</strong>
+                  <span>${entry.reason} · ${fmt(entry.turns)}막</span>
+                </div>
+              `).join("")}
+            </div>
+          ` : ""}
+        `;
+      } else {
+        const phaseHtml = finale.phase === 1
+          ? renderFinalePhaseOne()
+          : finale.phase === 2
+            ? renderFinalePhaseTwo()
+            : finale.phase === 3
+              ? renderFinalePhaseThree()
+              : renderFinalePhaseFour();
+
+        els.finaleContent.innerHTML = `
+          ${phaseHtml}
+          <button class="finale-abandon" data-finale-abandon>왕좌 원정 포기</button>
+        `;
+      }
+
+      bindFinaleButtons();
+      renderFinaleLog();
     }
 
     function ensureArena() {
@@ -5541,38 +7880,25 @@ const VERSION = 30;
         : `계약을 켜면 전투 후 최대 ${fmt(care.budget)}G 안에서 필요한 만큼만 사용한다. 골드가 부족하면 보유액까지만 정비한다.`;
     }
 
-    function showDefeatModal({enemy,result,autoStopped}) {
-      const stats = totalStats();
-      els.defeatEnemy.textContent = enemy?.name || "알 수 없는 적";
-      els.defeatTurns.textContent = `${fmt(result?.turns || 0)}턴`;
-      els.defeatHp.textContent = `${fmt(state.hp)} / ${fmt(stats.maxHp)}`;
-      els.defeatMp.textContent = `${fmt(state.mp)} / ${fmt(stats.maxMp)}`;
-      els.defeatSummary.textContent = autoStopped
-        ? "연속 패배를 막기 위해 자동 사냥을 멈췄습니다. 장비와 경험치는 잃지 않았습니다."
-        : "이번 사냥에서 쓰러졌습니다. 장비와 경험치는 잃지 않았으며, 정비 후 다시 도전할 수 있습니다.";
-      els.defeatAutoStop.textContent = autoStopped
-        ? "자동 사냥이 즉시 중지되었습니다."
-        : "수동 사냥 패배가 기록되었습니다.";
-      els.defeatAutoStop.classList.toggle("manual",!autoStopped);
-      els.defeatModal.classList.remove("hidden");
-      document.body.classList.add("modal-open");
+    function showDefeatLog({enemy,result,autoStopped}) {
+      if (!els.defeatLogBanner) return;
 
-      if (navigator.vibrate) {
-        try { navigator.vibrate([120,70,220]); } catch (_) {}
-      }
-    }
+      const enemyName = enemy?.name || "적";
+      const turns = Math.max(0,Number(result?.turns || 0));
+      els.defeatLogTitle.textContent = `${enemyName}에게 패배`;
+      els.defeatLogText.textContent = autoStopped
+        ? `${fmt(turns)}막에서 전투가 종료되어 자동 사냥을 멈췄습니다. 장비와 경험치는 유지됩니다.`
+        : `${fmt(turns)}막에서 전투가 종료되었습니다. 장비와 경험치는 유지됩니다.`;
 
-    function closeDefeatModal() {
-      els.defeatModal.classList.add("hidden");
-      document.body.classList.remove("modal-open");
-    }
+      els.defeatLogBanner.classList.remove("hidden","show");
+      void els.defeatLogBanner.offsetWidth;
+      els.defeatLogBanner.classList.add("show");
 
-    function openRecoveryInventoryAfterDefeat() {
-      closeDefeatModal();
-      switchPage("inventory");
-      setTimeout(() => {
-        document.querySelector(".consumable-shelf")?.scrollIntoView({behavior:"smooth",block:"start"});
-      },80);
+      if (defeatLogTimer) clearTimeout(defeatLogTimer);
+      defeatLogTimer = setTimeout(() => {
+        els.defeatLogBanner.classList.remove("show");
+        setTimeout(() => els.defeatLogBanner.classList.add("hidden"),220);
+      },5000);
     }
 
     async function hunt(inRareMap=false) {
@@ -5745,11 +8071,11 @@ const VERSION = 30;
         if (feverActive) state.feverBattles = Math.max(0,state.feverBattles-1);
 
         defeatNotice = {enemy,result,autoStopped};
-        log(`${enemy.name}에게 패배했습니다.${autoStopped ? " 자동 사냥을 즉시 중지했습니다." : ""} 장비와 경험치는 잃지 않습니다.`, "negative");
+        log(`사냥 실패 · ${enemy.name}에게 패배${autoStopped ? " · 자동 사냥 중지" : ""} · 장비와 경험치 유지`, "negative");
       }
 
       applyFieldCare();
-      if (defeatNotice) showDefeatModal(defeatNotice);
+      if (defeatNotice) showDefeatLog(defeatNotice);
       saveState();
       setTimeout(() => {
         isBusy = false;
@@ -5839,6 +8165,7 @@ const VERSION = 30;
         <button class="class-option" data-class="${id}">
           <div class="class-option-name">${cls.name}</div>
           <div class="class-option-stat">${cls.line} · 주 능력치 ${attributeInfo[cls.main].name}</div>
+          <div class="class-option-memory"><span>과거의 잔향</span>${classMemoryLines[id] || "정체를 알 수 없는 전투의 기억"}</div>
           <div class="class-option-desc">${cls.desc}</div>
           <div class="class-option-passive">${cls.passive}</div>
         </button>
@@ -5858,7 +8185,7 @@ const VERSION = 30;
         Object.entries(cls.start).forEach(([k,v]) => state.attributes[k] += v);
         state.statPoints += 2;
         state.skillPoints += 1;
-        state.logs.push({ text:`${cls.name}의 길을 선택했습니다. 주 능력치 ${attributeInfo[cls.main].name}이 증가하며 시작 스킬 포인트 1을 받았습니다.`, cls:"rarity-epic", at:Date.now() });
+        state.logs.push({ text:`불씨 속에서 ${cls.name}의 기억을 붙잡았다. ${classMemoryLines[id] || ""} · 주 능력치 ${attributeInfo[cls.main].name} 증가 · 스킬 포인트 +1`, cls:"rarity-epic", at:Date.now() });
       }
       const s = totalStats();
       state.hp = s.maxHp;
@@ -6199,6 +8526,8 @@ const VERSION = 30;
       ensureStaminaGame();
       ensureDailyDungeon();
       ensureArena();
+      synchronizeStoryProgress(storyBootComplete);
+      storyBootComplete = true;
       const s = totalStats();
       const maxHp = s.maxHp;
       const maxMp = s.maxMp;
@@ -6256,9 +8585,11 @@ const VERSION = 30;
       renderDailyDungeon();
       renderDailyBoss();
       renderAbyss();
+      renderFinale();
       renderCollectionHall();
       renderMercenaries();
       renderArena();
+      renderOnlineRanking();
       renderSaveVault();
       renderGambleShop();
       renderLog();
@@ -6280,6 +8611,8 @@ const VERSION = 30;
       if (event.key === "Enter") updateNickname();
     };
     els.nicknameConfirmBtn.onclick = confirmNickname;
+    els.storyIntroNextBtn.onclick = advanceStoryIntro;
+    els.storyIntroSkipBtn.onclick = finishStoryIntro;
     els.nicknameModalInput.onkeydown = event => {
       if (event.key === "Enter") confirmNickname();
     };
@@ -6337,8 +8670,6 @@ const VERSION = 30;
     document.addEventListener("keydown",event => {
       if (event.key === "Escape") hideEquipmentTooltip();
     });
-    els.defeatConfirmBtn.onclick = closeDefeatModal;
-    els.defeatInventoryBtn.onclick = openRecoveryInventoryAfterDefeat;
     els.statResetBtn.onclick = resetAllocatedStats;
     els.changeClassBtn.onclick = showClassModal;
     els.potionBtn.onclick = potion;
@@ -6397,6 +8728,7 @@ const VERSION = 30;
       }
 
       state = defaultState();
+      storyBootComplete = false;
       saveState();
       renderAll();
       showNicknameModal();
@@ -6404,6 +8736,12 @@ const VERSION = 30;
     }
 
     els.resetBtn.onclick = deleteCurrentCharacter;
+
+    els.rankingSyncBtn.onclick = () => syncOnlineRanking({silent:false,refresh:true,force:true});
+    els.rankingRefreshBtn.onclick = () => fetchOnlineRanking({silent:false});
+    els.rankingMetricTabs.querySelectorAll("[data-ranking-metric]").forEach(button => {
+      button.onclick = () => selectOnlineMetric(button.dataset.rankingMetric);
+    });
 
     window.addEventListener("beforeunload", saveState);
     setInterval(() => {
@@ -6419,9 +8757,19 @@ const VERSION = 30;
         renderMarket();
         saveState();
       }
+      if (
+        onlineClient &&
+        onlineUser?.id &&
+        state.nickname &&
+        state.classId &&
+        Date.now()-(state.online.lastSyncAt || 0) >= ONLINE_SYNC_INTERVAL
+      ) {
+        scheduleOnlineSync(false);
+      }
     }, 1000);
 
     renderAll();
     updateAutoButton();
+    initializeOnlineRanking();
     if (!state.nickname) showNicknameModal();
     else if (!state.classId) showClassModal();
