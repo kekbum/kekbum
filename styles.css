@@ -7007,3 +7007,1789 @@
     display:none;
   }
 }
+
+
+/* v36: 온라인 랭킹 버튼 스타일 정리 */
+.ranking-status-actions > button,
+.ranking-board-heading > button,
+.ranking-error button {
+  min-height:34px;
+  padding:7px 12px;
+  border:1px solid #45697b;
+  border-radius:8px;
+  color:#cfe5ee;
+  background:
+    linear-gradient(180deg,rgba(63,101,120,.92),rgba(33,56,68,.96));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 1px 0 rgba(0,0,0,.22);
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+
+.ranking-status-actions > button:hover,
+.ranking-board-heading > button:hover,
+.ranking-error button:hover {
+  border-color:#5a8aa1;
+  color:#e4f3f9;
+  background:
+    linear-gradient(180deg,rgba(78,123,145,.96),rgba(38,66,81,.98));
+  transform:translateY(-1px);
+}
+
+.ranking-status-actions > button:active,
+.ranking-board-heading > button:active,
+.ranking-error button:active {
+  transform:translateY(0);
+  filter:brightness(.98);
+}
+
+.ranking-status-actions > button:disabled,
+.ranking-board-heading > button:disabled,
+.ranking-error button:disabled {
+  border-color:#384951;
+  color:#7e939d;
+  background:
+    linear-gradient(180deg,rgba(40,54,62,.92),rgba(25,34,39,.95));
+  box-shadow:none;
+  opacity:.88;
+  cursor:not-allowed;
+  transform:none;
+}
+
+#rankingSyncBtn {
+  border-color:#57788a;
+}
+
+#rankingRefreshBtn {
+  border-color:#4b6f80;
+}
+
+
+/* v37: 온라인 랭킹 가독성 확대 */
+.ranking-kicker {
+  font-size:9px;
+}
+
+.ranking-heading h2 {
+  font-size:21px;
+}
+
+.ranking-heading p {
+  font-size:10px;
+  line-height:1.55;
+}
+
+.ranking-status-badge {
+  font-size:9px !important;
+}
+
+.ranking-status-actions > button,
+.ranking-board-heading > button,
+.ranking-error button {
+  min-height:38px;
+  padding:8px 14px;
+  font-size:10px;
+}
+
+.ranking-notice strong {
+  font-size:12px;
+}
+
+.ranking-notice p {
+  font-size:10px;
+  line-height:1.65;
+}
+
+.ranking-user-id span {
+  font-size:9px;
+}
+
+.ranking-user-id strong {
+  font-size:11px;
+}
+
+.ranking-my-title span {
+  font-size:9px;
+}
+
+.ranking-my-title h3 {
+  font-size:17px;
+}
+
+.ranking-my-title p {
+  font-size:10px;
+}
+
+.ranking-my-stat span {
+  font-size:9px;
+}
+
+.ranking-my-stat strong {
+  font-size:15px;
+}
+
+.ranking-metric-tabs button {
+  min-height:36px;
+  padding:8px 11px;
+  font-size:10px;
+}
+
+.ranking-board-heading span {
+  font-size:9px;
+}
+
+.ranking-board-heading h3 {
+  font-size:16px;
+}
+
+.ranking-table-head {
+  font-size:9px;
+}
+
+.ranking-row {
+  min-height:70px;
+}
+
+.ranking-position strong {
+  font-size:21px;
+}
+
+.ranking-position span {
+  font-size:8px;
+}
+
+.ranking-hunter strong,
+.ranking-class strong {
+  font-size:12px;
+}
+
+.ranking-hunter span,
+.ranking-class span {
+  font-size:9px;
+}
+
+.ranking-hunter em {
+  font-size:8px;
+}
+
+.ranking-score {
+  font-size:15px;
+}
+
+.ranking-updated {
+  font-size:9px;
+}
+
+.ranking-loading,
+.ranking-empty,
+.ranking-error {
+  font-size:11px;
+}
+
+.ranking-empty strong,
+.ranking-error strong {
+  font-size:13px;
+}
+
+@media (max-width:580px) {
+  .ranking-heading h2 {
+    font-size:22px;
+  }
+
+  .ranking-heading p {
+    font-size:11px;
+  }
+
+  .ranking-notice strong {
+    font-size:13px;
+  }
+
+  .ranking-notice p {
+    font-size:11px;
+  }
+
+  .ranking-my-title h3 {
+    font-size:18px;
+  }
+
+  .ranking-my-title p,
+  .ranking-my-stat span,
+  .ranking-user-id span {
+    font-size:10px;
+  }
+
+  .ranking-my-stat strong,
+  .ranking-user-id strong {
+    font-size:14px;
+  }
+
+  .ranking-metric-tabs button {
+    min-height:40px;
+    font-size:11px;
+  }
+
+  .ranking-board-heading h3 {
+    font-size:17px;
+  }
+
+  .ranking-row {
+    min-height:84px;
+    padding-top:11px;
+    padding-bottom:11px;
+  }
+
+  .ranking-position strong {
+    font-size:23px;
+  }
+
+  .ranking-hunter strong,
+  .ranking-class strong {
+    font-size:13px;
+  }
+
+  .ranking-hunter span,
+  .ranking-class span {
+    font-size:10px;
+  }
+
+  .ranking-score {
+    font-size:16px;
+  }
+}
+
+
+/* v38: 이야기 탭 + 모험 최종장 가독성 및 버튼 톤 정리 */
+
+/* 이야기 탭 */
+.story-archive-hero > div:first-child > span,
+.faction-hero > div > span {
+  font-size:9px;
+}
+
+.story-archive-hero h3,
+.faction-hero h3 {
+  font-size:19px;
+}
+
+.story-archive-hero p,
+.faction-hero p {
+  font-size:11px;
+  line-height:1.6;
+}
+
+.story-progress-box strong {
+  font-size:24px;
+}
+
+.story-progress-box span {
+  font-size:10px;
+}
+
+.story-next-objective span {
+  font-size:10px;
+}
+
+.story-next-objective strong {
+  font-size:11px;
+  line-height:1.5;
+}
+
+.story-chapter-list button {
+  min-height:86px;
+  padding:11px 12px;
+}
+
+.story-chapter-list span {
+  font-size:9px;
+}
+
+.story-chapter-list strong {
+  font-size:12px;
+}
+
+.story-chapter-list small {
+  font-size:9px;
+  line-height:1.5;
+}
+
+.story-reader {
+  min-height:500px;
+  padding:20px;
+}
+
+.story-reader-heading > span {
+  font-size:10px;
+}
+
+.story-reader-heading h2 {
+  font-size:24px;
+}
+
+.story-reader-heading p {
+  font-size:11px;
+  line-height:1.6;
+}
+
+.story-reader blockquote {
+  font-size:12px;
+  line-height:1.8;
+}
+
+.story-reader-body p {
+  font-size:12px;
+  line-height:1.9;
+}
+
+.story-reader-locked {
+  font-size:11px;
+}
+
+.story-reader-locked strong {
+  font-size:13px;
+}
+
+.story-replay-button {
+  min-height:38px;
+  padding:7px 14px;
+  border-color:#6e5385 !important;
+  color:#dfc8ef !important;
+  background:linear-gradient(180deg,rgba(86,64,103,.94),rgba(44,35,55,.98)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 1px 0 rgba(0,0,0,.22);
+  font-size:10px;
+  font-weight:900;
+}
+
+.story-replay-button:hover {
+  border-color:#8b68a7 !important;
+  color:#f1e4fb !important;
+  background:linear-gradient(180deg,rgba(104,77,124,.96),rgba(53,40,66,.98)) !important;
+}
+
+.story-intro-kicker {
+  font-size:10px;
+}
+
+.story-intro-card h2 {
+  font-size:27px;
+}
+
+.story-intro-scene p {
+  font-size:14px;
+  line-height:2;
+}
+
+.story-intro-actions button {
+  min-height:44px;
+  padding:8px 14px;
+  border:1px solid #4b4251;
+  border-radius:9px;
+  color:#d1ccd7;
+  background:linear-gradient(180deg,rgba(47,42,52,.95),rgba(25,23,29,.98));
+  font-size:10px;
+  font-weight:900;
+}
+
+.story-intro-actions button:hover {
+  border-color:#665a70;
+  color:#ece7f1;
+  background:linear-gradient(180deg,rgba(60,52,68,.96),rgba(32,28,37,.98));
+}
+
+/* 세력 카드도 함께 확대 */
+.faction-card-top span,
+.faction-card-top small,
+.faction-card-top em,
+.faction-section > span,
+.zone-lore-heading span,
+.zone-lore-heading b,
+.faction-threads span {
+  font-size:9px;
+}
+
+.faction-card-top h3 {
+  font-size:15px;
+}
+
+.faction-card blockquote,
+.faction-section p {
+  font-size:11px;
+  line-height:1.6;
+}
+
+/* 모험 최종장 */
+.finale-kicker {
+  font-size:9px;
+}
+
+.finale-page-heading h2 {
+  font-size:22px;
+}
+
+.finale-page-heading p {
+  font-size:11px;
+  line-height:1.6;
+}
+
+#finaleGateBadge {
+  font-size:10px;
+}
+
+.finale-section-heading span {
+  font-size:9px;
+}
+
+.finale-section-heading h3 {
+  font-size:17px;
+}
+
+.finale-section-heading > strong {
+  font-size:18px;
+}
+
+.finale-requirement {
+  padding:10px 11px;
+}
+
+.finale-requirement b {
+  width:24px;
+  height:24px;
+  font-size:10px;
+}
+
+.finale-requirement span {
+  font-size:11px;
+}
+
+.finale-requirement strong {
+  font-size:10px;
+}
+
+.finale-first-heading > span {
+  font-size:9px;
+}
+
+.finale-first-heading h3 {
+  font-size:19px;
+}
+
+.finale-first-heading p,
+.finale-global-record small,
+.finale-local-record small {
+  font-size:10px;
+  line-height:1.6;
+}
+
+.finale-global-record span,
+.finale-local-record span {
+  font-size:9px;
+}
+
+.finale-global-record strong {
+  font-size:13px;
+}
+
+.finale-local-record strong {
+  font-size:16px;
+}
+
+.finale-local-record p {
+  font-size:10px;
+}
+
+.finale-entry-card span,
+.finale-phase-card > span,
+.finale-boss-heading span {
+  font-size:9px;
+}
+
+.finale-entry-card h3,
+.finale-phase-card h3,
+.finale-boss-heading h3 {
+  font-size:19px;
+}
+
+.finale-entry-card p,
+.finale-phase-card > p {
+  font-size:11px;
+  line-height:1.7;
+}
+
+.finale-primary {
+  min-height:44px;
+  padding:8px 15px;
+  font-size:10px !important;
+}
+
+.finale-resource-grid span {
+  font-size:10px;
+}
+
+.finale-resource-grid strong {
+  font-size:11px;
+}
+
+.finale-echo-grid strong {
+  font-size:11px;
+}
+
+.finale-echo-grid small {
+  font-size:9px;
+  line-height:1.5;
+}
+
+.finale-trial-score {
+  font-size:10px;
+}
+
+.finale-rune-hints span {
+  font-size:11px;
+  line-height:1.6;
+}
+
+.finale-rune-grid strong {
+  font-size:12px;
+}
+
+.finale-rune-grid small {
+  font-size:9px;
+  line-height:1.5;
+}
+
+.finale-rune-order span {
+  font-size:10px;
+}
+
+.finale-rune-order strong {
+  font-size:12px;
+}
+
+.finale-boss-heading > strong {
+  font-size:10px;
+}
+
+.finale-boss-hp span {
+  font-size:10px;
+}
+
+.finale-boss-hp strong {
+  font-size:11px;
+}
+
+.finale-omen span {
+  font-size:10px;
+}
+
+.finale-omen strong {
+  font-size:15px;
+  line-height:1.65;
+}
+
+.finale-omen p {
+  font-size:10px;
+  line-height:1.6;
+}
+
+.finale-action-grid button {
+  min-height:92px;
+}
+
+.finale-action-grid b {
+  font-size:19px;
+}
+
+.finale-action-grid strong {
+  font-size:11px;
+}
+
+.finale-action-grid small {
+  font-size:9px;
+  line-height:1.45;
+}
+
+.finale-boss-stats span {
+  font-size:9px;
+}
+
+.finale-learned > span {
+  font-size:9px;
+}
+
+.finale-learned p {
+  font-size:10px;
+  line-height:1.6;
+}
+
+.finale-abandon {
+  min-height:37px;
+  padding:7px 13px;
+  font-size:10px !important;
+}
+
+.finale-archive h3 {
+  font-size:12px;
+}
+
+.finale-archive strong,
+.finale-archive span {
+  font-size:10px;
+  line-height:1.5;
+}
+
+.finale-log-heading span {
+  font-size:9px;
+}
+
+.finale-log-heading h3 {
+  font-size:15px;
+}
+
+.finale-log-heading > strong {
+  font-size:9px;
+}
+
+.finale-log-line > span {
+  font:800 9px/1.5 monospace;
+}
+
+.finale-log-line p {
+  font-size:11px;
+  line-height:1.65;
+}
+
+.finale-log-empty {
+  font-size:11px;
+}
+
+/* 모바일에서 추가 확대 */
+@media (max-width:760px) {
+  .story-archive-hero h3,
+  .faction-hero h3 {
+    font-size:18px;
+  }
+
+  .story-archive-hero p,
+  .faction-hero p,
+  .story-reader-heading p,
+  .story-reader-body p,
+  .faction-card blockquote,
+  .faction-section p {
+    font-size:11px;
+  }
+
+  .story-chapter-list span,
+  .story-reader-heading > span {
+    font-size:10px;
+  }
+
+  .story-chapter-list strong {
+    font-size:13px;
+  }
+
+  .story-chapter-list small {
+    font-size:10px;
+  }
+
+  .story-intro-card h2 {
+    font-size:24px;
+  }
+
+  .story-intro-scene p {
+    font-size:14px;
+  }
+
+  .finale-page-heading h2 {
+    font-size:23px;
+  }
+
+  .finale-page-heading p,
+  .finale-entry-card p,
+  .finale-phase-card > p,
+  .finale-omen p,
+  .finale-log-line p {
+    font-size:11px;
+  }
+
+  .finale-entry-card h3,
+  .finale-phase-card h3,
+  .finale-boss-heading h3 {
+    font-size:18px;
+  }
+
+  .finale-action-grid strong {
+    font-size:12px;
+  }
+}
+
+@media (max-width:580px) {
+  .story-archive-hero > div:first-child > span,
+  .faction-hero > div > span,
+  .story-progress-box span,
+  .story-next-objective span,
+  .story-chapter-list span,
+  .story-reader-heading > span,
+  .faction-card-top span,
+  .faction-card-top small,
+  .faction-card-top em,
+  .faction-section > span,
+  .zone-lore-heading span,
+  .zone-lore-heading b,
+  .faction-threads span {
+    font-size:10px;
+  }
+
+  .story-archive-hero h3,
+  .faction-hero h3 {
+    font-size:19px;
+  }
+
+  .story-archive-hero p,
+  .faction-hero p,
+  .story-next-objective strong,
+  .story-reader-heading p,
+  .story-reader-body p,
+  .faction-card blockquote,
+  .faction-section p {
+    font-size:12px;
+  }
+
+  .story-progress-box strong {
+    font-size:26px;
+  }
+
+  .story-chapter-list strong {
+    font-size:14px;
+  }
+
+  .story-chapter-list small {
+    font-size:11px;
+  }
+
+  .story-reader-heading h2 {
+    font-size:25px;
+  }
+
+  .story-reader blockquote,
+  .story-reader-locked,
+  .story-reader-locked strong {
+    font-size:12px;
+  }
+
+  .story-replay-button {
+    width:100%;
+    min-height:40px;
+    font-size:11px;
+  }
+
+  .story-intro-card h2 {
+    font-size:25px;
+  }
+
+  .story-intro-actions button {
+    font-size:11px;
+  }
+
+  .finale-kicker,
+  .finale-section-heading span,
+  .finale-first-heading > span,
+  .finale-entry-card span,
+  .finale-phase-card > span,
+  .finale-boss-heading span,
+  .finale-log-heading span {
+    font-size:10px;
+  }
+
+  .finale-page-heading h2 {
+    font-size:24px;
+  }
+
+  .finale-page-heading p,
+  .finale-requirement span,
+  .finale-requirement strong,
+  .finale-first-heading p,
+  .finale-global-record small,
+  .finale-local-record small,
+  .finale-entry-card p,
+  .finale-phase-card > p,
+  .finale-rune-hints span,
+  .finale-omen p,
+  .finale-learned p,
+  .finale-log-line p,
+  .finale-log-empty {
+    font-size:12px;
+  }
+
+  .finale-section-heading h3,
+  .finale-first-heading h3,
+  .finale-entry-card h3,
+  .finale-phase-card h3,
+  .finale-boss-heading h3 {
+    font-size:20px;
+  }
+
+  .finale-section-heading > strong,
+  .finale-local-record strong {
+    font-size:17px;
+  }
+
+  .finale-global-record strong,
+  .finale-resource-grid strong,
+  .finale-rune-order strong,
+  .finale-boss-hp strong,
+  .finale-archive h3 {
+    font-size:13px;
+  }
+
+  .finale-action-grid button {
+    min-height:98px;
+  }
+
+  .finale-action-grid strong {
+    font-size:12px;
+  }
+
+  .finale-action-grid small,
+  .finale-boss-stats span,
+  .finale-archive strong,
+  .finale-archive span,
+  .finale-rune-grid small {
+    font-size:10px;
+  }
+}
+
+
+/* v39: 기록 보관소 + 모험 최종장 게임 UI 정돈 */
+.info-page {
+  position:relative;
+  overflow:hidden;
+  background:
+    linear-gradient(180deg,rgba(24,22,28,.98),rgba(14,15,19,.99));
+}
+
+.info-page::before {
+  content:"";
+  position:absolute;
+  inset:0 0 auto;
+  height:190px;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 82% 0,rgba(127,76,153,.13),transparent 42%),
+    linear-gradient(180deg,rgba(121,79,143,.045),transparent);
+}
+
+.info-page-heading {
+  position:relative;
+  z-index:1;
+  min-height:92px;
+  border-bottom-color:rgba(154,108,181,.22);
+}
+
+.info-page-kicker {
+  display:block;
+  margin-bottom:4px;
+  color:#9a78ad;
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:.18em;
+}
+
+.info-page-heading h2 {
+  font-size:23px;
+}
+
+.info-page-heading p {
+  max-width:650px;
+  font-size:11px;
+  line-height:1.6;
+}
+
+.info-page-seal {
+  display:grid;
+  place-items:center;
+  width:58px;
+  height:58px;
+  border:1px solid rgba(172,122,195,.48);
+  border-radius:12px;
+  color:#dfc6eb;
+  background:
+    linear-gradient(145deg,rgba(88,56,103,.55),rgba(27,24,32,.92));
+  box-shadow:
+    inset 0 0 0 4px rgba(14,15,19,.55),
+    0 10px 25px rgba(0,0,0,.25);
+}
+
+.info-page-seal span {
+  font:900 23px/1 Georgia,serif;
+}
+
+.info-page-seal small {
+  margin-top:3px;
+  color:#917c9d;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+
+.info-tabs {
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:7px;
+  margin:12px 16px 0;
+  padding:7px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:12px;
+  background:rgba(10,11,14,.72);
+}
+
+.info-tab {
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:43px;
+  padding:8px 9px;
+  border:1px solid #38343e;
+  border-radius:8px;
+  color:#8e8994;
+  background:
+    linear-gradient(180deg,rgba(34,32,39,.96),rgba(22,21,26,.98));
+  font-size:10px;
+  font-weight:900;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.info-tab::before {
+  display:grid;
+  place-items:center;
+  width:21px;
+  height:21px;
+  border:1px solid #49424f;
+  border-radius:6px;
+  color:#8d8294;
+  background:#18161c;
+  font:900 10px/1 Georgia,serif;
+}
+
+.info-tab[data-info-target="records"]::before { content:"記"; }
+.info-tab[data-info-target="story"]::before { content:"史"; }
+.info-tab[data-info-target="factions"]::before { content:"勢"; }
+.info-tab[data-info-target="zones"]::before { content:"門"; }
+.info-tab[data-info-target="classes"]::before { content:"職"; }
+.info-tab[data-info-target="drops"]::before { content:"宝"; }
+
+.info-tab:hover {
+  border-color:#67546f;
+  color:#d4cad9;
+  background:
+    linear-gradient(180deg,rgba(48,41,53,.98),rgba(27,24,31,.98));
+}
+
+.info-tab.active {
+  border-color:#8a5da1;
+  color:#eadcf0;
+  background:
+    linear-gradient(180deg,rgba(101,62,120,.80),rgba(54,38,65,.92));
+  box-shadow:
+    inset 0 -3px 0 #b27ac8,
+    0 0 18px rgba(126,72,151,.10);
+}
+
+.info-tab.active::before {
+  border-color:#b27bc8;
+  color:#f1dff8;
+  background:#4d315b;
+}
+
+.info-content {
+  position:relative;
+  z-index:1;
+  padding:0 16px 16px;
+}
+
+/* 이야기 연대기 */
+.story-archive-hero {
+  min-height:102px;
+  padding:16px 18px;
+  border-color:rgba(161,106,187,.38);
+  background:
+    linear-gradient(105deg,rgba(69,42,82,.30),rgba(17,17,22,.96) 55%),
+    #111116;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.story-archive-identity {
+  display:flex;
+  align-items:center;
+  gap:13px;
+  min-width:0;
+}
+
+.story-archive-mark {
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+  width:54px;
+  height:54px;
+  border:1px solid #765184;
+  border-radius:12px;
+  color:#e0c5ec;
+  background:
+    radial-gradient(circle at 35% 25%,rgba(183,119,207,.18),transparent 45%),
+    #251b2c;
+  box-shadow:inset 0 0 0 4px rgba(11,10,14,.30);
+  font:900 22px/1 Georgia,serif;
+}
+
+.story-progress-box {
+  min-width:92px;
+  padding:10px 12px;
+  border-left:1px solid rgba(255,255,255,.08);
+}
+
+.story-progress-box strong {
+  display:flex;
+  align-items:baseline;
+  justify-content:flex-end;
+  gap:4px;
+}
+
+.story-progress-box strong i {
+  color:#715c7c;
+  font-size:13px;
+  font-style:normal;
+}
+
+.story-next-objective {
+  align-items:center;
+  justify-content:flex-start;
+  padding:10px 12px;
+}
+
+.story-objective-icon {
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+  width:30px;
+  height:30px;
+  border:1px solid #725830;
+  border-radius:8px;
+  color:#d5ae62;
+  background:#241c10;
+  font-size:11px;
+}
+
+.story-next-objective > div:last-child {
+  display:grid;
+  flex:1;
+  gap:3px;
+}
+
+.story-next-objective.complete .story-objective-icon {
+  border-color:#4e835d;
+  color:#9cd0a9;
+  background:#14231a;
+}
+
+.story-archive-layout {
+  grid-template-columns:minmax(250px,.42fr) minmax(0,1fr);
+  gap:10px;
+  padding-bottom:18px;
+}
+
+.story-chapter-list {
+  overflow:hidden;
+  gap:0;
+  border:1px solid #38323e;
+  border-radius:11px;
+  background:#0e0e12;
+}
+
+.story-list-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-height:55px;
+  padding:10px 12px;
+  border-bottom:1px solid rgba(255,255,255,.065);
+  background:
+    linear-gradient(180deg,rgba(61,43,70,.36),rgba(24,21,28,.94));
+}
+
+.story-list-heading span {
+  display:block;
+  color:#866a96;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.14em;
+}
+
+.story-list-heading strong {
+  display:block;
+  margin-top:2px;
+  color:#d7cadf;
+  font-size:12px;
+}
+
+.story-list-heading b {
+  padding:4px 7px;
+  border:1px solid #57465f;
+  border-radius:999px;
+  color:#ae98b9;
+  background:rgba(0,0,0,.17);
+  font-size:8px;
+}
+
+.story-chapter-list button {
+  grid-template-columns:35px minmax(0,1fr) auto;
+  align-items:center;
+  gap:9px;
+  min-height:81px;
+  padding:9px 10px;
+  border:0;
+  border-bottom:1px solid rgba(255,255,255,.045);
+  border-radius:0;
+  background:#111116;
+}
+
+.story-chapter-list button:last-child {
+  border-bottom:0;
+}
+
+.story-chapter-list button:hover:not(:disabled) {
+  border-color:transparent;
+  background:rgba(91,55,108,.13);
+}
+
+.story-chapter-list button.active {
+  border-color:transparent;
+  background:
+    linear-gradient(90deg,rgba(115,70,135,.25),rgba(46,30,55,.18));
+  box-shadow:
+    inset 3px 0 0 #b277ca,
+    inset 0 0 22px rgba(104,61,124,.08);
+}
+
+.story-chapter-index {
+  display:grid;
+  place-items:center;
+  width:31px;
+  height:31px;
+  border:1px solid #49434e;
+  border-radius:8px;
+  color:#77707c;
+  background:#17161b;
+  font:900 9px/1 monospace;
+}
+
+.story-chapter-list button.active .story-chapter-index {
+  border-color:#9463aa;
+  color:#e3c8ef;
+  background:#422c4d;
+}
+
+.story-chapter-copy {
+  display:grid;
+  gap:3px;
+  min-width:0;
+}
+
+.story-chapter-copy small {
+  color:#80678f;
+  font-size:8px;
+  font-style:normal;
+  font-weight:950;
+}
+
+.story-chapter-copy strong {
+  overflow:hidden;
+  color:#d1c8d6;
+  font-size:11px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.story-chapter-copy em {
+  overflow:hidden;
+  color:#706a74;
+  font-size:8px;
+  font-style:normal;
+  line-height:1.45;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.story-chapter-state {
+  padding:3px 5px;
+  border:1px solid #464048;
+  border-radius:999px;
+  color:#77707a;
+  font-size:6px;
+  letter-spacing:.05em;
+}
+
+.story-chapter-list button.active .story-chapter-state {
+  border-color:#7d588d;
+  color:#d5b8e2;
+}
+
+.story-chapter-list button.locked .story-chapter-index {
+  color:#514d54;
+}
+
+.story-reader {
+  position:relative;
+  overflow:hidden;
+  padding:0 20px 20px;
+  border-color:#42384a;
+  background:
+    radial-gradient(circle at 100% 0,rgba(132,74,161,.10),transparent 40%),
+    linear-gradient(180deg,#151219,#101015);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.story-reader-ribbon {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 -20px 18px;
+  padding:9px 14px;
+  border-bottom:1px solid rgba(255,255,255,.055);
+  background:rgba(66,43,77,.22);
+}
+
+.story-reader-ribbon span {
+  color:#8f6ea0;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.16em;
+}
+
+.story-reader-ribbon strong {
+  color:#bca8c7;
+  font:900 9px/1 monospace;
+}
+
+.story-reader-heading {
+  padding-bottom:12px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+.story-reader blockquote {
+  position:relative;
+  margin:15px 0 17px;
+  padding:13px 15px 13px 17px;
+  border:1px solid rgba(171,124,62,.20);
+  border-left:3px solid #a87942;
+  border-radius:0 8px 8px 0;
+  background:
+    linear-gradient(90deg,rgba(113,74,34,.13),rgba(32,25,20,.06));
+}
+
+.story-reader-body {
+  display:grid;
+  gap:0;
+}
+
+.story-reader-body p {
+  display:grid;
+  grid-template-columns:26px minmax(0,1fr);
+  gap:9px;
+  margin:0;
+  padding:12px 0;
+  border-bottom:1px dashed rgba(255,255,255,.055);
+}
+
+.story-reader-body p:last-child {
+  border-bottom:0;
+}
+
+.story-reader-body p i {
+  color:#6d5a76;
+  font:900 8px/1.75 monospace;
+  font-style:normal;
+}
+
+.story-reader-body p span {
+  min-width:0;
+}
+
+.story-replay-button {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  margin-top:14px;
+}
+
+/* 모험 최종장 상단 상태 */
+.finale-page {
+  overflow:hidden;
+}
+
+.finale-page-heading {
+  position:relative;
+  min-height:96px;
+  background:
+    radial-gradient(circle at 92% 0,rgba(182,119,37,.12),transparent 40%);
+}
+
+.finale-overview {
+  display:grid;
+  grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(105px,.45fr));
+  gap:8px;
+  margin:14px 16px 9px;
+  padding:10px;
+  border:1px solid #443b32;
+  border-radius:12px;
+  background:
+    linear-gradient(105deg,rgba(74,52,28,.20),rgba(16,16,20,.96) 52%);
+}
+
+.finale-overview.ready {
+  border-color:rgba(177,127,57,.45);
+}
+
+.finale-overview.active {
+  border-color:rgba(151,92,178,.48);
+  background:
+    linear-gradient(105deg,rgba(81,45,99,.22),rgba(17,16,21,.96) 55%);
+}
+
+.finale-overview.cleared {
+  border-color:rgba(84,143,101,.45);
+  background:
+    linear-gradient(105deg,rgba(37,91,54,.18),rgba(16,17,19,.96) 55%);
+}
+
+.finale-overview-title,
+.finale-overview-stat {
+  padding:10px 11px;
+  border:1px solid rgba(255,255,255,.055);
+  border-radius:8px;
+  background:rgba(0,0,0,.15);
+}
+
+.finale-overview-title span,
+.finale-overview-stat span {
+  color:#8d7048;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.12em;
+}
+
+.finale-overview-title h3 {
+  margin:4px 0;
+  color:#dfccb0;
+  font-size:16px;
+}
+
+.finale-overview-title p {
+  margin:0;
+  color:#887f75;
+  font-size:9px;
+  line-height:1.55;
+}
+
+.finale-overview-stat {
+  display:grid;
+  align-content:center;
+  justify-items:end;
+  gap:3px;
+}
+
+.finale-overview-stat strong {
+  color:#e1c27d;
+  font-size:17px;
+}
+
+.finale-overview-stat small {
+  color:#756d64;
+  font-size:7px;
+}
+
+.finale-overview.active .finale-overview-title span,
+.finale-overview.active .finale-overview-stat span {
+  color:#9671aa;
+}
+
+.finale-overview.active .finale-overview-stat strong {
+  color:#d7b7e6;
+}
+
+.finale-overview.cleared .finale-overview-title span,
+.finale-overview.cleared .finale-overview-stat span {
+  color:#6f9c7a;
+}
+
+.finale-overview.cleared .finale-overview-stat strong {
+  color:#a7d3b1;
+}
+
+.finale-route {
+  margin:0 16px 10px;
+  padding:11px 12px;
+  border:1px solid #37333a;
+  border-radius:10px;
+  background:#0e0f13;
+}
+
+.finale-route-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.finale-route-heading span {
+  color:#7d6544;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.14em;
+}
+
+.finale-route-heading strong {
+  color:#9a8c78;
+  font-size:9px;
+}
+
+.finale-route-track {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:7px;
+}
+
+.finale-route-step {
+  position:relative;
+  display:grid;
+  grid-template-columns:29px minmax(0,1fr);
+  align-items:center;
+  gap:7px;
+  min-height:52px;
+  padding:7px 8px;
+  border:1px solid #37343a;
+  border-radius:8px;
+  background:#111116;
+}
+
+.finale-route-step b {
+  display:grid;
+  place-items:center;
+  width:27px;
+  height:27px;
+  border:1px solid #4b454d;
+  border-radius:50%;
+  color:#746e77;
+  font-size:8px;
+}
+
+.finale-route-step strong {
+  display:block;
+  overflow:hidden;
+  color:#9e98a1;
+  font-size:9px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.finale-route-step small {
+  display:block;
+  margin-top:2px;
+  overflow:hidden;
+  color:#656069;
+  font-size:7px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.finale-route-step i {
+  position:absolute;
+  right:-8px;
+  top:50%;
+  z-index:2;
+  width:8px;
+  height:1px;
+  background:#49434a;
+}
+
+.finale-route-step:last-child i {
+  display:none;
+}
+
+.finale-route-step.current {
+  border-color:#86599c;
+  background:
+    linear-gradient(135deg,rgba(93,55,109,.24),rgba(19,17,23,.97));
+  box-shadow:inset 0 -2px 0 #9e68b5;
+}
+
+.finale-route-step.current b {
+  border-color:#9b69b0;
+  color:#e0c6eb;
+  background:#3f2a49;
+}
+
+.finale-route-step.current strong {
+  color:#d9c9df;
+}
+
+.finale-route-step.complete {
+  border-color:rgba(77,137,92,.39);
+  background:rgba(37,81,48,.10);
+}
+
+.finale-route-step.complete b {
+  border-color:#558962;
+  color:#9dcca8;
+}
+
+.finale-route-step.complete strong {
+  color:#a5c5ac;
+}
+
+/* 최종장 본문 카드 정돈 */
+.finale-requirements,
+.finale-first-flame,
+.finale-entry-card,
+.finale-phase-card,
+.finale-boss-card,
+.finale-log-panel {
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.finale-requirement-grid {
+  gap:8px;
+}
+
+.finale-requirement {
+  min-height:48px;
+}
+
+.finale-first-flame {
+  position:relative;
+  overflow:hidden;
+}
+
+.finale-first-flame::after {
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:3px;
+  background:linear-gradient(#e1b65d,#765127);
+}
+
+.finale-entry-card {
+  min-height:112px;
+}
+
+.finale-primary,
+.finale-answer-buttons button,
+.finale-action-grid button,
+.finale-rune-grid button,
+.finale-abandon {
+  transition:border-color .15s ease,background .15s ease,transform .15s ease,color .15s ease;
+}
+
+.finale-answer-buttons button {
+  border:1px solid #55485d;
+  border-radius:8px;
+  color:#c9bbcF;
+  background:
+    linear-gradient(180deg,rgba(55,46,61,.95),rgba(29,26,33,.98));
+  font-size:10px;
+  font-weight:900;
+}
+
+.finale-answer-buttons button:hover:not(:disabled) {
+  border-color:#816890;
+  color:#eee2f3;
+  background:
+    linear-gradient(180deg,rgba(73,56,83,.98),rgba(37,31,43,.98));
+  transform:translateY(-1px);
+}
+
+.finale-log {
+  scrollbar-color:#5d465f #151318;
+}
+
+@media (max-width:900px) {
+  .info-tabs {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+
+  .finale-overview {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+
+  .finale-overview-title {
+    grid-column:1/-1;
+  }
+
+  .finale-route-track {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .finale-route-step:nth-child(2) i {
+    display:none;
+  }
+}
+
+@media (max-width:760px) {
+  .info-page-seal {
+    display:none;
+  }
+
+  .story-archive-layout {
+    grid-template-columns:1fr;
+  }
+
+  .story-chapter-list {
+    max-height:420px;
+    overflow-y:auto;
+  }
+
+  .story-reader {
+    min-height:430px;
+  }
+
+  .finale-route-step strong {
+    font-size:10px;
+  }
+
+  .finale-route-step small {
+    font-size:8px;
+  }
+}
+
+@media (max-width:580px) {
+  .info-tabs {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    margin-left:11px;
+    margin-right:11px;
+  }
+
+  .info-tab {
+    justify-content:flex-start;
+    min-height:46px;
+    font-size:11px;
+  }
+
+  .info-content {
+    padding-left:11px;
+    padding-right:11px;
+  }
+
+  .story-archive-hero {
+    gap:10px;
+    margin-left:0;
+    margin-right:0;
+    padding:13px;
+  }
+
+  .story-archive-identity {
+    align-items:flex-start;
+  }
+
+  .story-archive-mark {
+    width:45px;
+    height:45px;
+    font-size:19px;
+  }
+
+  .story-progress-box {
+    justify-items:start;
+    padding:9px 0 0;
+    border-top:1px solid rgba(255,255,255,.07);
+    border-left:0;
+  }
+
+  .story-next-objective {
+    margin-left:0;
+    margin-right:0;
+  }
+
+  .story-archive-layout {
+    padding-left:0;
+    padding-right:0;
+  }
+
+  .story-chapter-list button {
+    min-height:88px;
+  }
+
+  .story-chapter-copy strong {
+    font-size:13px;
+  }
+
+  .story-chapter-copy em {
+    font-size:10px;
+  }
+
+  .story-reader {
+    padding:0 15px 17px;
+  }
+
+  .story-reader-ribbon {
+    margin-left:-15px;
+    margin-right:-15px;
+  }
+
+  .story-reader-body p {
+    grid-template-columns:24px minmax(0,1fr);
+  }
+
+  .finale-overview,
+  .finale-route {
+    margin-left:11px;
+    margin-right:11px;
+  }
+
+  .finale-overview {
+    grid-template-columns:1fr 1fr;
+  }
+
+  .finale-overview-title {
+    grid-column:1/-1;
+  }
+
+  .finale-overview-stat:last-child {
+    grid-column:1/-1;
+  }
+
+  .finale-overview-stat {
+    justify-items:start;
+  }
+
+  .finale-route-track {
+    grid-template-columns:1fr;
+  }
+
+  .finale-route-step i {
+    right:auto;
+    top:auto;
+    bottom:-8px;
+    left:21px;
+    width:1px;
+    height:8px;
+  }
+
+  .finale-route-step:nth-child(2) i {
+    display:block;
+  }
+
+  .finale-route-step:last-child i {
+    display:none;
+  }
+
+  .finale-route-step {
+    min-height:60px;
+  }
+}

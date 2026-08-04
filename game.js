@@ -1,4 +1,4 @@
-const VERSION = 35;
+const VERSION = 40;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -145,7 +145,7 @@ const VERSION = 35;
     const recoveryItems = {
       health: { id:"health", name:"붉은 치유약", desc:"최대 체력의 42%를 회복합니다.", hpRate:.42, sell:24, color:"positive" },
       mana: { id:"mana", name:"푸른 마나약", desc:"최대 마나의 48%를 회복합니다.", mpRate:.48, sell:26, color:"rarity-rare" },
-      stamina: { id:"stamina", name:"녹빛 활력 물약", desc:"활력을 12 회복합니다.", staminaFlat:12, sell:38, color:"rarity-set" },
+      stamina: { id:"stamina", name:"녹색 활력 물약", desc:"활력을 12 회복합니다.", staminaFlat:12, sell:38, color:"rarity-set" },
       elixir: { id:"elixir", name:"보랏빛 혼합 영약", desc:"체력과 마나를 각각 34% 회복합니다.", hpRate:.34, mpRate:.34, sell:48, color:"rarity-epic" }
     };
 
@@ -1626,6 +1626,8 @@ const VERSION = 35;
       dailyHistory: document.getElementById("dailyHistory"),
       finaleNavMark: document.getElementById("finaleNavMark"),
       finaleGateBadge: document.getElementById("finaleGateBadge"),
+      finaleOverview: document.getElementById("finaleOverview"),
+      finaleRoute: document.getElementById("finaleRoute"),
       finaleRequirements: document.getElementById("finaleRequirements"),
       finaleFirstClear: document.getElementById("finaleFirstClear"),
       finaleContent: document.getElementById("finaleContent"),
@@ -2336,33 +2338,50 @@ const VERSION = 35;
 
       els.infoContent.innerHTML = `
         <div class="story-archive-hero">
-          <div>
-            <span>THE ASHEN CHRONICLE</span>
-            <h3>${state.nickname || "무명의 사냥꾼"}의 잃어버린 연대기</h3>
-            <p>죽은 자의 전리품에서 되찾은 기억이 메인 스토리로 기록됩니다.</p>
+          <div class="story-archive-identity">
+            <div class="story-archive-mark" aria-hidden="true">記</div>
+            <div>
+              <span>THE ASHEN CHRONICLE</span>
+              <h3>${state.nickname || "무명의 사냥꾼"}의 잃어버린 연대기</h3>
+              <p>죽은 자의 전리품에서 되찾은 기억이 시간순으로 복원됩니다.</p>
+            </div>
           </div>
           <div class="story-progress-box">
-            <strong>${unlockedCount} / ${storyChapters.length}</strong>
-            <span>이야기 해금</span>
+            <strong>${unlockedCount}<i>/</i>${storyChapters.length}</strong>
+            <span>복원된 기록</span>
           </div>
         </div>
 
         <div class="story-next-objective ${nextLocked ? "" : "complete"}">
-          <span>${nextLocked ? "다음 이야기 조건" : "현재 공개된 이야기 완료"}</span>
-          <strong>${nextLocked ? nextLocked.unlockHint : "최종 선택의 봉인은 추후 메인 스토리에서 열립니다."}</strong>
+          <div class="story-objective-icon" aria-hidden="true">${nextLocked ? "◆" : "✓"}</div>
+          <div>
+            <span>${nextLocked ? "다음 기억 복원 조건" : "현재 공개 기록 복원 완료"}</span>
+            <strong>${nextLocked ? nextLocked.unlockHint : "최종 선택의 봉인은 추후 메인 스토리에서 열립니다."}</strong>
+          </div>
         </div>
 
         <div class="story-archive-layout">
           <aside class="story-chapter-list">
-            ${storyChapters.map(chapter => {
+            <div class="story-list-heading">
+              <div>
+                <span>MEMORY INDEX</span>
+                <strong>기억 목록</strong>
+              </div>
+              <b>${unreadIds.length ? `새 기록 ${unreadIds.length}` : "확인 완료"}</b>
+            </div>
+            ${storyChapters.map((chapter,index) => {
               const unlocked = storyUnlocked(chapter.id);
               const unread = unlocked && !(state.story.read || []).includes(chapter.id);
               return `
                 <button class="${selected?.id === chapter.id ? "active" : ""} ${unlocked ? "unlocked" : "locked"}"
                   data-story-chapter="${chapter.id}" ${unlocked ? "" : "disabled"}>
-                  <span>${chapter.act}${unread ? " · 새 기록" : ""}</span>
-                  <strong>${unlocked ? chapter.title : "봉인된 기억"}</strong>
-                  <small>${unlocked ? chapter.subtitle : chapter.unlockHint}</small>
+                  <i class="story-chapter-index">${String(index+1).padStart(2,"0")}</i>
+                  <span class="story-chapter-copy">
+                    <small>${chapter.act}${unread ? " · 새 기록" : ""}</small>
+                    <strong>${unlocked ? chapter.title : "봉인된 기억"}</strong>
+                    <em>${unlocked ? chapter.subtitle : chapter.unlockHint}</em>
+                  </span>
+                  <b class="story-chapter-state">${unlocked ? unread ? "NEW" : "OPEN" : "LOCK"}</b>
                 </button>
               `;
             }).join("")}
@@ -2370,6 +2389,10 @@ const VERSION = 35;
 
           <article class="story-reader">
             ${selected ? `
+              <div class="story-reader-ribbon">
+                <span>MEMORY RESTORED</span>
+                <strong>${String(storyChapters.findIndex(chapter => chapter.id === selected.id)+1).padStart(2,"0")} / ${String(storyChapters.length).padStart(2,"0")}</strong>
+              </div>
               <div class="story-reader-heading">
                 <span>${selected.act}</span>
                 <h2>${selected.title}</h2>
@@ -2377,9 +2400,9 @@ const VERSION = 35;
               </div>
               <blockquote>${selected.quote}</blockquote>
               <div class="story-reader-body">
-                ${selected.body.map(paragraph => `<p>${paragraph}</p>`).join("")}
+                ${selected.body.map((paragraph,index) => `<p><i>${String(index+1).padStart(2,"0")}</i><span>${paragraph}</span></p>`).join("")}
               </div>
-              ${selected.id === "prologue" ? `<button class="story-replay-button" id="storyReplayIntroBtn">시작 장면 다시 보기</button>` : ""}
+              ${selected.id === "prologue" ? `<button class="story-replay-button" id="storyReplayIntroBtn"><span>↻</span> 시작 장면 다시 보기</button>` : ""}
             ` : `
               <div class="story-reader-locked">
                 <strong>아직 되찾은 이야기가 없습니다.</strong>
@@ -4565,7 +4588,7 @@ const VERSION = 35;
             <div class="info-card"><h3>일반 장비의 접사 슬롯</h3><p>일반 0+0 · 고급 1+0 · 희귀 1+1 · 영웅 2+2 · 전설 3+3 구조다.</p><p>전설 장비는 최대 접두사 3개와 접미사 3개, 총 6개의 접사를 가진다. 이름에는 가장 강한 접두사와 접미사만 표시된다.</p></div>
             <div class="info-card"><h3 class="rarity-set">세트·유니크 완성도</h3><p>세트와 유니크는 일반 접사를 갖지 않는 대신 일반 장비에 없는 전용 효과가 붙는다.</p><p>결함품·불완전·온전·완벽·각성으로 완성도가 나뉘며 능력치와 고유 효과 출력이 달라진다.</p></div>
             <div class="info-card"><h3 class="rarity-unique">대박과 꽝</h3><p>같은 이름의 유물도 감정 결과가 다르다. 좋은 기반 유니크의 각성품은 대박이고, 약한 유니크의 결함품은 실제 꽝에 가깝다.</p><p>누더기 행상단 세트와 무딘 왕의 식칼·금 간 모래시계는 의도적으로 약하거나 대가가 있는 특별 전리품이다.</p></div>
-            <div class="info-card"><h3 class="rarity-set">녹빛 활력 물약</h3><p>몬스터의 회복품 드롭에서 낮은 확률로 등장하며 한 병당 활력 12를 회복한다.</p><p>수동 사냥에서는 즉시 사용·보관·판매를 고를 수 있고 연속 사냥에서는 자동으로 보관된다.</p></div>
+            <div class="info-card"><h3 class="rarity-set">녹색 활력 물약</h3><p>몬스터의 회복품 드롭에서 낮은 확률로 등장하며 한 병당 활력 12를 회복한다.</p><p>수동 사냥에서는 즉시 사용·보관·판매를 고를 수 있고 연속 사냥에서는 자동으로 보관된다.</p></div>
             <div class="info-card"><h3>숫자 봉인</h3><p>활력 야영지에서 하루 5판까지 정상 보상을 받는 세 자리 숫자야구다. 최대 8번 안에 맞히면 시도 횟수에 따라 활력을 얻는다.</p><p>5판 이후에는 무제한 연습 대전으로 전환되며 활력 보상은 10%, 활력 물약은 지급되지 않는다. 연습 결과는 보상 대전 연승에 영향을 주지 않는다.</p></div>
             <div class="info-card"><h3>초보자 가이드 미션</h3><p>현재 단계 하나만 활성화되며 목표를 달성하고 보상을 받으면 다음 단계가 열린다. 가이드가 열리기 전에 수행한 장착·스탯 배분·수동 저장도 자동으로 인정된다.</p><p>사냥·장착·능력치·기술·도감·의뢰·야영지·일일 균열·저장까지 차례로 익힌다.</p></div>
             <div class="info-card"><h3 class="rarity-epic">몬스터 스킬북</h3><p>몬스터는 낮은 확률로 특정 직업과 기술이 적힌 스킬북을 떨어뜨린다. 정예·보스·희귀 지도에서 확률이 높다.</p><p>낡은 책은 Lv.5, 온전한 책은 Lv.8, 금단의 책은 Lv.10까지 기술을 직접 올릴 수 있다.</p></div>
@@ -5214,7 +5237,7 @@ const VERSION = 35;
       const result = grantGameStamina(reward,rewardSource,{allowOverflowPotion:!practice});
       if (potionReward) {
         state.consumables.stamina = (state.consumables.stamina || 0)+potionReward;
-        log(`빠른 해독 보너스 · 녹빛 활력 물약 +${potionReward}`,"rarity-set");
+        log(`빠른 해독 보너스 · 녹색 활력 물약 +${potionReward}`,"rarity-set");
       }
 
       game.active = false;
@@ -6501,6 +6524,90 @@ const VERSION = 35;
       toast("모험 최종장 정복 완료");
     }
 
+    function renderFinaleOverview() {
+      if (!els.finaleOverview || !els.finaleRoute) return;
+      const finale = state.finale;
+      const ready = finaleReady();
+      const status = finale.active
+        ? "왕좌 원정 진행 중"
+        : finale.completed
+          ? "회백의 왕 처단 완료"
+          : ready
+            ? "왕좌의 봉인 해제"
+            : "왕좌 봉인 유지";
+      const statusClass = finale.active
+        ? "active"
+        : finale.completed
+          ? "cleared"
+          : ready
+            ? "ready"
+            : "locked";
+
+      els.finaleOverview.innerHTML = `
+        <div class="finale-overview-title">
+          <span>THRONE EXPEDITION STATUS</span>
+          <h3>${status}</h3>
+          <p>${finale.active
+            ? `${finalePhaseName()} 진행 중 · 중간 저장 없이 모든 페이즈를 통과해야 합니다.`
+            : finale.completed
+              ? "정복 기록은 남아 있으며 회상전으로 다시 도전할 수 있습니다."
+              : ready
+                ? "모든 준비가 끝났습니다. 재의 왕좌 아래로 내려갈 수 있습니다."
+                : "입장 조건을 완성하면 회백의 왕 본체에 도전할 수 있습니다."}</p>
+        </div>
+        <div class="finale-overview-stat">
+          <span>도전 횟수</span>
+          <strong>${fmt(finale.attempts || 0)}</strong>
+          <small>왕좌 원정</small>
+        </div>
+        <div class="finale-overview-stat">
+          <span>정복 횟수</span>
+          <strong>${fmt(state.records.finalBossWins || 0)}</strong>
+          <small>회백의 왕</small>
+        </div>
+        <div class="finale-overview-stat">
+          <span>최고 기록</span>
+          <strong>${state.records.finalBossBestTurns ? `${fmt(state.records.finalBossBestTurns)}막` : "—"}</strong>
+          <small>${statusClass === "cleared" ? "개인 최단" : "미정복"}</small>
+        </div>
+      `;
+      els.finaleOverview.className = `finale-overview ${statusClass}`;
+
+      const phase = finale.active ? finale.phase : finale.completed ? 5 : 0;
+      const stages = [
+        {number:1,name:"이름 없는 군대",desc:"세 잔영 연속전"},
+        {number:2,name:"기억 재판",desc:"네 세력의 진실"},
+        {number:3,name:"삼중 낙인",desc:"재·불씨·이름"},
+        {number:4,name:"회백의 왕",desc:"수동 패턴 전투"}
+      ];
+
+      els.finaleRoute.innerHTML = `
+        <div class="finale-route-heading">
+          <span>EXPEDITION ROUTE</span>
+          <strong>${finale.active ? `${phase} / 4 페이즈` : finale.completed ? "전 구간 정복" : "원정 경로"}</strong>
+        </div>
+        <div class="finale-route-track">
+          ${stages.map(stage => {
+            const stageClass = finale.completed || phase > stage.number
+              ? "complete"
+              : phase === stage.number
+                ? "current"
+                : "locked";
+            return `
+              <div class="finale-route-step ${stageClass}">
+                <b>${stage.number}</b>
+                <div>
+                  <strong>${stage.name}</strong>
+                  <small>${stage.desc}</small>
+                </div>
+                <i></i>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
     function renderFinaleRequirements() {
       if (!els.finaleRequirements || !els.finaleGateBadge || !els.finaleNavMark) return;
       const rows = finaleRequirementRows();
@@ -6717,6 +6824,7 @@ const VERSION = 35;
 
     function renderFinale() {
       if (!els.finaleContent) return;
+      renderFinaleOverview();
       renderFinaleRequirements();
       renderFinaleFirstClear();
       const finale = state.finale;
