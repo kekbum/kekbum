@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=43">
+  <link rel="stylesheet" href="styles.css?v=44">
 
 </head>
 <body>
@@ -56,6 +56,7 @@
             <button class="top-tab" data-page-target="attendance">출석부 <span id="attendanceNavMark"></span></button>
             <button class="top-tab" data-page-target="collection">수집·업적 <span id="achievementNavMark"></span></button>
             <button class="top-tab" data-page-target="savevault">세이브·기기 이전</button>
+            <button class="top-tab inquiry-nav-tab" data-page-target="inquiry">문의·제안 <span id="inquiryNavMark"></span></button>
           </div>
         </section>
 
@@ -825,6 +826,137 @@
       </div>
     </section>
 
+
+    <section class="page" data-page="inquiry">
+      <div class="panel wide-panel inquiry-page">
+        <div class="page-heading inquiry-page-heading">
+          <div>
+            <span class="inquiry-kicker">HUNTER SUPPORT DESK · BETA</span>
+            <h2>문의·제안 게시판</h2>
+            <p>게임 중 발견한 문제와 개선 의견을 기록국에 전달합니다.</p>
+          </div>
+          <div class="inquiry-connection">
+            <span class="badge inquiry-status-badge" id="inquiryConnectionBadge">서버 연결 준비</span>
+            <button id="inquiryRefreshBtn">새로고침</button>
+          </div>
+        </div>
+
+        <section class="inquiry-guide">
+          <div>
+            <strong>공개 테스트 문의창구</strong>
+            <p>개인정보, 비밀번호, 인증번호는 적지 마세요. 운영자 답변은 작성자만 확인하며, 공개에 동의한 답변만 공개 답변 목록에 표시됩니다.</p>
+          </div>
+          <div class="inquiry-limit">
+            <span>작성 제한</span>
+            <strong>1시간 최대 5건</strong>
+          </div>
+        </section>
+
+        <div class="inquiry-tabs" id="inquiryTabs">
+          <button class="active" data-inquiry-tab="write">문의 작성</button>
+          <button data-inquiry-tab="mine">내 문의 <span id="myInquiryCount"></span></button>
+          <button data-inquiry-tab="public">공개 답변 <span id="publicInquiryCount"></span></button>
+        </div>
+
+        <section class="inquiry-panel" id="inquiryWritePanel">
+          <div class="inquiry-form-heading">
+            <div>
+              <span>NEW REPORT</span>
+              <h3>새 문의 작성</h3>
+              <p>가능하면 발생 상황과 기대한 동작을 함께 적어 주세요.</p>
+            </div>
+            <span class="badge" id="inquiryFormState">작성 가능</span>
+          </div>
+
+          <form class="inquiry-form" id="inquiryForm">
+            <label>
+              <span>분류</span>
+              <select id="inquiryCategory">
+                <option value="bug">버그 신고</option>
+                <option value="balance">밸런스 의견</option>
+                <option value="ui">UI·편의 개선</option>
+                <option value="content">콘텐츠 제안</option>
+                <option value="save">저장·기기 이전</option>
+                <option value="ranking">온라인 랭킹</option>
+                <option value="other">기타 문의</option>
+              </select>
+            </label>
+
+            <label>
+              <span>제목</span>
+              <input id="inquiryTitle" type="text" maxlength="80" placeholder="문의 내용을 짧게 요약해 주세요." />
+              <small><b id="inquiryTitleCount">0</b> / 80</small>
+            </label>
+
+            <label class="inquiry-content-label">
+              <span>내용</span>
+              <textarea id="inquiryContent" maxlength="2000" rows="9" placeholder="발생한 상황, 기대한 동작, 실제 동작을 자세히 적어 주세요."></textarea>
+              <small><b id="inquiryContentCount">0</b> / 2000</small>
+            </label>
+
+            <label class="inquiry-public-consent">
+              <input id="inquiryPublicConsent" type="checkbox" />
+              <span>
+                <strong>답변 공개에 동의</strong>
+                <small>운영자가 유용하다고 판단한 경우 닉네임을 숨기고 질문과 답변을 공개할 수 있습니다.</small>
+              </span>
+            </label>
+
+            <section class="inquiry-context-preview">
+              <div>
+                <span>자동 첨부 정보</span>
+                <strong id="inquiryContextSummary">게임 버전과 캐릭터 상태를 준비 중입니다.</strong>
+              </div>
+              <p>브라우저 종류, 화면 크기, 게임 버전, 레벨, 직업, 현재 페이지가 함께 전달됩니다. 저장 파일과 장비 전체 정보는 전송하지 않습니다.</p>
+            </section>
+
+            <button class="inquiry-submit-button" id="inquirySubmitBtn" type="submit">문의 등록</button>
+          </form>
+        </section>
+
+        <section class="inquiry-panel hidden" id="inquiryMinePanel">
+          <div class="inquiry-list-heading">
+            <div>
+              <span>MY REPORTS</span>
+              <h3>내 문의</h3>
+            </div>
+            <select id="inquiryMineFilter">
+              <option value="all">전체 상태</option>
+              <option value="received">접수됨</option>
+              <option value="reviewing">검토 중</option>
+              <option value="answered">답변 완료</option>
+              <option value="closed">종료</option>
+            </select>
+          </div>
+          <div class="inquiry-list" id="inquiryMineList">
+            <div class="inquiry-loading">내 문의를 불러오는 중입니다.</div>
+          </div>
+        </section>
+
+        <section class="inquiry-panel hidden" id="inquiryPublicPanel">
+          <div class="inquiry-list-heading">
+            <div>
+              <span>PUBLIC ANSWERS</span>
+              <h3>공개 답변</h3>
+            </div>
+            <select id="inquiryPublicCategory">
+              <option value="all">전체 분류</option>
+              <option value="bug">버그 신고</option>
+              <option value="balance">밸런스 의견</option>
+              <option value="ui">UI·편의 개선</option>
+              <option value="content">콘텐츠 제안</option>
+              <option value="save">저장·기기 이전</option>
+              <option value="ranking">온라인 랭킹</option>
+              <option value="other">기타 문의</option>
+            </select>
+          </div>
+          <div class="inquiry-list" id="inquiryPublicList">
+            <div class="inquiry-loading">공개 답변을 불러오는 중입니다.</div>
+          </div>
+        </section>
+      </div>
+    </section>
+
     <section class="page" data-page="savevault">
       <div class="panel wide-panel">
         <div class="page-heading">
@@ -1144,7 +1276,7 @@
   </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="game.js?v=43"></script>
+  <script src="game.js?v=44"></script>
 
 </body>
 </html>

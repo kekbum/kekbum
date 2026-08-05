@@ -1,4 +1,4 @@
-const VERSION = 43;
+const VERSION = 44;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -6,6 +6,7 @@ const VERSION = 43;
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_V7n7cCKOLHTctrtE5pZ_vA_co7Fu_0j";
     const ONLINE_SYNC_INTERVAL = 60000;
     const ONLINE_RANKING_LIMIT = 100;
+    const INQUIRY_PAGE_LIMIT = 50;
 
 
     function createSaveIdentityId() {
@@ -31,6 +32,24 @@ const VERSION = 43;
       spd: { name:"속도", short:"속도", desc:"연속공격·회피" }
     };
 
+
+
+    const inquiryCategories = {
+      bug:{label:"버그 신고",icon:"!"},
+      balance:{label:"밸런스 의견",icon:"⚖"},
+      ui:{label:"UI·편의 개선",icon:"◇"},
+      content:{label:"콘텐츠 제안",icon:"＋"},
+      save:{label:"저장·기기 이전",icon:"↔"},
+      ranking:{label:"온라인 랭킹",icon:"★"},
+      other:{label:"기타 문의",icon:"?"}
+    };
+
+    const inquiryStatuses = {
+      received:{label:"접수됨",className:"received"},
+      reviewing:{label:"검토 중",className:"reviewing"},
+      answered:{label:"답변 완료",className:"answered"},
+      closed:{label:"종료",className:"closed"}
+    };
 
     const onlineRankingMetrics = {
       power:{
@@ -1219,6 +1238,12 @@ const VERSION = 43;
         lastTransferAt:0,
         lastError:""
       },
+      inquiry: {
+        tab:"write",
+        lastFetchAt:0,
+        lastSeenAnswerAt:0,
+        lastError:""
+      },
       attributes: { str:5, vit:5, int:5, spi:5, luck:5, spd:5 },
       statPoints: 0,
       statResetCount: 0,
@@ -1458,6 +1483,10 @@ const VERSION = 43;
     let activeTransferCode = "";
     let activeTransferCodeExpiresAt = 0;
     let mobileNavExpanded = false;
+    let inquirySubmitBusy = false;
+    let inquiryFetchBusy = false;
+    let inquiryMineRows = [];
+    let inquiryPublicRows = [];
 
     const els = {
       heroTitle: document.getElementById("heroTitle"),
@@ -1713,6 +1742,29 @@ const VERSION = 43;
       rankingMetricTitle: document.getElementById("rankingMetricTitle"),
       rankingRefreshBtn: document.getElementById("rankingRefreshBtn"),
       rankingList: document.getElementById("rankingList"),
+      inquiryNavMark: document.getElementById("inquiryNavMark"),
+      inquiryConnectionBadge: document.getElementById("inquiryConnectionBadge"),
+      inquiryRefreshBtn: document.getElementById("inquiryRefreshBtn"),
+      inquiryTabs: document.getElementById("inquiryTabs"),
+      inquiryWritePanel: document.getElementById("inquiryWritePanel"),
+      inquiryMinePanel: document.getElementById("inquiryMinePanel"),
+      inquiryPublicPanel: document.getElementById("inquiryPublicPanel"),
+      myInquiryCount: document.getElementById("myInquiryCount"),
+      publicInquiryCount: document.getElementById("publicInquiryCount"),
+      inquiryFormState: document.getElementById("inquiryFormState"),
+      inquiryForm: document.getElementById("inquiryForm"),
+      inquiryCategory: document.getElementById("inquiryCategory"),
+      inquiryTitle: document.getElementById("inquiryTitle"),
+      inquiryTitleCount: document.getElementById("inquiryTitleCount"),
+      inquiryContent: document.getElementById("inquiryContent"),
+      inquiryContentCount: document.getElementById("inquiryContentCount"),
+      inquiryPublicConsent: document.getElementById("inquiryPublicConsent"),
+      inquiryContextSummary: document.getElementById("inquiryContextSummary"),
+      inquirySubmitBtn: document.getElementById("inquirySubmitBtn"),
+      inquiryMineFilter: document.getElementById("inquiryMineFilter"),
+      inquiryMineList: document.getElementById("inquiryMineList"),
+      inquiryPublicCategory: document.getElementById("inquiryPublicCategory"),
+      inquiryPublicList: document.getElementById("inquiryPublicList"),
       saveVaultHero: document.getElementById("saveVaultHero"),
       saveSlotGrid: document.getElementById("saveSlotGrid"),
       saveOwnershipPanel: document.getElementById("saveOwnershipPanel"),
@@ -1772,6 +1824,14 @@ const VERSION = 43;
               : fresh.saveIdentity.id,
             status:"checking",
             lastCheckedAt:0,
+            lastError:""
+          },
+          inquiry: {
+            ...fresh.inquiry,
+            ...(loaded.inquiry || {}),
+            tab:["write","mine","public"].includes(loaded.inquiry?.tab)
+              ? loaded.inquiry.tab
+              : "write",
             lastError:""
           },
           attributes: { ...fresh.attributes, ...(loaded.attributes || {}) },
@@ -2601,6 +2661,318 @@ const VERSION = 43;
       saveState({skipOnline:true});
       renderOnlineRanking();
       fetchOnlineRanking({silent:true});
+    }
+
+    function inquiryCategoryMeta(category) {
+      return inquiryCategories[category] || inquiryCategories.other;
+    }
+
+    function inquiryStatusMeta(status) {
+      return inquiryStatuses[status] || inquiryStatuses.received;
+    }
+
+    function inquiryConnectionStatus(status,text) {
+      if (!els.inquiryConnectionBadge) return;
+      els.inquiryConnectionBadge.textContent = text;
+      els.inquiryConnectionBadge.className = `badge inquiry-status-badge ${status || ""}`;
+    }
+
+    function inquiryDateLabel(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "-";
+      return date.toLocaleString("ko-KR",{
+        year:"numeric",
+        month:"2-digit",
+        day:"2-digit",
+        hour:"2-digit",
+        minute:"2-digit"
+      });
+    }
+
+    function buildInquiryContext() {
+      const currentPage = document.querySelector(".page.active")?.dataset.page || "unknown";
+      const viewport = `${window.innerWidth}×${window.innerHeight}`;
+      return {
+        game_version:VERSION,
+        character_level:Number(state.level || 1),
+        class_id:state.classId || "unknown",
+        power:Math.round(Number(power() || 0)),
+        current_page:currentPage,
+        viewport,
+        user_agent:String(navigator.userAgent || "").slice(0,500),
+        save_id:state.saveIdentity?.id || null
+      };
+    }
+
+    function renderInquiryContext() {
+      if (!els.inquiryContextSummary) return;
+      const context = buildInquiryContext();
+      els.inquiryContextSummary.textContent =
+        `v${VERSION} · ${classes[state.classId]?.name || "직업 미선택"} · Lv.${context.character_level} · 전투력 ${fmt(context.power)} · 화면 ${context.viewport}`;
+    }
+
+    function inquiryHasUnreadAnswer(row) {
+      if (!row?.answered_at || row.status !== "answered") return false;
+      return new Date(row.answered_at).getTime() > Number(state.inquiry.lastSeenAnswerAt || 0);
+    }
+
+    function updateInquiryNavMark() {
+      if (!els.inquiryNavMark) return;
+      const unread = inquiryMineRows.filter(inquiryHasUnreadAnswer).length;
+      els.inquiryNavMark.textContent = unread ? String(Math.min(99,unread)) : "";
+    }
+
+    function selectInquiryTab(tab,{fetch=true}={}) {
+      if (!["write","mine","public"].includes(tab)) return;
+      state.inquiry.tab = tab;
+      saveState({skipOnline:true});
+
+      els.inquiryTabs?.querySelectorAll("[data-inquiry-tab]").forEach(button => {
+        button.classList.toggle("active",button.dataset.inquiryTab === tab);
+      });
+      els.inquiryWritePanel.classList.toggle("hidden",tab !== "write");
+      els.inquiryMinePanel.classList.toggle("hidden",tab !== "mine");
+      els.inquiryPublicPanel.classList.toggle("hidden",tab !== "public");
+
+      if (tab === "write") renderInquiryContext();
+      if (tab === "mine") {
+        state.inquiry.lastSeenAnswerAt = Date.now();
+        saveState({skipOnline:true});
+        updateInquiryNavMark();
+        renderMyInquiries();
+        if (fetch) fetchInquiries({mine:true,publicRows:false,silent:true});
+      }
+      if (tab === "public") {
+        renderPublicInquiries();
+        if (fetch) fetchInquiries({mine:false,publicRows:true,silent:true});
+      }
+    }
+
+    function inquiryFormCounts() {
+      if (!els.inquiryTitleCount) return;
+      els.inquiryTitleCount.textContent = String(els.inquiryTitle.value.length);
+      els.inquiryContentCount.textContent = String(els.inquiryContent.value.length);
+    }
+
+    function clearInquiryForm() {
+      els.inquiryCategory.value = "bug";
+      els.inquiryTitle.value = "";
+      els.inquiryContent.value = "";
+      els.inquiryPublicConsent.checked = false;
+      inquiryFormCounts();
+      renderInquiryContext();
+    }
+
+    async function submitInquiry(event) {
+      event?.preventDefault();
+      if (inquirySubmitBusy) return;
+      if (!onlineClient || !onlineUser?.id) await initializeOnlineRanking();
+      if (!onlineClient || !onlineUser?.id) return toast("문의 서버에 연결하지 못했습니다.");
+
+      const category = els.inquiryCategory.value;
+      const title = els.inquiryTitle.value.trim();
+      const content = els.inquiryContent.value.trim();
+
+      if (!inquiryCategories[category]) return toast("문의 분류를 선택해 주세요.");
+      if (title.length < 4) return toast("제목을 4자 이상 입력해 주세요.");
+      if (content.length < 10) return toast("문의 내용을 10자 이상 입력해 주세요.");
+
+      inquirySubmitBusy = true;
+      els.inquirySubmitBtn.disabled = true;
+      els.inquiryFormState.textContent = "등록 중";
+      inquiryConnectionStatus("syncing","문의 등록 중");
+
+      try {
+        const context = buildInquiryContext();
+        const {data,error} = await onlineClient.rpc("submit_game_inquiry",{
+          p_category:category,
+          p_title:title,
+          p_content:content,
+          p_public_consent:!!els.inquiryPublicConsent.checked,
+          p_nickname:cleanNickname(state.nickname || "") || "무명의 사냥꾼",
+          p_context:context
+        });
+        if (error) throw error;
+
+        const result = normalizeRpcResult(data);
+        if (!result.ok) {
+          if (result.reason === "rate_limited") {
+            const minutes = Math.max(1,Math.ceil(Number(result.retry_after_seconds || 60)/60));
+            throw new Error(`작성 횟수가 초과되었습니다. 약 ${minutes}분 후 다시 등록해 주세요.`);
+          }
+          throw new Error("문의를 등록하지 못했습니다.");
+        }
+
+        clearInquiryForm();
+        inquiryConnectionStatus("connected","문의 서버 연결됨");
+        toast(`문의 #${result.ticket_no}가 접수되었습니다.`);
+        await fetchInquiries({mine:true,publicRows:false,silent:true});
+        selectInquiryTab("mine",{fetch:false});
+      } catch (error) {
+        state.inquiry.lastError = error?.message || "문의 등록 실패";
+        saveState({skipOnline:true});
+        inquiryConnectionStatus("error","등록 실패");
+        toast(state.inquiry.lastError);
+      } finally {
+        inquirySubmitBusy = false;
+        els.inquirySubmitBtn.disabled = false;
+        els.inquiryFormState.textContent = "작성 가능";
+      }
+    }
+
+    async function fetchInquiries({mine=true,publicRows=true,silent=false}={}) {
+      if (inquiryFetchBusy) return false;
+      if (!onlineClient || !onlineUser?.id) await initializeOnlineRanking();
+      if (!onlineClient) return false;
+
+      inquiryFetchBusy = true;
+      inquiryConnectionStatus("syncing","문의 불러오는 중");
+      if (els.inquiryRefreshBtn) els.inquiryRefreshBtn.disabled = true;
+
+      try {
+        if (mine) {
+          const {data,error} = await onlineClient
+            .from("game_inquiries")
+            .select("id,ticket_no,category,title,content,status,answer,public_consent,is_public,created_at,updated_at,answered_at")
+            .eq("user_id",onlineUser.id)
+            .order("created_at",{ascending:false})
+            .limit(INQUIRY_PAGE_LIMIT);
+          if (error) throw error;
+          inquiryMineRows = Array.isArray(data) ? data : [];
+        }
+
+        if (publicRows) {
+          const {data,error} = await onlineClient
+            .from("game_inquiries")
+            .select("id,ticket_no,category,title,content,status,answer,created_at,answered_at")
+            .eq("is_public",true)
+            .eq("status","answered")
+            .order("answered_at",{ascending:false})
+            .limit(INQUIRY_PAGE_LIMIT);
+          if (error) throw error;
+          inquiryPublicRows = Array.isArray(data) ? data : [];
+        }
+
+        state.inquiry.lastFetchAt = Date.now();
+        state.inquiry.lastError = "";
+        saveState({skipOnline:true});
+        inquiryConnectionStatus("connected","문의 서버 연결됨");
+        renderInquiryBoard();
+        if (!silent) toast("문의 목록을 새로 불러왔습니다.");
+        return true;
+      } catch (error) {
+        state.inquiry.lastError = error?.message || "문의 목록 조회 실패";
+        saveState({skipOnline:true});
+        inquiryConnectionStatus("error","조회 실패");
+        renderInquiryBoard();
+        if (!silent) toast("문의 목록을 불러오지 못했습니다.");
+        return false;
+      } finally {
+        inquiryFetchBusy = false;
+        if (els.inquiryRefreshBtn) els.inquiryRefreshBtn.disabled = false;
+      }
+    }
+
+    function renderInquiryCard(row,{publicView=false}={}) {
+      const category = inquiryCategoryMeta(row.category);
+      const status = inquiryStatusMeta(row.status);
+      const answer = String(row.answer || "").trim();
+      return `
+        <article class="inquiry-card ${status.className} ${inquiryHasUnreadAnswer(row) ? "unread" : ""}">
+          <header>
+            <div class="inquiry-card-icon">${escapeOnlineHtml(category.icon)}</div>
+            <div class="inquiry-card-title">
+              <span>${escapeOnlineHtml(category.label)} · #${fmt(Number(row.ticket_no || 0))}</span>
+              <h4>${escapeOnlineHtml(row.title || "제목 없음")}</h4>
+              <small>${inquiryDateLabel(row.created_at)}</small>
+            </div>
+            <span class="inquiry-card-status ${status.className}">${escapeOnlineHtml(status.label)}</span>
+          </header>
+          <div class="inquiry-question">
+            <span>문의 내용</span>
+            <p>${escapeOnlineHtml(row.content || "").replaceAll("\n","<br>")}</p>
+          </div>
+          ${answer ? `
+            <div class="inquiry-answer">
+              <span>기록국 답변 · ${inquiryDateLabel(row.answered_at)}</span>
+              <p>${escapeOnlineHtml(answer).replaceAll("\n","<br>")}</p>
+            </div>
+          ` : `
+            <div class="inquiry-waiting">
+              ${row.status === "reviewing" ? "담당자가 내용을 검토하고 있습니다." : "답변을 기다리고 있습니다."}
+            </div>
+          `}
+          ${!publicView ? `
+            <footer>
+              <span>${row.public_consent ? "공개 답변 동의" : "작성자만 공개"}</span>
+              <span>${row.is_public ? "공개 답변 등록됨" : "비공개 문의"}</span>
+            </footer>
+          ` : ""}
+        </article>
+      `;
+    }
+
+    function renderMyInquiries() {
+      if (!els.inquiryMineList) return;
+      const filter = els.inquiryMineFilter?.value || "all";
+      const rows = filter === "all"
+        ? inquiryMineRows
+        : inquiryMineRows.filter(row => row.status === filter);
+
+      els.myInquiryCount.textContent = inquiryMineRows.length ? String(inquiryMineRows.length) : "";
+      updateInquiryNavMark();
+
+      if (!rows.length) {
+        els.inquiryMineList.innerHTML = `
+          <div class="inquiry-empty">
+            <strong>${inquiryMineRows.length ? "이 상태의 문의가 없습니다." : "아직 작성한 문의가 없습니다."}</strong>
+            <span>문의 작성 탭에서 첫 번째 의견을 남길 수 있습니다.</span>
+          </div>
+        `;
+        return;
+      }
+
+      els.inquiryMineList.innerHTML = rows.map(row => renderInquiryCard(row)).join("");
+    }
+
+    function renderPublicInquiries() {
+      if (!els.inquiryPublicList) return;
+      const category = els.inquiryPublicCategory?.value || "all";
+      const rows = category === "all"
+        ? inquiryPublicRows
+        : inquiryPublicRows.filter(row => row.category === category);
+
+      els.publicInquiryCount.textContent = inquiryPublicRows.length ? String(inquiryPublicRows.length) : "";
+
+      if (!rows.length) {
+        els.inquiryPublicList.innerHTML = `
+          <div class="inquiry-empty">
+            <strong>아직 공개된 답변이 없습니다.</strong>
+            <span>반복되는 문의와 중요한 안내가 답변 완료 후 이곳에 공개됩니다.</span>
+          </div>
+        `;
+        return;
+      }
+
+      els.inquiryPublicList.innerHTML = rows.map(row => renderInquiryCard(row,{publicView:true})).join("");
+    }
+
+    function renderInquiryBoard() {
+      if (!els.inquiryTabs) return;
+      selectInquiryTab(state.inquiry.tab || "write",{fetch:false});
+      renderInquiryContext();
+      inquiryFormCounts();
+      renderMyInquiries();
+      renderPublicInquiries();
+
+      if (state.inquiry.lastError) {
+        inquiryConnectionStatus("error","문의 서버 오류");
+      } else if (onlineClient && onlineUser?.id) {
+        inquiryConnectionStatus("connected","문의 서버 연결됨");
+      } else {
+        inquiryConnectionStatus("connecting","서버 연결 준비");
+      }
     }
 
     function storyChapterById(id) {
@@ -4473,6 +4845,10 @@ const VERSION = 43;
       if (page === "ranking") {
         renderOnlineRanking();
         fetchOnlineRanking({silent:true});
+      }
+      if (page === "inquiry") {
+        renderInquiryBoard();
+        fetchInquiries({mine:true,publicRows:true,silent:true});
       }
       if (page === "savevault") renderSaveVault();
       if (page === "gamble") renderGambleShop();
@@ -9184,6 +9560,7 @@ const VERSION = 43;
       renderMercenaries();
       renderArena();
       renderOnlineRanking();
+      renderInquiryBoard();
       renderSaveVault();
       renderGambleShop();
       renderLog();
@@ -9352,6 +9729,16 @@ const VERSION = 43;
       button.onclick = () => selectOnlineMetric(button.dataset.rankingMetric);
     });
 
+    els.inquiryTabs.querySelectorAll("[data-inquiry-tab]").forEach(button => {
+      button.onclick = () => selectInquiryTab(button.dataset.inquiryTab);
+    });
+    els.inquiryForm.onsubmit = submitInquiry;
+    els.inquiryTitle.oninput = inquiryFormCounts;
+    els.inquiryContent.oninput = inquiryFormCounts;
+    els.inquiryRefreshBtn.onclick = () => fetchInquiries({mine:true,publicRows:true,silent:false});
+    els.inquiryMineFilter.onchange = renderMyInquiries;
+    els.inquiryPublicCategory.onchange = renderPublicInquiries;
+
     window.addEventListener("beforeunload", saveState);
     setInterval(() => {
       recoverOffline();
@@ -9382,6 +9769,7 @@ const VERSION = 43;
     }, 1000);
 
     renderAll();
+    fetchInquiries({mine:true,publicRows:true,silent:true});
     updateAutoButton();
     initializeOnlineRanking();
     if (!state.nickname) showNicknameModal();
