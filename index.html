@@ -4,20 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=44">
+  <link rel="stylesheet" href="styles.css?v=50">
 
 </head>
 <body>
   <div class="app">
     <header class="game-header">
-      <div class="brand-lockup">
+      <button
+        class="brand-lockup brand-home-button"
+        id="brandHomeButton"
+        type="button"
+        title="사냥터 초기 화면으로 이동"
+        aria-label="사냥터 초기 화면으로 이동"
+      >
         <div class="brand-crest"><span>✦</span></div>
         <div>
           <div class="brand-kicker">ASHEN RELICS</div>
           <h1>잿빛 전리품</h1>
           <div class="subtitle">끝없는 균열. 단 하나의 전리품.</div>
         </div>
-      </div>
+      </button>
       <div class="save-state" id="saveState">기록 준비 중</div>
     </header>
 
@@ -29,66 +35,82 @@
       </div>
     </div>
 
-    <nav class="top-tabs" id="topTabs" aria-label="게임 메뉴">
-      <div class="top-tabs-primary">
-        <button class="top-tab active" data-page-target="hunt">사냥터</button>
-        <button class="top-tab" data-page-target="inventory">전리품 가방 <span id="inventoryNavCount"></span></button>
-        <button class="top-tab" data-page-target="character">능력치</button>
-        <button class="top-tab" data-page-target="skills">기술서 <span id="skillNavCount"></span></button>
-        <button class="top-tab" data-page-target="quests">의뢰 <span id="questNavCount"></span></button>
-        <button class="nav-more-toggle" id="navMoreToggle" type="button" aria-expanded="false" aria-controls="mobileNavExpanded">
-          <span id="navMoreLabel">전체 메뉴</span>
-          <b id="navMoreIcon">＋</b>
-        </button>
+    <nav class="top-tabs top-tabs-category-layout" id="topTabs" aria-label="게임 메뉴">
+      <div class="top-section-tabs" id="topSectionTabs">
+        <button class="top-section-tab active" data-nav-section="hunt">사냥터</button>
+        <button class="top-section-tab" data-nav-section="info">정보</button>
+        <button class="top-section-tab" data-nav-section="board">게시판</button>
+        <button class="top-section-tab" data-nav-section="quest">퀘스트</button>
+        <button class="top-section-tab" data-nav-section="arena">투기장</button>
+        <button class="top-section-tab" data-nav-section="event">이벤트</button>
       </div>
 
-      <div class="top-tabs-expanded" id="mobileNavExpanded">
-        <section class="nav-menu-group">
-          <div class="nav-menu-group-title">
-            <span>GROWTH & RECORDS</span>
-            <strong>성장·기록</strong>
-          </div>
-          <div class="nav-menu-group-buttons">
-            <button class="top-tab" data-page-target="guide">초보자 길잡이 <span id="guideNavMark"></span></button>
-            <button class="top-tab" data-page-target="info">기록 보관소</button>
-            <button class="top-tab" data-page-target="codex">몬스터 도감 <span id="codexNavCount"></span></button>
-            <button class="top-tab" data-page-target="bounties">현상수배 <span id="bountyNavCount"></span></button>
-            <button class="top-tab" data-page-target="attendance">출석부 <span id="attendanceNavMark"></span></button>
-            <button class="top-tab" data-page-target="collection">수집·업적 <span id="achievementNavMark"></span></button>
-            <button class="top-tab" data-page-target="savevault">세이브·기기 이전</button>
-            <button class="top-tab inquiry-nav-tab" data-page-target="inquiry">문의·제안 <span id="inquiryNavMark"></span></button>
-          </div>
-        </section>
+      <div class="top-subnav-shell">
+        <div class="top-subnav active" data-nav-group="hunt">
+          <button class="top-tab active" data-page-target="hunt">사냥 메인</button>
+          <button class="top-tab" data-page-target="inventory">전리품 가방 <span id="inventoryNavCount"></span></button>
+          <button class="top-tab" data-page-target="character">능력치</button>
+          <button class="top-tab" data-page-target="skills">기술서 <span id="skillNavCount"></span></button>
+          <button class="top-tab" data-page-target="mercenary">용병단</button>
+          <button class="top-tab" data-page-target="market">암시장</button>
+          <button class="top-tab" data-page-target="gamble">도박 상점</button>
+        </div>
 
-        <section class="nav-menu-group">
-          <div class="nav-menu-group-title">
-            <span>EXPEDITIONS</span>
-            <strong>원정·도전</strong>
-          </div>
-          <div class="nav-menu-group-buttons">
-            <button class="top-tab" data-page-target="staminacamp">활력 야영지 <span id="staminaCampNavMark"></span></button>
-            <button class="top-tab" data-page-target="daily">오늘의 균열</button>
-            <button class="top-tab" data-page-target="dailyboss">일일 보스 <span id="dailyBossNavMark"></span></button>
-            <button class="top-tab" data-page-target="abyss">끝없는 심연</button>
-            <button class="top-tab finale-nav-tab" data-page-target="finale">모험 최종장 <span id="finaleNavMark"></span></button>
-            <button class="top-tab" data-page-target="arena">투기장 <span id="arenaNavCount"></span></button>
-          </div>
-        </section>
+        <div class="top-subnav" data-nav-group="info">
+          <button class="top-tab" data-page-target="guide">초보자 길잡이 <span id="guideNavMark"></span></button>
+          <button class="top-tab" data-page-target="info">정보</button>
+          <button class="top-tab" data-page-target="codex">몬스터 도감 <span id="codexNavCount"></span></button>
+          <button class="top-tab" data-page-target="collection">수집·업적 <span id="achievementNavMark"></span></button>
+          <button class="top-tab" data-page-target="savevault">세이브·기기 이전</button>
+        </div>
 
-        <section class="nav-menu-group">
-          <div class="nav-menu-group-title">
-            <span>COMPANIONS & TRADE</span>
-            <strong>동료·거래</strong>
-          </div>
-          <div class="nav-menu-group-buttons">
-            <button class="top-tab" data-page-target="mercenary">용병단</button>
-            <button class="top-tab online-ranking-tab" data-page-target="ranking">온라인 랭킹 <span id="rankingNavMark"></span></button>
-            <button class="top-tab" data-page-target="gamble">도박 상점</button>
-            <button class="top-tab" data-page-target="market">암시장</button>
-          </div>
-        </section>
+        <div class="top-subnav" data-nav-group="board">
+          <button class="top-tab inquiry-nav-tab" data-page-target="inquiry">게시판 <span id="inquiryNavMark"></span></button>
+          <button class="top-tab online-ranking-tab" data-page-target="ranking">온라인 랭킹 <span id="rankingNavMark"></span></button>
+        </div>
+
+        <div class="top-subnav" data-nav-group="quest">
+          <button class="top-tab" data-page-target="quests">의뢰 <span id="questNavCount"></span></button>
+          <button class="top-tab" data-page-target="bounties">현상수배 <span id="bountyNavCount"></span></button>
+          <button class="top-tab" data-page-target="staminacamp">활력 야영지 <span id="staminaCampNavMark"></span></button>
+        </div>
+
+        <div class="top-subnav" data-nav-group="arena">
+          <button class="top-tab" data-page-target="arena">투기장 <span id="arenaNavCount"></span></button>
+        </div>
+
+        <div class="top-subnav" data-nav-group="event">
+          <button class="top-tab" data-page-target="attendance">출석부 <span id="attendanceNavMark"></span></button>
+          <button class="top-tab" data-page-target="daily">오늘의 균열</button>
+          <button class="top-tab" data-page-target="dailyboss">일일 보스 <span id="dailyBossNavMark"></span></button>
+          <button class="top-tab" data-page-target="abyss">끝없는 심연</button>
+          <button class="top-tab finale-nav-tab" data-page-target="finale">모험 최종장 <span id="finaleNavMark"></span></button>
+        </div>
       </div>
     </nav>
+
+
+    <section class="global-resource-hud" aria-label="핵심 모험 자원">
+      <button class="core-resource-card stamina-resource-card" id="globalStaminaCard" type="button">
+        <span class="core-resource-icon">⚡</span>
+        <span class="core-resource-copy">
+          <small>사냥 행동력</small>
+          <strong id="globalStaminaValue">활력 60 / 60</strong>
+          <em id="globalStaminaHint">사냥에 사용 · 10분마다 회복</em>
+        </span>
+        <b>야영지 ›</b>
+      </button>
+
+      <button class="core-resource-card dust-resource-card" id="globalDustCard" type="button">
+        <span class="core-resource-icon">✦</span>
+        <span class="core-resource-copy">
+          <small>장비 재련 재료</small>
+          <strong id="globalDustValue">별가루 0</strong>
+          <em>장비 분해로 획득 · 접사 수치 재련에 사용</em>
+        </span>
+        <b>사용처 ›</b>
+      </button>
+    </section>
 
     <section class="page active" data-page="hunt">
     <main class="grid">
@@ -303,10 +325,35 @@
         <div class="page-heading">
           <div>
             <h2>초보자 길잡이</h2>
-            <p>한 단계씩 따라가며 사냥·장비·기술·도감·의뢰·저장을 익힌다.</p>
+            <p>한 단계씩 따라가며 사냥·장비·핵심 자원·기술·도감·의뢰·저장을 익힌다.</p>
           </div>
-          <span class="badge" id="guideSummaryBadge">0 / 10 완료</span>
+          <span class="badge" id="guideSummaryBadge">0 / 11 완료</span>
         </div>
+
+        <section class="guide-resource-school">
+          <article class="guide-resource-card stamina">
+            <div class="guide-resource-symbol">⚡</div>
+            <div>
+              <span>CORE RESOURCE 01</span>
+              <h3>활력은 사냥 행동력</h3>
+              <p>일반 사냥은 1, 희귀 지도는 3을 소모한다. 10분마다 1씩 회복하며 활력 물약과 야영지에서도 보충할 수 있다.</p>
+            </div>
+            <strong id="guideStaminaValue">60 / 60</strong>
+            <button id="guideStaminaBtn" type="button">활력 야영지로 이동</button>
+          </article>
+
+          <article class="guide-resource-card dust">
+            <div class="guide-resource-symbol">✦</div>
+            <div>
+              <span>CORE RESOURCE 02</span>
+              <h3>별가루는 장비 재련 재료</h3>
+              <p>필요 없는 장비를 분해하거나 의뢰·균열 보상으로 얻는다. 전리품 가방에서 장비의 접사 종류는 유지하고 수치만 다시 뽑을 때 사용한다.</p>
+            </div>
+            <strong id="guideDustValue">별가루 0</strong>
+            <button id="guideDustBtn" type="button">별가루 사용처로 이동</button>
+          </article>
+        </section>
+
         <div class="guide-current-banner" id="guideCurrentBanner"></div>
         <div class="guide-mission-grid" id="guideMissionGrid"></div>
       </div>
@@ -341,6 +388,57 @@
             <button id="sellJunkBtn">일반·고급 일괄 판매</button>
           </div>
         </div>
+
+
+        <section class="inventory-expansion-panel" id="inventoryExpansionPanel">
+          <div class="inventory-expansion-icon">▣</div>
+          <div class="inventory-expansion-copy">
+            <span>LOOT BAG EXPANSION</span>
+            <h3>전리품 가방 확장</h3>
+            <p>골드를 지불해 가방을 5칸씩 늘립니다. 확장할수록 다음 공사 비용이 상승합니다.</p>
+            <div class="inventory-expansion-progress">
+              <strong id="inventoryExpansionCapacity">40 / 100칸</strong>
+              <div><i id="inventoryExpansionBar"></i></div>
+            </div>
+          </div>
+          <div class="inventory-expansion-action">
+            <small>다음 확장</small>
+            <strong id="inventoryExpansionPrice">500 G</strong>
+            <button id="inventoryExpansionBtn" type="button">5칸 확장</button>
+            <em id="inventoryExpansionHint">확장 후 45칸</em>
+          </div>
+        </section>
+
+        <section class="dust-guide-panel" id="dustGuidePanel">
+          <div class="dust-guide-emblem">✦</div>
+          <div class="dust-guide-copy">
+            <span>STARDUST REFORGING</span>
+            <h3>별가루는 어디에 쓰나요?</h3>
+            <p>
+              필요 없는 장비를 <strong>분해</strong>하면 별가루를 얻습니다.
+              일반 장비의 <strong>재련</strong>을 누르면 접두사·접미사의 종류는 유지하고 수치만 다시 추첨합니다.
+            </p>
+            <div class="dust-guide-route">
+              <span><b>1</b> 장비 획득</span>
+              <span><b>2</b> 필요 없는 장비 분해</span>
+              <span><b>3</b> 남길 장비 재련</span>
+            </div>
+          </div>
+          <div class="dust-guide-action">
+            <strong id="dustGuideBalance">보유 별가루 0</strong>
+            <button id="tutorialDustReforgeBtn" type="button">별가루 1개로 재련 체험</button>
+            <small id="tutorialDustHint">가방이나 착용 장비 중 재련 가능한 장비를 자동으로 선택합니다.</small>
+          </div>
+        </section>
+
+
+        <section class="crit-cap-notice">
+          <div class="crit-cap-symbol">◆</div>
+          <div>
+            <strong>치명타 확률 장비당 적용 상한 10%</strong>
+            <p>한 장비에 치명타 옵션이 여러 개 붙어도 최대 10%까지만 전투와 장비 점수에 적용됩니다. 직업·능력치·세트 보너스는 이 제한과 별도로 적용됩니다.</p>
+          </div>
+        </section>
 
         <div class="inventory-management">
           <div class="inventory-management-head">
@@ -828,50 +926,222 @@
 
 
     <section class="page" data-page="inquiry">
-      <div class="panel wide-panel inquiry-page">
+      <div class="panel wide-panel inquiry-page community-board-page">
         <div class="page-heading inquiry-page-heading">
           <div>
-            <span class="inquiry-kicker">HUNTER SUPPORT DESK · BETA</span>
-            <h2>문의·제안 게시판</h2>
-            <p>게임 중 발견한 문제와 개선 의견을 기록국에 전달합니다.</p>
+            <span class="inquiry-kicker">ASHEN COMMUNITY ARCHIVE · BETA</span>
+            <h2>모험가 게시판</h2>
+            <p>운영 공지, 모험가들의 자유로운 기록, 비공개 문의를 한곳에서 확인합니다.</p>
           </div>
           <div class="inquiry-connection">
             <span class="badge inquiry-status-badge" id="inquiryConnectionBadge">서버 연결 준비</span>
-            <button id="inquiryRefreshBtn">새로고침</button>
+            <button id="inquiryRefreshBtn">전체 새로고침</button>
           </div>
         </div>
 
-        <section class="inquiry-guide">
-          <div>
-            <strong>공개 테스트 문의창구</strong>
-            <p>개인정보, 비밀번호, 인증번호는 적지 마세요. 운영자 답변은 작성자만 확인하며, 공개에 동의한 답변만 공개 답변 목록에 표시됩니다.</p>
+        <nav class="community-board-tabs" id="communityBoardTabs" aria-label="게시판 종류">
+          <button class="active notice" data-community-board-tab="notice">
+            <span>NOTICE</span>
+            <strong>공지사항</strong>
+            <b id="noticeBoardCount"></b>
+          </button>
+          <button class="free" data-community-board-tab="free">
+            <span>FREE BOARD</span>
+            <strong>자유게시판</strong>
+            <b id="freeBoardCount"></b>
+          </button>
+          <button class="support" data-community-board-tab="inquiry">
+            <span>SUPPORT</span>
+            <strong>문의게시판</strong>
+            <b id="inquiryBoardCount"></b>
+          </button>
+        </nav>
+
+        <section class="community-board-panel" id="boardNoticePanel">
+          <div class="community-board-banner notice">
+            <div class="community-board-banner-symbol">!</div>
+            <div>
+              <span>OFFICIAL NOTICE</span>
+              <h3>운영 공지사항</h3>
+              <p>점검, 업데이트, 밸런스 변경과 중요한 안내를 운영자가 게시합니다.</p>
+            </div>
           </div>
-          <div class="inquiry-limit">
-            <span>작성 제한</span>
-            <strong>1시간 최대 5건</strong>
+
+          <form class="board-compose notice-compose hidden" id="noticeBoardForm">
+            <div class="board-compose-heading">
+              <div>
+                <span>ADMIN NOTICE</span>
+                <h3>공지 작성</h3>
+              </div>
+              <label class="board-pin-toggle">
+                <input id="noticeBoardPinned" type="checkbox" />
+                <span>상단 고정</span>
+              </label>
+            </div>
+            <label>
+              <span>제목</span>
+              <input id="noticeBoardTitle" type="text" maxlength="100" placeholder="공지 제목을 입력하세요." />
+              <small><b id="noticeBoardTitleCount">0</b> / 100</small>
+            </label>
+            <label>
+              <span>내용</span>
+              <textarea id="noticeBoardContent" maxlength="3000" rows="7" placeholder="업데이트와 운영 안내를 입력하세요."></textarea>
+              <small><b id="noticeBoardContentCount">0</b> / 3000</small>
+            </label>
+            <button id="noticeBoardSubmitBtn" type="submit">공지 등록</button>
+          </form>
+
+          <div class="community-post-list" id="noticeBoardList">
+            <div class="inquiry-loading">공지사항을 불러오는 중입니다.</div>
+          </div>
+
+          <details class="board-connection-details">
+            <summary>운영자 권한 연결 정보</summary>
+            <p>공지 작성 권한을 등록할 때 아래 익명 사용자 ID를 Supabase의 <code>game_board_admins</code> 테이블에 입력합니다.</p>
+            <div>
+              <strong id="boardCurrentUserId">연결 준비 중</strong>
+              <button id="copyBoardUserIdBtn" type="button">ID 복사</button>
+            </div>
+          </details>
+        </section>
+
+        <section class="community-board-panel hidden" id="boardFreePanel">
+          <div class="community-board-banner free">
+            <div class="community-board-banner-symbol">◇</div>
+            <div>
+              <span>ADVENTURER LOG</span>
+              <h3>자유게시판</h3>
+              <p>공략, 득템 기록, 질문과 플레이 경험을 다른 모험가들과 공유합니다.</p>
+            </div>
+          </div>
+
+          <form class="board-compose" id="freeBoardForm">
+            <div class="board-compose-heading">
+              <div>
+                <span>NEW ADVENTURER POST</span>
+                <h3>새 글 작성</h3>
+              </div>
+              <span class="badge">1시간 최대 6건</span>
+            </div>
+            <label>
+              <span>제목</span>
+              <input id="freeBoardTitle" type="text" maxlength="100" placeholder="글 제목을 입력하세요." />
+              <small><b id="freeBoardTitleCount">0</b> / 100</small>
+            </label>
+            <label>
+              <span>내용</span>
+              <textarea id="freeBoardContent" maxlength="3000" rows="6" placeholder="개인정보와 비밀번호는 작성하지 마세요."></textarea>
+              <small><b id="freeBoardContentCount">0</b> / 3000</small>
+            </label>
+            <button id="freeBoardSubmitBtn" type="submit">자유게시판에 등록</button>
+          </form>
+
+          <div class="community-post-list" id="freeBoardList">
+            <div class="inquiry-loading">자유게시판을 불러오는 중입니다.</div>
           </div>
         </section>
 
-        <div class="inquiry-tabs" id="inquiryTabs">
-          <button class="active" data-inquiry-tab="write">문의 작성</button>
-          <button data-inquiry-tab="mine">내 문의 <span id="myInquiryCount"></span></button>
-          <button data-inquiry-tab="public">공개 답변 <span id="publicInquiryCount"></span></button>
-        </div>
-
-        <section class="inquiry-panel" id="inquiryWritePanel">
-          <div class="inquiry-form-heading">
+        <section class="community-board-panel hidden" id="boardInquiryPanel">
+          <section class="inquiry-guide">
             <div>
-              <span>NEW REPORT</span>
-              <h3>새 문의 작성</h3>
-              <p>가능하면 발생 상황과 기대한 동작을 함께 적어 주세요.</p>
+              <strong>비공개 문의창구</strong>
+              <p>버그, 밸런스, 저장 문제를 운영자에게 전달합니다. 본인 문의와 운영자 답변은 작성자만 확인하며, 공개 동의한 답변만 공개 답변에 표시됩니다.</p>
             </div>
-            <span class="badge" id="inquiryFormState">작성 가능</span>
+            <div class="inquiry-limit">
+              <span>작성 제한</span>
+              <strong>1시간 최대 5건</strong>
+            </div>
+          </section>
+
+          <div class="inquiry-tabs" id="inquiryTabs">
+            <button class="active" data-inquiry-tab="write">문의 작성</button>
+            <button data-inquiry-tab="mine">내 문의 <span id="myInquiryCount"></span></button>
+            <button data-inquiry-tab="public">공개 답변 <span id="publicInquiryCount"></span></button>
           </div>
 
-          <form class="inquiry-form" id="inquiryForm">
-            <label>
-              <span>분류</span>
-              <select id="inquiryCategory">
+          <section class="inquiry-panel" id="inquiryWritePanel">
+            <div class="inquiry-form-heading">
+              <div>
+                <span>NEW REPORT</span>
+                <h3>새 문의 작성</h3>
+                <p>가능하면 발생 상황과 기대한 동작을 함께 적어 주세요.</p>
+              </div>
+              <span class="badge" id="inquiryFormState">작성 가능</span>
+            </div>
+
+            <form class="inquiry-form" id="inquiryForm">
+              <label>
+                <span>분류</span>
+                <select id="inquiryCategory">
+                  <option value="bug">버그 신고</option>
+                  <option value="balance">밸런스 의견</option>
+                  <option value="ui">UI·편의 개선</option>
+                  <option value="content">콘텐츠 제안</option>
+                  <option value="save">저장·기기 이전</option>
+                  <option value="ranking">온라인 랭킹</option>
+                  <option value="other">기타 문의</option>
+                </select>
+              </label>
+
+              <label>
+                <span>제목</span>
+                <input id="inquiryTitle" type="text" maxlength="80" placeholder="문의 내용을 짧게 요약해 주세요." />
+                <small><b id="inquiryTitleCount">0</b> / 80</small>
+              </label>
+
+              <label class="inquiry-content-label">
+                <span>내용</span>
+                <textarea id="inquiryContent" maxlength="2000" rows="9" placeholder="발생한 상황, 기대한 동작, 실제 동작을 자세히 적어 주세요."></textarea>
+                <small><b id="inquiryContentCount">0</b> / 2000</small>
+              </label>
+
+              <label class="inquiry-public-consent">
+                <input id="inquiryPublicConsent" type="checkbox" />
+                <span>
+                  <strong>답변 공개에 동의</strong>
+                  <small>운영자가 유용하다고 판단한 경우 닉네임을 숨기고 질문과 답변을 공개할 수 있습니다.</small>
+                </span>
+              </label>
+
+              <section class="inquiry-context-preview">
+                <div>
+                  <span>자동 첨부 정보</span>
+                  <strong id="inquiryContextSummary">게임 버전과 캐릭터 상태를 준비 중입니다.</strong>
+                </div>
+                <p>브라우저 종류, 화면 크기, 게임 버전, 레벨, 직업, 전투력과 현재 페이지가 함께 전달됩니다. 저장 파일과 장비 전체 정보는 전송하지 않습니다.</p>
+              </section>
+
+              <button class="inquiry-submit-button" id="inquirySubmitBtn" type="submit">문의 등록</button>
+            </form>
+          </section>
+
+          <section class="inquiry-panel hidden" id="inquiryMinePanel">
+            <div class="inquiry-list-heading">
+              <div>
+                <span>MY REPORTS</span>
+                <h3>내 문의</h3>
+              </div>
+              <select id="inquiryMineFilter">
+                <option value="all">전체 상태</option>
+                <option value="received">접수됨</option>
+                <option value="reviewing">검토 중</option>
+                <option value="answered">답변 완료</option>
+                <option value="closed">종료</option>
+              </select>
+            </div>
+            <div class="inquiry-list" id="inquiryMineList">
+              <div class="inquiry-loading">내 문의를 불러오는 중입니다.</div>
+            </div>
+          </section>
+
+          <section class="inquiry-panel hidden" id="inquiryPublicPanel">
+            <div class="inquiry-list-heading">
+              <div>
+                <span>PUBLIC ANSWERS</span>
+                <h3>공개 답변</h3>
+              </div>
+              <select id="inquiryPublicCategory">
+                <option value="all">전체 분류</option>
                 <option value="bug">버그 신고</option>
                 <option value="balance">밸런스 의견</option>
                 <option value="ui">UI·편의 개선</option>
@@ -880,79 +1150,11 @@
                 <option value="ranking">온라인 랭킹</option>
                 <option value="other">기타 문의</option>
               </select>
-            </label>
-
-            <label>
-              <span>제목</span>
-              <input id="inquiryTitle" type="text" maxlength="80" placeholder="문의 내용을 짧게 요약해 주세요." />
-              <small><b id="inquiryTitleCount">0</b> / 80</small>
-            </label>
-
-            <label class="inquiry-content-label">
-              <span>내용</span>
-              <textarea id="inquiryContent" maxlength="2000" rows="9" placeholder="발생한 상황, 기대한 동작, 실제 동작을 자세히 적어 주세요."></textarea>
-              <small><b id="inquiryContentCount">0</b> / 2000</small>
-            </label>
-
-            <label class="inquiry-public-consent">
-              <input id="inquiryPublicConsent" type="checkbox" />
-              <span>
-                <strong>답변 공개에 동의</strong>
-                <small>운영자가 유용하다고 판단한 경우 닉네임을 숨기고 질문과 답변을 공개할 수 있습니다.</small>
-              </span>
-            </label>
-
-            <section class="inquiry-context-preview">
-              <div>
-                <span>자동 첨부 정보</span>
-                <strong id="inquiryContextSummary">게임 버전과 캐릭터 상태를 준비 중입니다.</strong>
-              </div>
-              <p>브라우저 종류, 화면 크기, 게임 버전, 레벨, 직업, 현재 페이지가 함께 전달됩니다. 저장 파일과 장비 전체 정보는 전송하지 않습니다.</p>
-            </section>
-
-            <button class="inquiry-submit-button" id="inquirySubmitBtn" type="submit">문의 등록</button>
-          </form>
-        </section>
-
-        <section class="inquiry-panel hidden" id="inquiryMinePanel">
-          <div class="inquiry-list-heading">
-            <div>
-              <span>MY REPORTS</span>
-              <h3>내 문의</h3>
             </div>
-            <select id="inquiryMineFilter">
-              <option value="all">전체 상태</option>
-              <option value="received">접수됨</option>
-              <option value="reviewing">검토 중</option>
-              <option value="answered">답변 완료</option>
-              <option value="closed">종료</option>
-            </select>
-          </div>
-          <div class="inquiry-list" id="inquiryMineList">
-            <div class="inquiry-loading">내 문의를 불러오는 중입니다.</div>
-          </div>
-        </section>
-
-        <section class="inquiry-panel hidden" id="inquiryPublicPanel">
-          <div class="inquiry-list-heading">
-            <div>
-              <span>PUBLIC ANSWERS</span>
-              <h3>공개 답변</h3>
+            <div class="inquiry-list" id="inquiryPublicList">
+              <div class="inquiry-loading">공개 답변을 불러오는 중입니다.</div>
             </div>
-            <select id="inquiryPublicCategory">
-              <option value="all">전체 분류</option>
-              <option value="bug">버그 신고</option>
-              <option value="balance">밸런스 의견</option>
-              <option value="ui">UI·편의 개선</option>
-              <option value="content">콘텐츠 제안</option>
-              <option value="save">저장·기기 이전</option>
-              <option value="ranking">온라인 랭킹</option>
-              <option value="other">기타 문의</option>
-            </select>
-          </div>
-          <div class="inquiry-list" id="inquiryPublicList">
-            <div class="inquiry-loading">공개 답변을 불러오는 중입니다.</div>
-          </div>
+          </section>
         </section>
       </div>
     </section>
@@ -1276,7 +1478,7 @@
   </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="game.js?v=44"></script>
+  <script src="game.js?v=50"></script>
 
 </body>
 </html>

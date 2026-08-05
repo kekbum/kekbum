@@ -1,4 +1,4 @@
-const VERSION = 44;
+const VERSION = 50;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -7,7 +7,68 @@ const VERSION = 44;
     const ONLINE_SYNC_INTERVAL = 60000;
     const ONLINE_RANKING_LIMIT = 100;
     const INQUIRY_PAGE_LIMIT = 50;
+    const COMMUNITY_BOARD_POST_LIMIT = 50;
 
+
+    const BASE_INVENTORY_CAPACITY = 40;
+    const INVENTORY_EXPANSION_STEP = 5;
+    const MAX_INVENTORY_CAPACITY = 100;
+    const INVENTORY_EXPANSION_BASE_COST = 500;
+    const INVENTORY_EXPANSION_GROWTH = 1.6;
+    const EQUIPMENT_CRIT_CAP = 10;
+
+
+    const FIELD_SET_BASE_CHANCE = .009;
+    const FIELD_SET_MAX_CHANCE = .025;
+    const FIELD_UNIQUE_BASE_CHANCE = .0018;
+    const FIELD_UNIQUE_MAX_CHANCE = .006;
+    const STANDARD_LEGENDARY_BASE_WEIGHT = .025;
+
+    function fieldSpecialDropChances(rareMapBonus=0,itemFind=0) {
+      const bonus = Math.max(0,Math.min(20,Number(rareMapBonus) || 0));
+      const find = Math.max(0,Math.min(300,Number(itemFind) || 0));
+      return {
+        set:Math.min(
+          FIELD_SET_MAX_CHANCE,
+          FIELD_SET_BASE_CHANCE*(1+bonus*.055)*(1+find*.0012)
+        ),
+        unique:Math.min(
+          FIELD_UNIQUE_MAX_CHANCE,
+          FIELD_UNIQUE_BASE_CHANCE*(1+bonus*.045)*(1+find*.0006)
+        )
+      };
+    }
+
+    function normalizeInventoryCapacity(value) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return BASE_INVENTORY_CAPACITY;
+      const stepped = BASE_INVENTORY_CAPACITY
+        + Math.floor(Math.max(0,numeric-BASE_INVENTORY_CAPACITY)/INVENTORY_EXPANSION_STEP)
+          * INVENTORY_EXPANSION_STEP;
+      return Math.min(MAX_INVENTORY_CAPACITY,Math.max(BASE_INVENTORY_CAPACITY,stepped));
+    }
+
+    function appliedItemCrit(itemOrStats) {
+      const stats = itemOrStats?.stats || itemOrStats || {};
+      return Math.min(EQUIPMENT_CRIT_CAP,Math.max(0,Number(stats.crit || 0)));
+    }
+
+    function inventoryExpansionLevel() {
+      return Math.max(
+        0,
+        Math.floor((normalizeInventoryCapacity(state?.inventoryCapacity)-BASE_INVENTORY_CAPACITY)/INVENTORY_EXPANSION_STEP)
+      );
+    }
+
+    function inventoryExpansionCost() {
+      if (normalizeInventoryCapacity(state?.inventoryCapacity) >= MAX_INVENTORY_CAPACITY) return 0;
+      const raw = INVENTORY_EXPANSION_BASE_COST
+        * Math.pow(INVENTORY_EXPANSION_GROWTH,inventoryExpansionLevel());
+      return Math.max(
+        INVENTORY_EXPANSION_BASE_COST,
+        Math.round(raw/100)*100
+      );
+    }
 
     function createSaveIdentityId() {
       if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
@@ -50,6 +111,20 @@ const VERSION = 44;
       answered:{label:"답변 완료",className:"answered"},
       closed:{label:"종료",className:"closed"}
     };
+
+
+    const navSections = {
+      hunt:{label:"사냥터",defaultPage:"hunt",pages:["hunt","inventory","character","skills","mercenary","market","gamble"]},
+      info:{label:"정보",defaultPage:"guide",pages:["guide","info","codex","collection","savevault"]},
+      board:{label:"게시판",defaultPage:"inquiry",pages:["inquiry","ranking"]},
+      quest:{label:"퀘스트",defaultPage:"quests",pages:["quests","bounties","staminacamp"]},
+      arena:{label:"투기장",defaultPage:"arena",pages:["arena"]},
+      event:{label:"이벤트",defaultPage:"attendance",pages:["attendance","daily","dailyboss","abyss","finale"]}
+    };
+
+    const navSectionByPage = Object.fromEntries(
+      Object.entries(navSections).flatMap(([section,meta]) => meta.pages.map(page => [page,section]))
+    );
 
     const onlineRankingMetrics = {
       power:{
@@ -268,6 +343,7 @@ const VERSION = 44;
       { id:"guide_hunt", name:"첫 번째 사냥", desc:"몬스터를 한 마리 처치한다.", type:"kills", target:1, page:"hunt", reward:{gold:100} },
       { id:"guide_loot", name:"전리품의 주인", desc:"장비를 한 개 획득한다.", type:"items", target:1, page:"hunt", reward:{health:1,gold:80} },
       { id:"guide_equip", name:"장비를 걸치다", desc:"전리품 가방에서 장비를 한 번 착용한다.", type:"itemsEquipped", target:1, page:"inventory", reward:{dust:5} },
+      { id:"guide_dust", name:"별가루 사용해보기", desc:"전리품 가방에서 별가루를 사용해 장비를 한 번 재련한다. 별가루는 장비 분해로 얻고 접사 수치를 다시 뽑는 데 사용한다.", type:"reforges", target:1, page:"inventory", reward:{gold:120,dust:6} },
       { id:"guide_stats", name:"힘의 방향", desc:"능력치 포인트를 한 개 이상 배분한다.", type:"statPointsSpent", target:1, page:"hunt", reward:{gold:150} },
       { id:"guide_skill", name:"첫 기술 훈련", desc:"기술을 한 번 훈련한다.", type:"skillUpgrades", target:1, page:"skills", reward:{book:1} },
       { id:"guide_codex", name:"괴물을 기록하다", desc:"몬스터 도감에서 세 종류를 발견한다.", type:"codex", target:3, page:"codex", reward:{dust:8,skill:1} },
@@ -1199,11 +1275,11 @@ const VERSION = 44;
     ];
 
     const rarityTable = [
-      { key:"common", name:"일반", className:"rarity-common", weight:72.0, prefixCount:0, suffixCount:0, mult:1.0, sell:1 },
+      { key:"common", name:"일반", className:"rarity-common", weight:72.055, prefixCount:0, suffixCount:0, mult:1.0, sell:1 },
       { key:"uncommon", name:"고급", className:"rarity-uncommon", weight:22.5, prefixCount:1, suffixCount:0, mult:1.18, sell:2 },
       { key:"rare", name:"희귀", className:"rarity-rare", weight:4.6, prefixCount:1, suffixCount:1, mult:1.48, sell:4 },
       { key:"epic", name:"영웅", className:"rarity-epic", weight:.82, prefixCount:2, suffixCount:2, mult:1.88, sell:8 },
-      { key:"legendary", name:"전설", className:"rarity-legendary", weight:.08, prefixCount:3, suffixCount:3, mult:2.5, sell:20 }
+      { key:"legendary", name:"전설", className:"rarity-legendary", weight:STANDARD_LEGENDARY_BASE_WEIGHT, prefixCount:3, suffixCount:3, mult:2.5, sell:20 }
     ];
 
     const itemNames = {
@@ -1238,6 +1314,12 @@ const VERSION = 44;
         lastTransferAt:0,
         lastError:""
       },
+      communityBoard: {
+        tab:"notice",
+        lastSeenNoticeAt:0,
+        lastFetchAt:0,
+        lastError:""
+      },
       inquiry: {
         tab:"write",
         lastFetchAt:0,
@@ -1251,7 +1333,7 @@ const VERSION = 44;
       skills: defaultSkillState(),
       skillBooks: [],
       lastSkillBook: null,
-      guide: { claimed:{} },
+      guide: { claimed:{}, dustTutorialUsed:false },
       mastery: { vanguard:0, arcanist:0, oracle:0, ironfist:0, marksman:0, shadow:0 },
       level: 1,
       xp: 0,
@@ -1267,7 +1349,7 @@ const VERSION = 44;
       heatUpdatedAt: Date.now(),
       equipment: { weapon:null, armor:null, ring:null, amulet:null },
       inventory: [],
-      inventoryCapacity: 40,
+      inventoryCapacity: BASE_INVENTORY_CAPACITY,
       consumables: { health:1, mana:1, stamina:0, elixir:0 },
       fieldCare: {
         enabled:false,
@@ -1400,6 +1482,7 @@ const VERSION = 44;
         mutatedKills: 0,
         itemsSalvaged: 0,
         reforges: 0,
+        dustSpent: 0,
         feverActivations: 0,
         bountiesClaimed: 0,
         dailyClears: 0,
@@ -1456,7 +1539,9 @@ const VERSION = 44;
         gambleEpicPlus: 0,
         gambleSpecialItems: 0,
         statResets: 0,
-        statResetGoldSpent: 0
+        statResetGoldSpent: 0,
+        inventoryExpansions: 0,
+        inventoryExpansionGoldSpent: 0
       },
       logs: ["잿더미 위에서 눈을 떴다. 가슴의 회귀 불씨가 아직 타고 있다. 이름을 되찾아야 한다."]
     });
@@ -1483,6 +1568,12 @@ const VERSION = 44;
     let activeTransferCode = "";
     let activeTransferCodeExpiresAt = 0;
     let mobileNavExpanded = false;
+    let activeNavSection = "hunt";
+    let communityBoardSubmitBusy = false;
+    let communityBoardFetchBusy = false;
+    let communityBoardAdmin = false;
+    let noticeBoardRows = [];
+    let freeBoardRows = [];
     let inquirySubmitBusy = false;
     let inquiryFetchBusy = false;
     let inquiryMineRows = [];
@@ -1514,6 +1605,12 @@ const VERSION = 44;
       defeatLogBanner: document.getElementById("defeatLogBanner"),
       defeatLogTitle: document.getElementById("defeatLogTitle"),
       defeatLogText: document.getElementById("defeatLogText"),
+      brandHomeButton: document.getElementById("brandHomeButton"),
+      globalStaminaCard: document.getElementById("globalStaminaCard"),
+      globalStaminaValue: document.getElementById("globalStaminaValue"),
+      globalStaminaHint: document.getElementById("globalStaminaHint"),
+      globalDustCard: document.getElementById("globalDustCard"),
+      globalDustValue: document.getElementById("globalDustValue"),
       topTabs: document.getElementById("topTabs"),
       navMoreToggle: document.getElementById("navMoreToggle"),
       navMoreLabel: document.getElementById("navMoreLabel"),
@@ -1575,7 +1672,17 @@ const VERSION = 44;
       toast: document.getElementById("toast"),
       inventoryNavCount: document.getElementById("inventoryNavCount"),
       inventoryCount: document.getElementById("inventoryCount"),
+      inventoryExpansionPanel: document.getElementById("inventoryExpansionPanel"),
+      inventoryExpansionCapacity: document.getElementById("inventoryExpansionCapacity"),
+      inventoryExpansionBar: document.getElementById("inventoryExpansionBar"),
+      inventoryExpansionPrice: document.getElementById("inventoryExpansionPrice"),
+      inventoryExpansionBtn: document.getElementById("inventoryExpansionBtn"),
+      inventoryExpansionHint: document.getElementById("inventoryExpansionHint"),
       dustCount: document.getElementById("dustCount"),
+      dustGuidePanel: document.getElementById("dustGuidePanel"),
+      dustGuideBalance: document.getElementById("dustGuideBalance"),
+      tutorialDustReforgeBtn: document.getElementById("tutorialDustReforgeBtn"),
+      tutorialDustHint: document.getElementById("tutorialDustHint"),
       tierStoneCount: document.getElementById("tierStoneCount"),
       inventoryGrid: document.getElementById("inventoryGrid"),
       consumableGrid: document.getElementById("consumableGrid"),
@@ -1651,6 +1758,10 @@ const VERSION = 44;
       skillGrid: document.getElementById("skillGrid"),
       guideNavMark: document.getElementById("guideNavMark"),
       guideSummaryBadge: document.getElementById("guideSummaryBadge"),
+      guideStaminaValue: document.getElementById("guideStaminaValue"),
+      guideDustValue: document.getElementById("guideDustValue"),
+      guideStaminaBtn: document.getElementById("guideStaminaBtn"),
+      guideDustBtn: document.getElementById("guideDustBtn"),
       guideCurrentBanner: document.getElementById("guideCurrentBanner"),
       guideMissionGrid: document.getElementById("guideMissionGrid"),
       guideMiniTracker: document.getElementById("guideMiniTracker"),
@@ -1743,6 +1854,30 @@ const VERSION = 44;
       rankingRefreshBtn: document.getElementById("rankingRefreshBtn"),
       rankingList: document.getElementById("rankingList"),
       inquiryNavMark: document.getElementById("inquiryNavMark"),
+      communityBoardTabs: document.getElementById("communityBoardTabs"),
+      boardNoticePanel: document.getElementById("boardNoticePanel"),
+      boardFreePanel: document.getElementById("boardFreePanel"),
+      boardInquiryPanel: document.getElementById("boardInquiryPanel"),
+      noticeBoardCount: document.getElementById("noticeBoardCount"),
+      freeBoardCount: document.getElementById("freeBoardCount"),
+      inquiryBoardCount: document.getElementById("inquiryBoardCount"),
+      noticeBoardForm: document.getElementById("noticeBoardForm"),
+      noticeBoardPinned: document.getElementById("noticeBoardPinned"),
+      noticeBoardTitle: document.getElementById("noticeBoardTitle"),
+      noticeBoardTitleCount: document.getElementById("noticeBoardTitleCount"),
+      noticeBoardContent: document.getElementById("noticeBoardContent"),
+      noticeBoardContentCount: document.getElementById("noticeBoardContentCount"),
+      noticeBoardSubmitBtn: document.getElementById("noticeBoardSubmitBtn"),
+      noticeBoardList: document.getElementById("noticeBoardList"),
+      freeBoardForm: document.getElementById("freeBoardForm"),
+      freeBoardTitle: document.getElementById("freeBoardTitle"),
+      freeBoardTitleCount: document.getElementById("freeBoardTitleCount"),
+      freeBoardContent: document.getElementById("freeBoardContent"),
+      freeBoardContentCount: document.getElementById("freeBoardContentCount"),
+      freeBoardSubmitBtn: document.getElementById("freeBoardSubmitBtn"),
+      freeBoardList: document.getElementById("freeBoardList"),
+      boardCurrentUserId: document.getElementById("boardCurrentUserId"),
+      copyBoardUserIdBtn: document.getElementById("copyBoardUserIdBtn"),
       inquiryConnectionBadge: document.getElementById("inquiryConnectionBadge"),
       inquiryRefreshBtn: document.getElementById("inquiryRefreshBtn"),
       inquiryTabs: document.getElementById("inquiryTabs"),
@@ -1826,6 +1961,14 @@ const VERSION = 44;
             lastCheckedAt:0,
             lastError:""
           },
+          communityBoard: {
+            ...fresh.communityBoard,
+            ...(loaded.communityBoard || {}),
+            tab:["notice","free","inquiry"].includes(loaded.communityBoard?.tab)
+              ? loaded.communityBoard.tab
+              : "notice",
+            lastError:""
+          },
           inquiry: {
             ...fresh.inquiry,
             ...(loaded.inquiry || {}),
@@ -1844,12 +1987,18 @@ const VERSION = 44;
           skillPoints: Number.isFinite(loaded.skillPoints) ? loaded.skillPoints : 0,
           skillBooks: Array.isArray(loaded.skillBooks) ? loaded.skillBooks : [],
           lastSkillBook: loaded.lastSkillBook || null,
-          guide: { claimed:{ ...fresh.guide.claimed, ...((loaded.guide && loaded.guide.claimed) || {}) } },
+          guide: {
+            ...fresh.guide,
+            ...(loaded.guide || {}),
+            claimed:{ ...fresh.guide.claimed, ...((loaded.guide && loaded.guide.claimed) || {}) },
+            dustTutorialUsed:!!loaded.guide?.dustTutorialUsed
+          },
           mastery: { ...fresh.mastery, ...(loaded.mastery || {}) },
           heat: { ...fresh.heat, ...(loaded.heat || {}) },
           zonesVisited: { ...fresh.zonesVisited, ...(loaded.zonesVisited || {}) },
           equipment: { ...fresh.equipment, ...(loaded.equipment || {}) },
           inventory: migratedInventory,
+          inventoryCapacity:normalizeInventoryCapacity(loaded.inventoryCapacity),
           mp: Number.isFinite(loaded.mp) ? loaded.mp : fresh.mp,
           consumables: { ...fresh.consumables, ...(loaded.consumables || {}) },
           fieldCare: { ...fresh.fieldCare, ...(loaded.fieldCare || {}) },
@@ -2663,6 +2812,310 @@ const VERSION = 44;
       fetchOnlineRanking({silent:true});
     }
 
+
+    function boardDateLabel(value) {
+      return inquiryDateLabel(value);
+    }
+
+    function communityBoardUnreadNotices() {
+      const seen = Number(state.communityBoard?.lastSeenNoticeAt || 0);
+      return noticeBoardRows.filter(row =>
+        new Date(row.created_at || 0).getTime() > seen
+      ).length;
+    }
+
+    function updateCommunityBoardNavMark() {
+      if (!els.inquiryNavMark) return;
+      const notices = communityBoardUnreadNotices();
+      const answers = inquiryMineRows.filter(inquiryHasUnreadAnswer).length;
+      const unread = notices+answers;
+      els.inquiryNavMark.textContent = unread ? String(Math.min(99,unread)) : "";
+      if (els.noticeBoardCount) els.noticeBoardCount.textContent = noticeBoardRows.length ? String(noticeBoardRows.length) : "";
+      if (els.freeBoardCount) els.freeBoardCount.textContent = freeBoardRows.length ? String(freeBoardRows.length) : "";
+      if (els.inquiryBoardCount) els.inquiryBoardCount.textContent = answers ? String(answers) : "";
+    }
+
+    function selectCommunityBoardTab(tab,{fetch=true}={}) {
+      if (!["notice","free","inquiry"].includes(tab)) return;
+      state.communityBoard.tab = tab;
+
+      els.communityBoardTabs?.querySelectorAll("[data-community-board-tab]").forEach(button => {
+        button.classList.toggle("active",button.dataset.communityBoardTab === tab);
+      });
+      els.boardNoticePanel.classList.toggle("hidden",tab !== "notice");
+      els.boardFreePanel.classList.toggle("hidden",tab !== "free");
+      els.boardInquiryPanel.classList.toggle("hidden",tab !== "inquiry");
+
+      if (tab === "notice") {
+        state.communityBoard.lastSeenNoticeAt = Date.now();
+        renderNoticeBoard();
+      }
+      if (tab === "free") renderFreeBoard();
+      if (tab === "inquiry") renderInquiryBoard();
+
+      saveState({skipOnline:true});
+      updateCommunityBoardNavMark();
+
+      if (!fetch) return;
+      if (tab === "notice") fetchCommunityBoard({notices:true,free:false,silent:true});
+      if (tab === "free") fetchCommunityBoard({notices:false,free:true,silent:true});
+      if (tab === "inquiry") fetchInquiries({mine:true,publicRows:true,silent:true});
+    }
+
+    function boardFormCounts() {
+      if (els.noticeBoardTitleCount) {
+        els.noticeBoardTitleCount.textContent = String(els.noticeBoardTitle.value.length);
+        els.noticeBoardContentCount.textContent = String(els.noticeBoardContent.value.length);
+      }
+      if (els.freeBoardTitleCount) {
+        els.freeBoardTitleCount.textContent = String(els.freeBoardTitle.value.length);
+        els.freeBoardContentCount.textContent = String(els.freeBoardContent.value.length);
+      }
+    }
+
+    function boardPostCard(row) {
+      const isNotice = row.board_type === "notice";
+      const isMine = row.user_id === onlineUser?.id;
+      const canDelete = isMine || communityBoardAdmin;
+      return `
+        <details class="community-post-card ${isNotice ? "notice" : "free"} ${row.pinned ? "pinned" : ""}">
+          <summary>
+            <div class="community-post-marker">${row.pinned ? "PIN" : isNotice ? "!" : "◇"}</div>
+            <div class="community-post-title">
+              <span>${row.pinned ? "상단 고정 · " : ""}${isNotice ? "운영 공지" : escapeOnlineHtml(row.nickname || "무명의 사냥꾼")}</span>
+              <strong>${escapeOnlineHtml(row.title || "제목 없음")}</strong>
+              <small>${boardDateLabel(row.created_at)}</small>
+            </div>
+            <b>열기</b>
+          </summary>
+          <div class="community-post-content">
+            <p>${escapeOnlineHtml(row.content || "").replaceAll("\n","<br>")}</p>
+            <footer>
+              <span>${isNotice ? "ASHEN RELICS OFFICIAL" : `${escapeOnlineHtml(row.nickname || "무명의 사냥꾼")} · ${escapeOnlineHtml(classes[row.class_id]?.name || "직업 미상")}`}</span>
+              ${canDelete ? `<button data-board-delete="${row.id}" type="button">글 삭제</button>` : ""}
+            </footer>
+          </div>
+        </details>
+      `;
+    }
+
+    function bindCommunityPostActions(container) {
+      container?.querySelectorAll("[data-board-delete]").forEach(button => {
+        button.onclick = event => {
+          event.preventDefault();
+          event.stopPropagation();
+          deleteCommunityBoardPost(button.dataset.boardDelete);
+        };
+      });
+    }
+
+    function renderNoticeBoard() {
+      if (!els.noticeBoardList) return;
+      els.noticeBoardForm.classList.toggle("hidden",!communityBoardAdmin);
+      els.boardCurrentUserId.textContent = onlineUser?.id || "익명 로그인 준비 중";
+
+      if (!noticeBoardRows.length) {
+        els.noticeBoardList.innerHTML = `
+          <div class="inquiry-empty">
+            <strong>등록된 공지사항이 없습니다.</strong>
+            <span>업데이트와 점검 안내가 이곳에 표시됩니다.</span>
+          </div>
+        `;
+      } else {
+        els.noticeBoardList.innerHTML = noticeBoardRows.map(boardPostCard).join("");
+        bindCommunityPostActions(els.noticeBoardList);
+      }
+      updateCommunityBoardNavMark();
+    }
+
+    function renderFreeBoard() {
+      if (!els.freeBoardList) return;
+      if (!freeBoardRows.length) {
+        els.freeBoardList.innerHTML = `
+          <div class="inquiry-empty">
+            <strong>아직 작성된 자유게시판 글이 없습니다.</strong>
+            <span>첫 번째 공략이나 득템 기록을 남겨 보세요.</span>
+          </div>
+        `;
+      } else {
+        els.freeBoardList.innerHTML = freeBoardRows.map(boardPostCard).join("");
+        bindCommunityPostActions(els.freeBoardList);
+      }
+      updateCommunityBoardNavMark();
+    }
+
+    async function detectCommunityBoardAdmin() {
+      if (!onlineClient || !onlineUser?.id) return false;
+      try {
+        const {data,error} = await onlineClient.rpc("is_game_board_admin");
+        if (error) throw error;
+        communityBoardAdmin = !!data;
+      } catch {
+        communityBoardAdmin = false;
+      }
+      return communityBoardAdmin;
+    }
+
+    async function fetchCommunityBoard({notices=true,free=true,silent=false}={}) {
+      if (communityBoardFetchBusy) return false;
+      if (!onlineClient || !onlineUser?.id) await initializeOnlineRanking();
+      if (!onlineClient || !onlineUser?.id) return false;
+
+      communityBoardFetchBusy = true;
+      inquiryConnectionStatus("syncing","게시판 불러오는 중");
+      els.inquiryRefreshBtn.disabled = true;
+
+      try {
+        await detectCommunityBoardAdmin();
+
+        if (notices) {
+          const {data,error} = await onlineClient
+            .from("game_board_posts")
+            .select("id,board_type,user_id,nickname,class_id,title,content,pinned,created_at,updated_at")
+            .eq("board_type","notice")
+            .order("pinned",{ascending:false})
+            .order("created_at",{ascending:false})
+            .limit(COMMUNITY_BOARD_POST_LIMIT);
+          if (error) throw error;
+          noticeBoardRows = Array.isArray(data) ? data : [];
+        }
+
+        if (free) {
+          const {data,error} = await onlineClient
+            .from("game_board_posts")
+            .select("id,board_type,user_id,nickname,class_id,title,content,pinned,created_at,updated_at")
+            .eq("board_type","free")
+            .order("created_at",{ascending:false})
+            .limit(COMMUNITY_BOARD_POST_LIMIT);
+          if (error) throw error;
+          freeBoardRows = Array.isArray(data) ? data : [];
+        }
+
+        state.communityBoard.lastFetchAt = Date.now();
+        state.communityBoard.lastError = "";
+        inquiryConnectionStatus("connected","게시판 서버 연결됨");
+        renderCommunityBoard();
+        if (!silent) toast("게시판을 새로 불러왔습니다.");
+        return true;
+      } catch (error) {
+        state.communityBoard.lastError = error?.message || "게시판 조회 실패";
+        inquiryConnectionStatus("error","게시판 서버 오류");
+        renderCommunityBoard();
+        if (!silent) toast("게시판을 불러오지 못했습니다. 게시판 SQL 실행 여부를 확인해 주세요.");
+        return false;
+      } finally {
+        communityBoardFetchBusy = false;
+        els.inquiryRefreshBtn.disabled = false;
+        saveState({skipOnline:true});
+      }
+    }
+
+    async function submitCommunityBoardPost(event,boardType) {
+      event?.preventDefault();
+      if (communityBoardSubmitBusy) return;
+      if (!onlineClient || !onlineUser?.id) await initializeOnlineRanking();
+      if (!onlineClient || !onlineUser?.id) return toast("게시판 서버에 연결하지 못했습니다.");
+
+      const isNotice = boardType === "notice";
+      const titleInput = isNotice ? els.noticeBoardTitle : els.freeBoardTitle;
+      const contentInput = isNotice ? els.noticeBoardContent : els.freeBoardContent;
+      const submitButton = isNotice ? els.noticeBoardSubmitBtn : els.freeBoardSubmitBtn;
+      const title = titleInput.value.trim();
+      const content = contentInput.value.trim();
+
+      if (isNotice && !communityBoardAdmin) return toast("공지 작성 권한이 없습니다.");
+      if (title.length < 4) return toast("제목을 4자 이상 입력해 주세요.");
+      if (content.length < 5) return toast("내용을 5자 이상 입력해 주세요.");
+
+      communityBoardSubmitBusy = true;
+      submitButton.disabled = true;
+      inquiryConnectionStatus("syncing",isNotice ? "공지 등록 중" : "게시글 등록 중");
+
+      try {
+        const {data,error} = await onlineClient.rpc("submit_game_board_post",{
+          p_board_type:boardType,
+          p_title:title,
+          p_content:content,
+          p_nickname:cleanNickname(state.nickname || "") || "무명의 사냥꾼",
+          p_class_id:state.classId || "unknown",
+          p_pinned:isNotice && !!els.noticeBoardPinned.checked
+        });
+        if (error) throw error;
+
+        const result = normalizeRpcResult(data);
+        if (!result.ok) {
+          if (result.reason === "rate_limited") {
+            const minutes = Math.max(1,Math.ceil(Number(result.retry_after_seconds || 60)/60));
+            throw new Error(`게시글 작성 횟수가 초과되었습니다. 약 ${minutes}분 후 다시 시도해 주세요.`);
+          }
+          throw new Error("게시글을 등록하지 못했습니다.");
+        }
+
+        titleInput.value = "";
+        contentInput.value = "";
+        if (isNotice) els.noticeBoardPinned.checked = false;
+        boardFormCounts();
+        toast(isNotice ? "공지사항을 등록했습니다." : "자유게시판 글을 등록했습니다.");
+        await fetchCommunityBoard({
+          notices:isNotice,
+          free:!isNotice,
+          silent:true
+        });
+      } catch (error) {
+        inquiryConnectionStatus("error","게시글 등록 실패");
+        toast(error?.message || "게시글을 등록하지 못했습니다.");
+      } finally {
+        communityBoardSubmitBusy = false;
+        submitButton.disabled = false;
+      }
+    }
+
+    async function deleteCommunityBoardPost(postId) {
+      if (!postId || !confirm("이 게시글을 삭제할까요?")) return;
+      if (!onlineClient || !onlineUser?.id) await initializeOnlineRanking();
+      try {
+        const {data,error} = await onlineClient.rpc("delete_game_board_post",{
+          p_post_id:postId
+        });
+        if (error) throw error;
+        const result = normalizeRpcResult(data);
+        if (!result.ok) throw new Error("삭제 권한이 없거나 이미 삭제된 글입니다.");
+        toast("게시글을 삭제했습니다.");
+        await fetchCommunityBoard({notices:true,free:true,silent:true});
+      } catch (error) {
+        toast(error?.message || "게시글을 삭제하지 못했습니다.");
+      }
+    }
+
+    async function copyCommunityBoardUserId() {
+      if (!onlineUser?.id) return toast("익명 로그인을 준비 중입니다.");
+      try {
+        await navigator.clipboard.writeText(onlineUser.id);
+        toast("게시판 사용자 ID를 복사했습니다.");
+      } catch {
+        toast(`사용자 ID: ${onlineUser.id}`);
+      }
+    }
+
+    function renderCommunityBoard() {
+      if (!els.communityBoardTabs) return;
+      if (els.boardCurrentUserId) els.boardCurrentUserId.textContent = onlineUser?.id || "익명 로그인 준비 중";
+      selectCommunityBoardTab(state.communityBoard.tab || "notice",{fetch:false});
+      boardFormCounts();
+      renderNoticeBoard();
+      renderFreeBoard();
+      renderInquiryBoard();
+      updateCommunityBoardNavMark();
+
+      if (state.communityBoard.lastError && !state.inquiry.lastError) {
+        inquiryConnectionStatus("error","게시판 서버 오류");
+      } else if (onlineClient && onlineUser?.id) {
+        inquiryConnectionStatus("connected","게시판 서버 연결됨");
+      } else {
+        inquiryConnectionStatus("connecting","서버 연결 준비");
+      }
+    }
+
     function inquiryCategoryMeta(category) {
       return inquiryCategories[category] || inquiryCategories.other;
     }
@@ -2718,9 +3171,7 @@ const VERSION = 44;
     }
 
     function updateInquiryNavMark() {
-      if (!els.inquiryNavMark) return;
-      const unread = inquiryMineRows.filter(inquiryHasUnreadAnswer).length;
-      els.inquiryNavMark.textContent = unread ? String(Math.min(99,unread)) : "";
+      updateCommunityBoardNavMark();
     }
 
     function selectInquiryTab(tab,{fetch=true}={}) {
@@ -3689,7 +4140,7 @@ const VERSION = 44;
         s.attack += item.stats.attack || 0;
         s.magicPower += item.stats.magicPower || 0;
         s.defense += item.stats.defense || 0;
-        s.crit += item.stats.crit || 0;
+        s.crit += appliedItemCrit(item);
         s.goldFind += item.stats.goldFind || 0;
         s.mapFind += item.stats.mapFind || 0;
         s.itemFind += item.stats.itemFind || 0;
@@ -3787,15 +4238,23 @@ const VERSION = 44;
     }
 
     function chooseRarity(bonus=0) {
-      const adjusted = rarityTable.map((r, i) => ({
+      const scaledBonus = Math.max(0,Math.min(20,Number(bonus) || 0));
+      const multipliers = {
+        common:1/(1+scaledBonus*.028),
+        uncommon:1+scaledBonus*.008,
+        rare:1+scaledBonus*.040,
+        epic:1+scaledBonus*.055,
+        legendary:1+scaledBonus*.012
+      };
+      const adjusted = rarityTable.map(r => ({
         ...r,
-        weight: i === 0 ? Math.max(30, r.weight - bonus * 1.9) : r.weight + bonus * (i * .34)
+        weight:r.weight*(multipliers[r.key] || 1)
       }));
-      const total = adjusted.reduce((sum, r) => sum + r.weight, 0);
-      let roll = Math.random() * total;
-      for (const r of adjusted) {
-        roll -= r.weight;
-        if (roll <= 0) return r;
+      const total = adjusted.reduce((sum,r) => sum+r.weight,0);
+      let roll = Math.random()*total;
+      for (const rarity of adjusted) {
+        roll -= rarity.weight;
+        if (roll <= 0) return rarity;
       }
       return adjusted[0];
     }
@@ -3902,7 +4361,7 @@ const VERSION = 44;
       return powerOfStats({
         maxHp:stats.maxHp || 0, maxMp:stats.maxMp || 0,
         attack:stats.attack || 0, magicPower:stats.magicPower || 0,
-        defense:stats.defense || 0, crit:stats.crit || 0,
+        defense:stats.defense || 0, crit:appliedItemCrit(stats),
         goldFind:stats.goldFind || 0, mapFind:stats.mapFind || 0,
         itemFind:stats.itemFind || 0, dodge:stats.dodge || 0,
         doubleHit:stats.doubleHit || 0,
@@ -3999,6 +4458,21 @@ const VERSION = 44;
       };
     }
 
+
+    const rarityOrder = ["common","uncommon","rare","epic","legendary"];
+
+    function rarityAtLeast(rolled,minRarityKey) {
+      if (!minRarityKey) return rolled;
+      const rolledRank = rarityOrder.indexOf(rolled?.key);
+      const minimumRank = rarityOrder.indexOf(minRarityKey);
+      if (minimumRank < 0 || rolledRank >= minimumRank) return rolled;
+      return rarityTable.find(entry => entry.key === minRarityKey) || rolled;
+    }
+
+    function rarityLabel(key) {
+      return rarityTable.find(entry => entry.key === key)?.name || "고급";
+    }
+
     function shuffledCopy(list) {
       const copy = [...list];
       for (let i=copy.length-1;i>0;i--) {
@@ -4008,14 +4482,15 @@ const VERSION = 44;
       return copy;
     }
 
-    function generateStandardItem(zoneMult,rareMapBonus=0,forcedSlot=null,forcedRarityKey=null) {
+    function generateStandardItem(zoneMult,rareMapBonus=0,forcedSlot=null,forcedRarityKey=null,minRarityKey=null) {
       const slot = forcedSlot || randomChoice(slots).key;
       const intrinsic = {};
       const playerFactor = 1+(state.level-1)*.08;
       const base = playerFactor*zoneMult*(.85+Math.random()*.32);
-      const rarity = forcedRarityKey
+      const rolledRarity = forcedRarityKey
         ? (rarityTable.find(entry => entry.key === forcedRarityKey) || chooseRarity(rareMapBonus+totalStats().itemFind/18))
         : chooseRarity(rareMapBonus+totalStats().itemFind/18);
+      const rarity = forcedRarityKey ? rolledRarity : rarityAtLeast(rolledRarity,minRarityKey);
 
       if (slot === "weapon") intrinsic.attack = Math.max(2,Math.round(5.5*base*rarity.mult));
       if (slot === "armor") {
@@ -4085,19 +4560,33 @@ const VERSION = 44;
       return item;
     }
 
-    function generateItem(zoneMult, rareMapBonus=0) {
+    function generateItem(zoneMult, rareMapBonus=0, minRarityKey=null) {
       const slot = randomChoice(slots).key;
-      const playerFactor = 1 + (state.level - 1) * .08;
-      const base = playerFactor * zoneMult * (0.88 + Math.random() * .25);
-      const developerMult = 1;
-      const specialFind = Math.min(.012, (totalStats().itemFind || 0) * .00003);
-      const uniqueChance = (.003 + rareMapBonus * .00055 + specialFind * .22) * developerMult;
-      const setChance = (.018 + rareMapBonus * .0012 + specialFind) * developerMult;
+      const playerFactor = 1+(state.level-1)*.08;
+      const base = playerFactor*zoneMult*(.88+Math.random()*.25);
+      const chances = fieldSpecialDropChances(
+        rareMapBonus,
+        totalStats().itemFind || 0
+      );
       const roll = Math.random();
 
-      if (roll < Math.min(.18,uniqueChance)) return generateUniqueItem(base,slot);
-      if (roll < Math.min(.42,uniqueChance+setChance)) return generateSetItem(base,slot);
-      return generateStandardItem(zoneMult,rareMapBonus,slot);
+      if (roll < chances.unique) return generateUniqueItem(base,slot);
+      if (roll < chances.unique+chances.set) return generateSetItem(base,slot);
+      return generateStandardItem(zoneMult,rareMapBonus,slot,null,minRarityKey);
+    }
+
+    function itemCritApplicationLine(item) {
+      const raw = Math.max(0,Number(item?.stats?.crit || 0));
+      if (raw <= 0) return "";
+      const applied = appliedItemCrit(item);
+      const overflow = Math.max(0,raw-applied);
+      return `
+        <span class="affix-source crit-apply-source">적용</span>
+        <span class="crit-application-line ${overflow > 0 ? "capped" : ""}">
+          치명타 ${applied.toFixed(1)}% / 장비당 상한 ${EQUIPMENT_CRIT_CAP}%
+          ${overflow > 0 ? `<b>· 초과 ${overflow.toFixed(1)}% 미적용</b>` : ""}
+        </span>
+      `;
     }
 
     function itemStatLines(item) {
@@ -4126,13 +4615,18 @@ const VERSION = 44;
           applyAffixTierMetadata(affix);
           rows.push(`<span class="affix-source">${affix.kind === "prefix" ? "접두사" : "접미사"}</span>[${affix.name}] ${affix.label} +${affix.value}${affix.percent ? "%" : ""}<span class="affix-tier-tag">${affix.tierLabel}</span>`);
         });
+        const critLine = itemCritApplicationLine(item);
+        if (critLine) rows.push(critLine);
         return rows;
       }
 
       // 이전 버전에서 저장된 장비 호환
-      return Object.entries(item.stats || {}).filter(([,v]) => v).map(([k,v]) =>
+      const rows = Object.entries(item.stats || {}).filter(([,v]) => v).map(([k,v]) =>
         `${labels[k] || k} +${v}${percentStats.includes(k) ? "%" : ""}`
       );
+      const critLine = itemCritApplicationLine(item);
+      if (critLine) rows.push(critLine);
+      return rows;
     }
 
 
@@ -4810,6 +5304,47 @@ const VERSION = 44;
       els.dailyBossHistory.innerHTML = state.dailyBoss.history.length ? state.dailyBoss.history.map(line => `<div class="expedition-history-row">${line}</div>`).join("") : `<div class="expedition-history-row">아직 일일 보스 기록이 없다.</div>`;
     }
 
+
+
+    function focusResourcePanel(element) {
+      if (!element) return;
+      element.classList.remove("resource-focus-pulse");
+      void element.offsetWidth;
+      element.classList.add("resource-focus-pulse");
+      element.scrollIntoView({behavior:"smooth",block:"center"});
+      setTimeout(() => element.classList.remove("resource-focus-pulse"),1800);
+    }
+
+    function openStaminaGuide() {
+      switchPage("staminacamp");
+      requestAnimationFrame(() => window.scrollTo({top:0,behavior:"smooth"}));
+    }
+
+    function openDustUsageGuide() {
+      switchPage("inventory");
+      requestAnimationFrame(() => focusResourcePanel(els.dustGuidePanel));
+    }
+
+    function selectNavSection(section,{openDefaultPage=false}={}) {
+      if (!navSections[section]) return;
+      activeNavSection = section;
+      document.querySelectorAll(".top-section-tab").forEach(button => {
+        button.classList.toggle("active",button.dataset.navSection === section);
+      });
+      document.querySelectorAll(".top-subnav").forEach(group => {
+        group.classList.toggle("active",group.dataset.navGroup === section);
+      });
+      if (openDefaultPage) {
+        switchPage(navSections[section].defaultPage);
+      }
+    }
+
+    function returnToHomeScreen() {
+      switchPage("hunt");
+      setMobileNavExpanded(false);
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+
     function setMobileNavExpanded(expanded) {
       mobileNavExpanded = !!expanded;
       els.topTabs?.classList.toggle("mobile-expanded",mobileNavExpanded);
@@ -4823,6 +5358,8 @@ const VERSION = 44;
     }
 
     function switchPage(page) {
+      const section = navSectionByPage[page] || "hunt";
+      selectNavSection(section);
       document.querySelectorAll(".page").forEach(el => el.classList.toggle("active", el.dataset.page === page));
       document.querySelectorAll(".top-tab").forEach(el => el.classList.toggle("active", el.dataset.pageTarget === page));
       if (page === "guide") renderGuide();
@@ -4847,15 +5384,13 @@ const VERSION = 44;
         fetchOnlineRanking({silent:true});
       }
       if (page === "inquiry") {
-        renderInquiryBoard();
+        renderCommunityBoard();
+        fetchCommunityBoard({notices:true,free:true,silent:true});
         fetchInquiries({mine:true,publicRows:true,silent:true});
       }
       if (page === "savevault") renderSaveVault();
       if (page === "gamble") renderGambleShop();
       if (page === "market") renderMarket();
-      if (window.matchMedia("(max-width: 760px)").matches) {
-        setMobileNavExpanded(false);
-      }
     }
 
     function rarityRank(item) {
@@ -4954,7 +5489,7 @@ const VERSION = 44;
       item.score = powerOfStats({
         maxHp: stats.maxHp || 0, maxMp: stats.maxMp || 0,
         attack: stats.attack || 0, magicPower: stats.magicPower || 0,
-        defense: stats.defense || 0, crit: stats.crit || 0,
+        defense: stats.defense || 0, crit: appliedItemCrit(stats),
         goldFind: stats.goldFind || 0, mapFind: stats.mapFind || 0,
         itemFind: stats.itemFind || 0,
         dodge: stats.dodge || 0, doubleHit: stats.doubleHit || 0,
@@ -5022,13 +5557,18 @@ const VERSION = 44;
       renderAll();
     }
 
-    function reforgeInventoryItem(id) {
-      const item = findInventoryItem(id);
-      if (!item || itemKind(item) !== "normal" || !Array.isArray(item.affixes) || !item.affixes.length) return toast("세트와 유니크는 재련할 수 없습니다.");
-      if (item.locked) return toast("잠금을 해제한 뒤 재련하세요.");
-      const cost = Math.max(4, rarityRank(item) * 5);
+    function applyDustReforge(item,cost,{tutorial=false}={}) {
+      if (!item || itemKind(item) !== "normal" || !Array.isArray(item.affixes) || !item.affixes.length) {
+        return toast("재련 가능한 일반 장비가 없습니다.");
+      }
+      if (item.locked && state.inventory.some(entry => entry.id === item.id)) {
+        return toast("잠금을 해제한 뒤 재련하세요.");
+      }
       if (state.dust < cost) return toast(`별가루가 부족합니다. 필요 ${cost}`);
+
+      const oldName = item.name;
       state.dust -= cost;
+      state.records.dustSpent = (state.records.dustSpent || 0) + cost;
       item.affixes.forEach(affix => {
         const base = affix.baseValue || affix.value;
         const quality = .78 + Math.random() * .48;
@@ -5041,10 +5581,52 @@ const VERSION = 44;
       rebuildItemFromAffixes(item);
       rebuildStandardItemName(item);
       state.records.reforges = (state.records.reforges || 0) + 1;
-      log(`${item.name} 재련 · 접사 종류 유지, 수치 재추첨 · ${fmt(item.score)}점`, "rarity-epic");
-      toast("접사 수치를 재련했습니다.");
+      if (tutorial) state.guide.dustTutorialUsed = true;
+
+      log(
+        `${tutorial ? "별가루 재련 체험" : "재련"} · ${oldName} → ${item.name} · 별가루 -${cost} · 접사 수치 재추첨`,
+        "rarity-epic"
+      );
+      toast(tutorial ? "별가루를 사용해 장비를 재련했습니다." : "접사 수치를 재련했습니다.");
       saveState();
       renderAll();
+      return true;
+    }
+
+    function reforgeInventoryItem(id) {
+      const item = findInventoryItem(id);
+      if (!item || itemKind(item) !== "normal" || !Array.isArray(item.affixes) || !item.affixes.length) {
+        return toast("세트와 유니크는 재련할 수 없습니다.");
+      }
+      const cost = Math.max(4,rarityRank(item)*5);
+      applyDustReforge(item,cost);
+    }
+
+    function tutorialReforgeCandidate() {
+      const inventoryItem = state.inventory.find(item =>
+        !item.locked
+        && itemKind(item) === "normal"
+        && Array.isArray(item.affixes)
+        && item.affixes.length
+      );
+      if (inventoryItem) return inventoryItem;
+      return Object.values(state.equipment || {}).find(item =>
+        item
+        && itemKind(item) === "normal"
+        && Array.isArray(item.affixes)
+        && item.affixes.length
+      ) || null;
+    }
+
+    function useTutorialDustReforge() {
+      if (state.guide.dustTutorialUsed) {
+        return toast("별가루 재련 체험은 이미 완료했습니다. 장비 카드의 재련 버튼으로 계속 이용할 수 있습니다.");
+      }
+      const item = tutorialReforgeCandidate();
+      if (!item) {
+        return toast("재련 가능한 일반 장비가 없습니다. 사냥으로 접사가 붙은 장비를 한 개 더 획득해 주세요.");
+      }
+      applyDustReforge(item,1,{tutorial:true});
     }
 
     function bulkSellJunk() {
@@ -5117,12 +5699,104 @@ const VERSION = 44;
             <button data-inventory-lock="${item.id}">${item.locked ? "잠금 해제" : "잠금"}</button>
             <button data-inventory-sell="${item.id}">판매 +${fmt(item.sellPrice)}G</button>
             <button data-inventory-salvage="${item.id}">분해</button>
-            ${kind === "normal" && Array.isArray(item.affixes) && item.affixes.length ? `<button data-inventory-reforge="${item.id}">재련</button><button data-extract-affix="${item.id}">접사 추출</button>` : ""}
+            ${kind === "normal" && Array.isArray(item.affixes) && item.affixes.length ? `<button data-inventory-reforge="${item.id}">재련 · 별가루 ${Math.max(4,rarityRank(item)*5)}</button><button data-extract-affix="${item.id}">접사 추출</button>` : ""}
             ${kind === "unique" && canEvolveUnique(item) ? `<button data-evolve-unique="${item.id}">중복 유니크 진화</button>` : ""}
             <button data-inventory-discard="${item.id}">버리기</button>
           </div>`}
         </article>
       `;
+    }
+
+
+    function renderCoreResourceEducation() {
+      const staminaText = `${fmtStamina(state.stamina)} / ${STAMINA_MAX}`;
+      const dustText = `별가루 ${fmt(state.dust)}`;
+
+      if (els.globalStaminaValue) els.globalStaminaValue.textContent = `활력 ${staminaText}`;
+      if (els.globalStaminaHint) els.globalStaminaHint.textContent = `사냥에 사용 · ${staminaRecoveryLabel()}`;
+      if (els.globalDustValue) els.globalDustValue.textContent = dustText;
+      if (els.guideStaminaValue) els.guideStaminaValue.textContent = staminaText;
+      if (els.guideDustValue) els.guideDustValue.textContent = dustText;
+      if (els.dustGuideBalance) els.dustGuideBalance.textContent = `보유 별가루 ${fmt(state.dust)}`;
+
+      if (els.globalStaminaCard) {
+        const low = state.stamina <= Math.max(5,STAMINA_MAX*.15);
+        els.globalStaminaCard.classList.toggle("resource-low",low);
+      }
+
+      if (els.tutorialDustReforgeBtn) {
+        const candidate = tutorialReforgeCandidate();
+        const used = !!state.guide.dustTutorialUsed;
+        els.tutorialDustReforgeBtn.disabled = used || !candidate || state.dust < 1;
+        els.tutorialDustReforgeBtn.textContent = used
+          ? "별가루 재련 체험 완료"
+          : candidate
+            ? "별가루 1개로 재련 체험"
+            : "재련 가능한 장비 필요";
+
+        els.tutorialDustHint.textContent = used
+          ? "이제 각 장비 카드의 ‘재련 · 별가루 N’ 버튼으로 실제 재련을 계속할 수 있습니다."
+          : !candidate
+            ? "사냥으로 접사가 붙은 일반 장비를 획득하면 체험할 수 있습니다."
+            : state.dust < 1
+              ? "별가루가 없습니다. 필요 없는 장비를 분해하거나 가이드 보상을 받아 주세요."
+              : `${candidate.name}을 자동 선택해 접사 수치를 다시 추첨합니다.`;
+      }
+    }
+
+
+    function renderInventoryExpansion() {
+      if (!els.inventoryExpansionPanel) return;
+      state.inventoryCapacity = normalizeInventoryCapacity(state.inventoryCapacity);
+      const capacity = state.inventoryCapacity;
+      const maxed = capacity >= MAX_INVENTORY_CAPACITY;
+      const cost = inventoryExpansionCost();
+      const progress = Math.max(
+        0,
+        Math.min(100,((capacity-BASE_INVENTORY_CAPACITY)/(MAX_INVENTORY_CAPACITY-BASE_INVENTORY_CAPACITY))*100)
+      );
+
+      els.inventoryExpansionCapacity.textContent = `${fmt(capacity)} / ${fmt(MAX_INVENTORY_CAPACITY)}칸`;
+      els.inventoryExpansionBar.style.width = `${progress}%`;
+      els.inventoryExpansionPrice.textContent = maxed ? "최대 확장" : `${fmt(cost)} G`;
+      els.inventoryExpansionBtn.textContent = maxed ? "최대치 도달" : `5칸 확장 · ${fmt(cost)}G`;
+      els.inventoryExpansionBtn.disabled = maxed || state.gold < cost;
+      els.inventoryExpansionHint.textContent = maxed
+        ? "더 이상 확장할 수 없습니다."
+        : state.gold < cost
+          ? `골드 ${fmt(cost-state.gold)} 부족`
+          : `확장 후 ${fmt(capacity+INVENTORY_EXPANSION_STEP)}칸`;
+      els.inventoryExpansionPanel.classList.toggle("maxed",maxed);
+    }
+
+    function purchaseInventoryExpansion() {
+      state.inventoryCapacity = normalizeInventoryCapacity(state.inventoryCapacity);
+      if (state.inventoryCapacity >= MAX_INVENTORY_CAPACITY) {
+        return toast("전리품 가방은 이미 최대 100칸입니다.");
+      }
+
+      const cost = inventoryExpansionCost();
+      if (state.gold < cost) {
+        return toast(`골드가 부족합니다. 필요 ${fmt(cost)}G`);
+      }
+
+      const before = state.inventoryCapacity;
+      state.gold -= cost;
+      state.inventoryCapacity = Math.min(
+        MAX_INVENTORY_CAPACITY,
+        before+INVENTORY_EXPANSION_STEP
+      );
+      state.records.inventoryExpansions = (state.records.inventoryExpansions || 0)+1;
+      state.records.inventoryExpansionGoldSpent =
+        (state.records.inventoryExpansionGoldSpent || 0)+cost;
+
+      log(
+        `전리품 가방 확장 · ${before}칸 → ${state.inventoryCapacity}칸 · ${fmt(cost)}G 사용`,
+        "positive"
+      );
+      toast(`전리품 가방이 ${state.inventoryCapacity}칸으로 확장되었습니다.`);
+      saveState();
+      renderAll();
     }
 
     function renderInventory() {
@@ -5140,7 +5814,9 @@ const VERSION = 44;
       els.inventoryCount.textContent = `${state.inventory.length} / ${state.inventoryCapacity}`;
       els.dustCount.textContent = `별가루 ${fmt(state.dust)}`;
       els.tierStoneCount.textContent = `동급 각인석 ${fmt(state.materials.sameTierRunes || 0)}`;
-      els.inventoryNavCount.textContent = `(${state.inventory.length})`;
+      els.inventoryNavCount.textContent = `(${state.inventory.length}/${state.inventoryCapacity})`;
+      renderInventoryExpansion();
+      renderCoreResourceEducation();
       els.inventoryGrid.innerHTML = items.length
         ? items.map(item => inventoryCardHtml(item)).join("")
         : `<div class="inventory-empty">이 칸에는 아직 전리품이 없다.<br>균열에서 이름 있는 물건을 찾아보자.</div>`;
@@ -5391,13 +6067,26 @@ const VERSION = 44;
           <div class="info-grid">
             ${rarityTable.map(r => `<div class="info-card"><h3 class="${r.className}">${r.name}</h3><p>기본 가중치 ${r.weight}%</p><p>접두사 ${r.prefixCount}개 · 접미사 ${r.suffixCount}개 · 판매 배율 ×${r.sell}</p></div>`).join("")}
             <div class="info-card"><h3>장비 보관 규칙</h3><p>획득 즉시 인벤토리에 들어갑니다. 장착 시 기존 장비도 인벤토리로 회수됩니다.</p><p>인벤토리가 기준 용량에 도달하면 자동 사냥이 중지되며 장비는 삭제되지 않습니다.</p></div>
-            <div class="info-card"><h3>희귀 지도</h3><p>정예 처치와 지도 발견 능력치에 따라 발견 확률이 증가합니다.</p><p>테스트 모드는 희귀 지도를 빠르게 확인하기 위한 높은 확률 설정입니다.</p></div>
+            <div class="info-card"><h3>희귀 지도</h3><p>정예 처치와 지도 발견 능력치에 따라 발견 확률이 증가합니다.</p><p>모든 희귀 지도는 일반 등급을 제외하고 <strong>고급 이상 장비</strong>를 보장합니다. 피의 투기장은 일반 장비가 나올 경우 영웅 이상을 보장합니다.</p></div>
             <div class="info-card"><h3>접두사 표</h3><p>강력한→공격력 · 비전의→마법력 · 철벽의→방어력 · 생명의→최대 체력</p><p>예리한→치명타 · 탐욕의→골드 · 발견자의→장비 발견 · 신속한→속도</p></div>
             <div class="info-card"><h3>접미사 표</h3><p>학살자→공격력 · 대마도사→마법력 · 수호자→방어력 · 불사자→최대 체력</p><p>매의 눈→치명타 · 보물사냥꾼→장비 발견 · 길잡이→희귀 지도 · 행운아→행운</p></div>
-            <div class="info-card"><h3>접사 수치 규칙</h3><p>접사의 이름과 효과는 고정되고 수치만 달라진다.</p><p>일반 전리품의 영웅·전설 확률은 크게 낮아졌다.</p></div>
+            <div class="info-card"><h3>접사 수치 규칙</h3><p>접사의 이름과 효과는 고정되고 수치만 달라집니다.</p><p>6접사 전설 장비는 단품 성능이 높으므로 기본 가중치를 약 ${(STANDARD_LEGENDARY_BASE_WEIGHT).toFixed(3)}%로 낮추고, 희귀 지도 보정도 제한했습니다.</p></div>
             <div class="info-card"><h3 class="rarity-set">세트 전리품</h3><p>일반 등급과 별개의 녹색 전리품이다. 같은 세트를 2·3·4부위 장착할 때마다 고유 효과가 열린다.</p><p>잿빛 파수꾼 · 별무리 서약 · 붉은 사냥, 세 종류가 존재한다.</p></div>
             <div class="info-card"><h3 class="rarity-unique">유니크 유물</h3><p>이름·설정·능력치·고유 효과가 고정된 붉은 유물이다. 접사가 붙지 않으며 재련할 수도 없다.</p><p>일부 유물은 특정 기술 또는 모든 기술의 레벨을 올린다.</p></div>
-            <div class="info-card"><h3>특별 전리품 확률</h3><p>장비 드롭 판정 뒤 세트 약 1.8%, 유니크 약 0.3%의 별도 판정을 거친다.</p><p>희귀 지도와 장비 발견 능력치는 이 확률을 조금 높인다.</p></div>
+            <div class="info-card loot-hierarchy-card">
+              <h3>전리품 희귀도 정책</h3>
+              <div class="loot-hierarchy-line">
+                <span class="rarity-rare">희귀 약 4.6%</span>
+                <b>›</b>
+                <span class="rarity-set">세트 약 ${(FIELD_SET_BASE_CHANCE*100).toFixed(2)}%</span>
+                <b>›</b>
+                <span class="rarity-unique">유니크 약 ${(FIELD_UNIQUE_BASE_CHANCE*100).toFixed(2)}%</span>
+                <b>›</b>
+                <span class="rarity-legendary">전설 약 ${STANDARD_LEGENDARY_BASE_WEIGHT.toFixed(3)}%</span>
+              </div>
+              <p>세트는 희귀와 유니크 사이에서 등장하고, 단품 성능이 높은 6접사 전설은 가장 낮은 일반 드롭률을 가집니다.</p>
+              <p>토요일 대적자, 유물 운반자처럼 특정 전리품을 노리는 전용 콘텐츠는 예외적으로 확률이 높습니다.</p>
+            </div>
             <div class="info-card"><h3>접사 수치 등급</h3><p>접사 이름은 수치 범위를 뜻한다. 공격력 +10~19는 ‘강인한’, +20~39는 ‘강력한’으로 표시된다.</p><p>수치가 다른 등급으로 넘어가면 접사 이름도 함께 바뀐다.</p></div>
             <div class="info-card"><h3>동급 각인석</h3><p>오늘의 균열에서만 얻는 재료다. 접사의 이름과 수치 등급을 유지하면서 해당 범위 안에서만 값을 다시 굴린다.</p><p>예: 강인한 공격력 +10을 사용하면 +10~19 안에서 다시 결정된다.</p></div>
             <div class="info-card"><h3>출석부</h3><p>하루 한 번 보상을 받을 수 있으며, 접속을 놓쳐도 7일 보상 순서는 초기화되지 않는다.</p><p>연속 7일마다 별가루 보너스가 추가된다.</p></div>
@@ -5414,12 +6103,12 @@ const VERSION = 44;
             <div class="info-card"><h3>잠금·자동 처리</h3><p>중요 장비는 잠그고, 일반 장비는 등급별로 자동 판매·분해할 수 있다. 세트·유니크와 6접사는 별도 보호 가능하다.</p></div>
             <div class="info-card"><h3>접사 추출·계승</h3><p>장비를 파괴해 가장 강한 접사를 추출한다. 성공률은 등급에 따라 1~5%이며 성공한 접사는 다른 장비에 계승할 수 있다.</p></div>
             <div class="info-card"><h3>수집·칭호·용병</h3><p>세트·유니크 수집은 영구 능력치와 보상을 제공한다. 업적으로 칭호를 얻고 용병 한 명을 동행시킬 수 있다.</p></div>
-            <div class="info-card"><h3 class="rarity-legendary">눈먼 행상인의 도박</h3><p>무기·갑옷·반지·부적 중 부위만 선택해 현재 성장 수준에 맞는 미확인 장비를 구매한다.</p><p>가격은 레벨과 전투력에 따라 상승하며 세트와 유니크도 극히 낮은 확률로 등장한다. 장비 발견 수치는 도박 확률에 영향을 주지 않는다.</p></div>
-            <div class="info-card"><h3>모바일 전리품 수령</h3><p>사냥 중 획득한 장비와 회복품은 별도의 확인창 없이 즉시 전리품 가방과 회복품 가방에 들어간다.</p><p>스킬북도 기술서 보관함으로 자동 이동하며, 획득 내용은 전투 기록과 메뉴의 보유 수량으로 확인한다.</p></div>
+            <div class="info-card"><h3 class="rarity-legendary">눈먼 행상인의 도박</h3><p>무기·갑옷·반지·부적 중 부위만 선택해 현재 성장 수준에 맞는 미확인 장비를 구매합니다.</p><p>도박에서도 세트는 희귀와 유니크 사이, 전설은 유니크보다 낮은 확률로 등장합니다. 장비 발견 수치는 도박 확률에 영향을 주지 않습니다.</p></div>
+            <div class="info-card"><h3>전리품 가방과 확장</h3><p>사냥 중 획득한 장비는 전리품 가방으로 즉시 들어갑니다. 가방은 40칸에서 시작하며 골드를 사용해 5칸씩, 최대 100칸까지 확장할 수 있습니다.</p><p>치명타 확률은 장비 한 개당 최대 10%까지만 적용되며 초과 수치는 전투와 장비 점수에서 제외됩니다.</p></div>
             <div class="info-card"><h3>활력 제한</h3><p>일반 사냥은 활력 1, 희귀 지도는 활력 3을 사용합니다.</p><p>최대 60이며 10분마다 1 회복됩니다. 활력이 없으면 자동 사냥도 멈춥니다.</p></div>
             <div class="info-card"><h3>마나와 기술</h3><p>직업마다 고유 기술과 마나 소모량이 다릅니다. 마나가 부족하면 기본 공격으로 계속 전투합니다.</p><p>승리 후 최대 마나의 5%를 회복하고, 마나약과 혼합 영약으로 추가 회복할 수 있습니다.</p></div>
             <div class="info-card"><h3>회복품 선택</h3><p>전투 후 치유약·마나약·혼합 영약을 발견할 수 있습니다.</p><p>수동 사냥에서는 즉시 사용·보관·판매를 선택하며, 자동 사냥에서는 자동 보관됩니다.</p></div>
-            <div class="info-card"><h3>장비 분해와 재련</h3><p>필요 없는 장비를 분해하면 별가루를 얻습니다.</p><p>재련은 접두사·접미사의 종류를 유지하면서 수치만 다시 추첨합니다.</p></div>
+            <div class="info-card"><h3>별가루 · 장비 분해와 재련</h3><p><strong>별가루</strong>는 필요 없는 장비를 분해하거나 의뢰·균열 보상으로 얻는 재련 재료입니다.</p><p>전리품 가방의 일반 장비에서 ‘재련 · 별가루 N’을 누르면 접두사·접미사의 종류는 유지하면서 수치만 다시 추첨합니다.</p></div>
             <div class="info-card"><h3>전리품 피버</h3><p>승리·정예·변이 처치로 게이지가 차며, 100이 되면 다음 3회 보상이 크게 증가합니다.</p><p>피버 중에는 골드·경험치·장비·희귀 지도 확률이 상승합니다.</p></div>
             <div class="info-card"><h3>변이 몬스터</h3><p>황금빛·거대한·광폭한·보물에 홀린 몬스터가 낮은 확률로 출현합니다.</p><p>각 변이는 위험도와 보상 구조가 다르며 도감에도 기록됩니다.</p></div>
             <div class="info-card"><h3>느린 성장 곡선</h3><p>레벨업 요구 경험치가 크게 증가했고 일반 사냥 경험치와 골드가 감소했습니다.</p><p>레벨당 능력치 포인트는 2이며, 3레벨마다 스킬 포인트를 1 얻습니다.</p></div>
@@ -5434,7 +6123,8 @@ const VERSION = 44;
           ["현재 직업", currentClass()?.name || "미선택"],
           ["직업 숙련도", fmt(state.classId ? state.mastery[state.classId] || 0 : 0)],
           ["현재 레벨 / 전투력", `${fmt(state.level)} / ${fmt(power())}`],
-          ["인벤토리", `${fmt(state.inventory.length)} / ${fmt(state.inventoryCapacity)}`],
+          ["인벤토리", `${fmt(state.inventory.length)} / ${fmt(state.inventoryCapacity)} · 확장 ${fmt(r.inventoryExpansions || 0)}회`],
+          ["가방 확장 지출", `${fmt(r.inventoryExpansionGoldSpent || 0)}G`],
           ["총 처치", fmt(r.kills)], ["승리 / 패배", `${fmt(r.wins)} / ${fmt(r.defeats)}`],
           ["최고 피해", fmt(r.highestDamage)], ["최고 연속 처치", fmt(r.bestStreak)],
           ["획득 장비", fmt(r.items)], ["판매한 장비", fmt(r.itemsSold || 0)],
@@ -5634,6 +6324,7 @@ const VERSION = 44;
       return ({
         kills:r.kills || 0, items:r.items || 0,
         skillUpgrades:r.skillUpgrades || 0, questsClaimed:r.questsClaimed || 0,
+        reforges:r.reforges || 0,
         numberBaseballGames:r.numberBaseballGames || 0, dailyClears:r.dailyClears || 0
       })[type] || 0;
     }
@@ -7846,11 +8537,11 @@ const VERSION = 44;
 
     function rollGambleCategory() {
       const roll = Math.random();
-      if (roll < .0005) return "unique";
-      if (roll < .0025) return "set";
-      if (roll < .0100) return "legendary";
-      if (roll < .0600) return "epic";
-      if (roll < .2300) return "rare";
+      if (roll < .0002) return "legendary";
+      if (roll < .0010) return "unique";
+      if (roll < .0070) return "set";
+      if (roll < .0500) return "epic";
+      if (roll < .2200) return "rare";
       if (roll < .5500) return "uncommon";
       return "common";
     }
@@ -8188,11 +8879,11 @@ const VERSION = 44;
 
     function generateRareMap() {
       const types = [
-        { name:"황금 고블린의 은신처", desc:"골드 보상이 크게 증가합니다.", gold:3.5, item:1.15, difficulty:1.25 },
-        { name:"무기 제작자의 무덤", desc:"장비가 확정 드롭되며 무기 확률이 높습니다.", gold:1.15, item:2.0, difficulty:1.4 },
-        { name:"피의 투기장", desc:"적이 매우 강하지만 영웅 이상 장비 확률이 증가합니다.", gold:1.55, item:2.4, difficulty:1.75 },
-        { name:"뒤틀린 보물창고", desc:"골드와 장비가 모두 크게 증가합니다.", gold:2.2, item:1.8, difficulty:1.55 },
-        { name:"이름 없는 방", desc:"무슨 일이 일어날지 알 수 없습니다.", gold:0.8 + Math.random()*3, item:1 + Math.random()*2.4, difficulty:1.1 + Math.random()*.9 }
+        { name:"황금 고블린의 은신처", desc:"골드 보상이 크게 증가하며 고급 이상 장비만 등장합니다.", gold:3.5, item:1.15, difficulty:1.25, minRarity:"uncommon" },
+        { name:"무기 제작자의 무덤", desc:"장비가 확정 드롭되며 고급 이상 무기 확률이 높습니다.", gold:1.15, item:2.0, difficulty:1.4, minRarity:"uncommon" },
+        { name:"피의 투기장", desc:"적이 매우 강하지만 영웅 이상 일반 장비만 등장합니다.", gold:1.55, item:2.4, difficulty:1.75, minRarity:"epic" },
+        { name:"뒤틀린 보물창고", desc:"골드와 고급 이상 장비가 모두 크게 증가합니다.", gold:2.2, item:1.8, difficulty:1.55, minRarity:"uncommon" },
+        { name:"이름 없는 방", desc:"보상 배율은 불규칙하지만 고급 이상 장비는 보장됩니다.", gold:0.8 + Math.random()*3, item:1 + Math.random()*2.4, difficulty:1.1 + Math.random()*.9, minRarity:"uncommon" }
       ];
       const t = randomChoice(types);
       state.rareMap = {
@@ -8227,6 +8918,7 @@ const VERSION = 44;
         <div class="affixes">
           <div>골드 배율 ×${map.gold.toFixed(2)}</div>
           <div>장비 보상 ×${map.item.toFixed(2)}</div>
+          <div>최저 장비 등급 ${rarityLabel(map.minRarity || "uncommon")} 이상</div>
           <div>적 전투력 ×${map.difficulty.toFixed(2)}</div>
           <div>남은 시간 ${mm}:${ss}</div>
         </div>
@@ -8936,7 +9628,11 @@ const VERSION = 44;
           const bonus = enemy.specialType === "reliccarrier" ? 12 : inRareMap ? 6 : enemy.rank === "일반" ? 0 : 2.5;
           droppedItem = enemy.specialType === "reliccarrier" && Math.random() < .22
             ? (Math.random() < .82 ? generateSetItem(z.mult*1.65,randomChoice(slots).key) : generateUniqueItem(z.mult*1.65,randomChoice(slots).key))
-            : generateItem(z.mult*(inRareMap ? 1.35 : 1),bonus);
+            : generateItem(
+                z.mult*(inRareMap ? 1.35 : 1),
+                bonus,
+                inRareMap ? (state.rareMap?.minRarity || "uncommon") : null
+              );
           storeItem(droppedItem);
           recordDroppedItem(droppedItem);
           const dropVerb = itemKind(droppedItem) === "unique" ? "유물이 모습을 드러냈다" : itemKind(droppedItem) === "set" ? "세트 전리품 발견" : "전리품 획득";
@@ -9519,6 +10215,7 @@ const VERSION = 44;
       els.focusText.textContent = `${fmtStamina(state.stamina)} / ${STAMINA_MAX} · ${staminaRecoveryLabel()}`;
       els.focusBar.style.width = `${state.stamina / STAMINA_MAX * 100}%`;
       els.focusBonusText.textContent = "일반 사냥 -1 · 희귀 지도 -3";
+      renderCoreResourceEducation();
 
       els.currentZoneName.textContent = z.name;
       if (!isBusy) {
@@ -9560,7 +10257,7 @@ const VERSION = 44;
       renderMercenaries();
       renderArena();
       renderOnlineRanking();
-      renderInquiryBoard();
+      renderCommunityBoard();
       renderSaveVault();
       renderGambleShop();
       renderLog();
@@ -9570,14 +10267,23 @@ const VERSION = 44;
       renderMarket();
     }
 
+    document.querySelectorAll(".top-section-tab").forEach(btn => {
+      btn.onclick = () => selectNavSection(btn.dataset.navSection,{openDefaultPage:false});
+    });
     document.querySelectorAll(".top-tab").forEach(btn => btn.onclick = () => switchPage(btn.dataset.pageTarget));
-    els.navMoreToggle.onclick = toggleMobileNav;
+    els.brandHomeButton.onclick = returnToHomeScreen;
+    els.globalStaminaCard.onclick = openStaminaGuide;
+    els.globalDustCard.onclick = openDustUsageGuide;
+    els.guideStaminaBtn.onclick = openStaminaGuide;
+    els.guideDustBtn.onclick = openDustUsageGuide;
+    els.tutorialDustReforgeBtn.onclick = useTutorialDustReforge;
     document.querySelectorAll(".info-tab").forEach(btn => btn.onclick = () => {
       activeInfoTab = btn.dataset.infoTarget;
       renderInfo();
     });
     els.inventoryFilter.onchange = renderInventory;
     els.inventorySort.onchange = renderInventory;
+    els.inventoryExpansionBtn.onclick = purchaseInventoryExpansion;
     els.nicknameSaveBtn.onclick = updateNickname;
     els.nicknameEditInput.onkeydown = event => {
       if (event.key === "Enter") updateNickname();
@@ -9729,13 +10435,30 @@ const VERSION = 44;
       button.onclick = () => selectOnlineMetric(button.dataset.rankingMetric);
     });
 
+    els.communityBoardTabs.querySelectorAll("[data-community-board-tab]").forEach(button => {
+      button.onclick = () => selectCommunityBoardTab(button.dataset.communityBoardTab);
+    });
+    els.noticeBoardForm.onsubmit = event => submitCommunityBoardPost(event,"notice");
+    els.freeBoardForm.onsubmit = event => submitCommunityBoardPost(event,"free");
+    els.noticeBoardTitle.oninput = boardFormCounts;
+    els.noticeBoardContent.oninput = boardFormCounts;
+    els.freeBoardTitle.oninput = boardFormCounts;
+    els.freeBoardContent.oninput = boardFormCounts;
+    els.copyBoardUserIdBtn.onclick = copyCommunityBoardUserId;
+
     els.inquiryTabs.querySelectorAll("[data-inquiry-tab]").forEach(button => {
       button.onclick = () => selectInquiryTab(button.dataset.inquiryTab);
     });
     els.inquiryForm.onsubmit = submitInquiry;
     els.inquiryTitle.oninput = inquiryFormCounts;
     els.inquiryContent.oninput = inquiryFormCounts;
-    els.inquiryRefreshBtn.onclick = () => fetchInquiries({mine:true,publicRows:true,silent:false});
+    els.inquiryRefreshBtn.onclick = async () => {
+      await Promise.all([
+        fetchCommunityBoard({notices:true,free:true,silent:true}),
+        fetchInquiries({mine:true,publicRows:true,silent:true})
+      ]);
+      toast("게시판 전체를 새로 불러왔습니다.");
+    };
     els.inquiryMineFilter.onchange = renderMyInquiries;
     els.inquiryPublicCategory.onchange = renderPublicInquiries;
 
@@ -9769,6 +10492,8 @@ const VERSION = 44;
     }, 1000);
 
     renderAll();
+    selectNavSection(navSectionByPage.hunt || "hunt");
+    fetchCommunityBoard({notices:true,free:true,silent:true});
     fetchInquiries({mine:true,publicRows:true,silent:true});
     updateAutoButton();
     initializeOnlineRanking();
