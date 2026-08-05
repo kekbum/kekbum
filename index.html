@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=50">
+  <link rel="stylesheet" href="styles.css?v=53">
 
 </head>
 <body>
@@ -116,8 +116,8 @@
     <main class="grid">
       <section class="left-column">
         <div class="panel">
-          <div class="panel-title">사냥꾼</div>
-          <div class="panel-body">
+          <div class="panel-title">사냥꾼 요약</div>
+          <div class="panel-body hunt-summary-body">
             <div class="hero-name">
               <div>
                 <span id="heroTitle">무명의 사냥꾼</span>
@@ -126,49 +126,61 @@
               <span class="level-badge" id="levelBadge">Lv.1</span>
             </div>
 
-            <div class="stat-grid">
+            <div class="stat-grid compact-hunt-stats">
               <div class="stat"><span>전투력</span><strong id="power">0</strong></div>
               <div class="stat"><span>골드</span><strong id="gold">0</strong></div>
               <div class="stat"><span>물리 / 마법</span><strong id="attack">0 / 0</strong></div>
-              <div class="stat"><span>방어력</span><strong id="defense">0</strong></div>
               <div class="stat"><span>치명타</span><strong id="crit">0%</strong></div>
+              <div class="stat"><span>방어력</span><strong id="defense">0</strong></div>
               <div class="stat"><span>연속 처치</span><strong id="streak">0</strong></div>
             </div>
 
-            <div class="class-card">
+            <div class="class-card hunt-brief-card">
               <div class="class-card-top"><span id="classPassiveTitle">직업 패시브</span><span id="masteryText">숙련도 0</span></div>
               <div class="class-passive" id="classPassive">직업을 선택하면 고유 효과가 적용됩니다.</div>
               <button class="change-class-btn" id="changeClassBtn">운명의 길 다시 고르기</button>
             </div>
 
-            <div class="attribute-box">
-              <div class="attribute-head"><span>기본 능력치</span><span class="attribute-points" id="statPoints">남은 포인트 0</span></div>
-              <div class="attribute-actions">
-                <button id="recommendedStatsBtn">직업 추천 배분</button>
-                <button id="balancedStatsBtn">균등 배분</button>
+            <div class="hunt-equipment-card">
+              <div class="hunt-equipment-head">
+                <span>장착 장비</span>
+                <small>전투 전력의 핵심 장비를 바로 확인합니다.</small>
               </div>
-              <div class="attribute-grid" id="attributes"></div>
-              <div class="stat-reset-panel">
-                <div>
-                  <strong>능력치 다시 배분</strong>
-                  <span id="statResetHint">첫 초기화는 무료입니다.</span>
+              <div class="equipment" id="equipment"></div>
+            </div>
+
+            <details class="side-detail-toggle">
+              <summary>상세 능력치 · 성장 · 배분 보기</summary>
+              <div class="side-detail-content">
+                <div class="meter-wrap">
+                  <div class="meter-label"><span>경험치</span><span id="xpText"></span></div>
+                  <div class="meter xp"><div id="xpBar"></div></div>
                 </div>
-                <button id="statResetBtn">능력치 초기화</button>
+
+                <div class="meter-wrap">
+                  <div class="meter-label"><span>활력(스태미너)</span><span id="focusText"></span></div>
+                  <div class="meter focus"><div id="focusBar"></div></div>
+                </div>
+
+                <div class="attribute-box">
+                  <div class="attribute-head"><span>기본 능력치</span><span class="attribute-points" id="statPoints">남은 포인트 0</span></div>
+                  <div class="attribute-actions">
+                    <button id="recommendedStatsBtn">직업 추천 배분</button>
+                    <button id="balancedStatsBtn">균등 배분</button>
+                  </div>
+                  <div class="attribute-grid" id="attributes"></div>
+                  <div class="stat-reset-panel">
+                    <div>
+                      <strong>능력치 다시 배분</strong>
+                      <span id="statResetHint">첫 초기화는 무료입니다.</span>
+                    </div>
+                    <button id="statResetBtn">능력치 초기화</button>
+                  </div>
+                </div>
+
+                <div class="notice">일반 사냥은 활력 1, 희귀 지도는 활력 3을 소모합니다. 활력이 0이면 사냥할 수 없으며 10분마다 1씩 회복됩니다.</div>
               </div>
-            </div>
-
-            <div class="meter-wrap">
-              <div class="meter-label"><span>경험치</span><span id="xpText"></span></div>
-              <div class="meter xp"><div id="xpBar"></div></div>
-            </div>
-
-            <div class="meter-wrap">
-              <div class="meter-label"><span>활력(스태미너)</span><span id="focusText"></span></div>
-              <div class="meter focus"><div id="focusBar"></div></div>
-            </div>
-
-            <div class="equipment" id="equipment"></div>
-            <div class="notice">일반 사냥은 활력 1, 희귀 지도는 활력 3을 소모합니다. 활력이 0이면 사냥할 수 없으며 10분마다 1씩 회복됩니다.</div>
+            </details>
           </div>
         </div>
 
@@ -199,25 +211,27 @@
           <span class="hunt-market-hud-link">거래소 열기 ›</span>
         </button>
 
-        <div class="combat-stage">
-          <div class="meter-wrap">
-            <div class="meter-label"><span>내 체력</span><span id="hpText"></span></div>
-            <div class="meter hp"><div id="hpBar"></div></div>
-          </div>
+        <div class="combat-stage combat-stage-focused">
+          <div class="combat-vitals-grid">
+            <div class="meter-wrap compact-meter">
+              <div class="meter-label"><span>내 체력</span><span id="hpText"></span></div>
+              <div class="meter hp"><div id="hpBar"></div></div>
+            </div>
 
-          <div class="meter-wrap">
-            <div class="meter-label"><span>내 마나</span><span id="mpText"></span></div>
-            <div class="meter mp"><div id="mpBar"></div></div>
-          </div>
+            <div class="meter-wrap compact-meter">
+              <div class="meter-label"><span>내 마나</span><span id="mpText"></span></div>
+              <div class="meter mp"><div id="mpBar"></div></div>
+            </div>
 
-          <div class="meter-wrap">
-            <div class="meter-label"><span>지역 과열도</span><span id="heatText"></span></div>
-            <div class="meter heat"><div id="heatBar"></div></div>
-          </div>
+            <div class="meter-wrap compact-meter">
+              <div class="meter-label"><span>지역 과열도</span><span id="heatText"></span></div>
+              <div class="meter heat"><div id="heatBar"></div></div>
+            </div>
 
-          <div class="meter-wrap">
-            <div class="meter-label"><span>전리품 피버</span><span id="feverText"></span></div>
-            <div class="meter fever"><div id="feverBar"></div></div>
+            <div class="meter-wrap compact-meter">
+              <div class="meter-label"><span>전리품 피버</span><span id="feverText"></span></div>
+              <div class="meter fever"><div id="feverBar"></div></div>
+            </div>
           </div>
 
           <div class="button-row">
@@ -235,59 +249,65 @@
             <button class="small-control-btn" id="refillStaminaBtn">시험용 활력 회복</button>
           </div>
 
+          <div id="battleRewardFocus" class="battle-reward-focus"></div>
 
-          <div class="field-care-card">
-            <div class="field-care-head">
-              <div>
-                <div class="field-care-kicker">FIELD CARE CONTRACT</div>
-                <strong>야전 정비 계약</strong>
-              </div>
-              <span class="field-care-status off" id="fieldCareStatus">계약 해제</span>
-            </div>
-
-            <div class="field-care-row">
-              <label class="field-care-toggle">
-                <input type="checkbox" id="fieldCareToggle" />
-                전투 종료 후 골드를 사용해 자동 회복
-              </label>
-            </div>
-
-            <div class="field-care-controls">
-              <label>
-                <span>한 판 최대 지출</span>
-                <input id="fieldCareBudget" type="number" min="1" max="999999" step="1" value="25" />
-                <b>G</b>
-              </label>
-              <label>
-                <span>정비 우선순위</span>
-                <select id="fieldCarePriority">
-                  <option value="balanced">균형 회복</option>
-                  <option value="hp">체력 우선</option>
-                  <option value="mp">마나 우선</option>
-                </select>
-              </label>
-            </div>
-
-            <div class="field-care-presets">
-              <button data-care-budget="10">10G</button>
-              <button data-care-budget="25">25G</button>
-              <button data-care-budget="50">50G</button>
-              <button data-care-budget="100">100G</button>
-            </div>
-
-            <div class="field-care-preview" id="fieldCarePreview">
-              계약을 켜면 전투가 끝날 때 실제로 부족한 자원만 정비한다.
-            </div>
+          <div class="battle-drop-grid">
+            <div id="rareMapCard" class="rare-map hidden"></div>
+            <div id="recoveryCard" class="recovery-card hidden"></div>
+            <div id="skillBookDropCard" class="skillbook-drop-card hidden"></div>
+            <div id="lootCard" class="loot-card hidden"></div>
           </div>
 
-          <div id="rareMapCard" class="rare-map hidden"></div>
-          <div id="recoveryCard" class="recovery-card hidden"></div>
-          <div id="skillBookDropCard" class="skillbook-drop-card hidden"></div>
-          <div id="lootCard" class="loot-card hidden"></div>
+          <details class="field-care-details">
+            <summary>야전 정비 계약 · 자동 회복 설정</summary>
+            <div class="field-care-card compact-field-care">
+              <div class="field-care-head">
+                <div>
+                  <div class="field-care-kicker">FIELD CARE CONTRACT</div>
+                  <strong>야전 정비 계약</strong>
+                </div>
+                <span class="field-care-status off" id="fieldCareStatus">계약 해제</span>
+              </div>
+
+              <div class="field-care-row">
+                <label class="field-care-toggle">
+                  <input type="checkbox" id="fieldCareToggle" />
+                  전투 종료 후 골드를 사용해 자동 회복
+                </label>
+              </div>
+
+              <div class="field-care-controls">
+                <label>
+                  <span>한 판 최대 지출</span>
+                  <input id="fieldCareBudget" type="number" min="1" max="999999" step="1" value="25" />
+                  <b>G</b>
+                </label>
+                <label>
+                  <span>정비 우선순위</span>
+                  <select id="fieldCarePriority">
+                    <option value="balanced">균형 회복</option>
+                    <option value="hp">체력 우선</option>
+                    <option value="mp">마나 우선</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="field-care-presets">
+                <button data-care-budget="10">10G</button>
+                <button data-care-budget="25">25G</button>
+                <button data-care-budget="50">50G</button>
+                <button data-care-budget="100">100G</button>
+              </div>
+
+              <div class="field-care-preview" id="fieldCarePreview">
+                계약을 켜면 전투가 끝날 때 실제로 부족한 자원만 정비한다.
+              </div>
+            </div>
+          </details>
         </div>
 
         <div class="panel-title">전투 연대기</div>
-        <div class="log" id="combatLog"></div>
+        <div class="log combat-log-prominent" id="combatLog"></div>
       </section>
 
       <section class="right-column">
@@ -347,7 +367,7 @@
             <div>
               <span>CORE RESOURCE 02</span>
               <h3>별가루는 장비 재련 재료</h3>
-              <p>필요 없는 장비를 분해하거나 의뢰·균열 보상으로 얻는다. 전리품 가방에서 장비의 접사 종류는 유지하고 수치만 다시 뽑을 때 사용한다.</p>
+              <p>필요 없는 장비를 분해하거나 의뢰·균열 보상으로 얻는다. 접사 종류와 기억 밀도는 유지하고, 장비에 표시된 재련 범위 안에서 수치만 다시 뽑을 때 사용한다.</p>
             </div>
             <strong id="guideDustValue">별가루 0</strong>
             <button id="guideDustBtn" type="button">별가루 사용처로 이동</button>
@@ -416,7 +436,7 @@
             <h3>별가루는 어디에 쓰나요?</h3>
             <p>
               필요 없는 장비를 <strong>분해</strong>하면 별가루를 얻습니다.
-              일반 장비의 <strong>재련</strong>을 누르면 접두사·접미사의 종류는 유지하고 수치만 다시 추첨합니다.
+              일반 장비의 <strong>재련</strong>을 누르면 접두사·접미사의 종류와 기억 밀도는 유지하고, 표시된 고정 범위 안에서 수치만 다시 추첨합니다.
             </p>
             <div class="dust-guide-route">
               <span><b>1</b> 장비 획득</span>
@@ -1478,7 +1498,7 @@
   </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="game.js?v=50"></script>
+  <script src="game.js?v=53"></script>
 
 </body>
 </html>

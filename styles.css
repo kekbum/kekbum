@@ -11333,3 +11333,309 @@
     flex-direction:column;
   }
 }
+
+
+/* v51: 피버 종료·희귀 지도 판정 설명 */
+.fever-map-rule-card {
+  border-color:rgba(164,113,43,.44) !important;
+  background:
+    radial-gradient(circle at 100% 0,rgba(180,115,35,.12),transparent 42%),
+    #17120d !important;
+}
+
+.fever-map-rule-card h3 {
+  color:#e1be7d !important;
+}
+
+.fever-map-rule-card strong {
+  color:#edc36e;
+}
+
+
+/* v52: 지역별 기억 밀도 + 메인 사냥 화면 가독성 */
+.memory-density-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:5px 0 4px;color:#8c877d;font-size:9px}
+.memory-density-badge{display:inline-flex;align-items:center;min-height:22px;padding:3px 7px;border:1px solid rgba(96,139,158,.45);border-radius:999px;color:#b9d9e5;background:rgba(52,102,123,.14);font-size:9px;font-weight:950;white-space:nowrap}
+.affix-memory-range{display:inline-block;margin-left:6px;padding:2px 5px;border:1px solid rgba(91,128,145,.30);border-radius:999px;color:#91b8c8;background:rgba(41,84,101,.11);font-size:8px;font-weight:900;white-space:nowrap}
+@media (min-width:981px){.app{width:min(1320px,calc(100% - 28px))}.page[data-page="hunt"] .grid{grid-template-columns:330px minmax(0,1fr) 330px;gap:16px}}
+.page[data-page="hunt"] .panel-title{padding:15px 17px;font-size:17px}
+.page[data-page="hunt"] .panel-body{padding:17px}
+.page[data-page="hunt"] .hero-name{font-size:22px}
+.page[data-page="hunt"] .class-line,.page[data-page="hunt"] .class-card-top,.page[data-page="hunt"] .class-passive,.page[data-page="hunt"] .attribute-head,.page[data-page="hunt"] .attribute-row,.page[data-page="hunt"] .meter-label,.page[data-page="hunt"] .slot,.page[data-page="hunt"] .notice{font-size:13px}
+.page[data-page="hunt"] .class-passive,.page[data-page="hunt"] .notice{line-height:1.65}
+.page[data-page="hunt"] .stat span{font-size:13px}.page[data-page="hunt"] .stat strong{font-size:20px}.page[data-page="hunt"] .level-badge{padding:5px 9px;font-size:13px}
+.page[data-page="hunt"] .equip-row{grid-template-columns:58px minmax(0,1fr);padding:10px}.page[data-page="hunt"] .equip-name{font-size:14px;line-height:1.4}
+.page[data-page="hunt"] .zone-name{font-size:16px}.page[data-page="hunt"] .enemy-meta{font-size:14px;line-height:1.5}.page[data-page="hunt"] .combat-stage{padding:18px}.page[data-page="hunt"] .inline-controls{font-size:14px}
+.page[data-page="hunt"] .small-control-btn,.page[data-page="hunt"] .change-class-btn,.page[data-page="hunt"] .attribute-actions button,.page[data-page="hunt"] .stat-reset-panel button{min-height:36px;font-size:12px}
+.page[data-page="hunt"] .field-care-kicker{font-size:10px}.page[data-page="hunt"] .field-care-head strong{font-size:19px}.page[data-page="hunt"] .field-care-status,.page[data-page="hunt"] .field-care-controls span,.page[data-page="hunt"] .field-care-controls b,.page[data-page="hunt"] .field-care-presets button,.page[data-page="hunt"] .field-care-preview{font-size:12px}.page[data-page="hunt"] .field-care-toggle{font-size:13px}
+.page[data-page="hunt"] .dungeon-picker span,.page[data-page="hunt"] .dungeon-select,.page[data-page="hunt"] .dungeon-summary span{font-size:13px}.page[data-page="hunt"] .dungeon-summary strong{font-size:14px}
+.page[data-page="hunt"] .log{height:380px;padding:14px;font-size:14px;line-height:1.75}.page[data-page="hunt"] .log-entry{padding:7px 3px}.page[data-page="hunt"] #guideMiniTracker{font-size:13px;line-height:1.6}.page[data-page="hunt"] .character-delete-warning{font-size:12px;line-height:1.55}
+.page[data-page="hunt"] .hunt-market-hud-title span,.page[data-page="hunt"] .hunt-market-hud-position span,.page[data-page="hunt"] .hunt-market-hud-position small,.page[data-page="hunt"] .hunt-market-hud-link{font-size:10px}.page[data-page="hunt"] .hunt-market-hud-title strong{font-size:14px}.page[data-page="hunt"] .hunt-market-hud-position strong{font-size:12px}
+@media (max-width:720px){.page[data-page="hunt"] .panel-title{font-size:16px}.page[data-page="hunt"] .panel-body,.page[data-page="hunt"] .combat-stage{padding:15px}.page[data-page="hunt"] .stat strong{font-size:18px}.page[data-page="hunt"] .log{height:340px;font-size:13px}.memory-density-row{font-size:8px}}
+
+
+/* v53 combat-focused main screen */
+
+.page[data-page="hunt"] .hunt-summary-body {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.page[data-page="hunt"] .compact-hunt-stats {
+  gap:10px;
+}
+
+.page[data-page="hunt"] .compact-hunt-stats .stat {
+  min-height:84px;
+}
+
+.page[data-page="hunt"] .hunt-brief-card {
+  padding:12px;
+}
+
+.page[data-page="hunt"] .hunt-equipment-card {
+  border:1px solid rgba(212,151,60,.22);
+  background:linear-gradient(180deg,rgba(31,26,18,.92),rgba(20,17,12,.92));
+  border-radius:16px;
+  padding:12px;
+}
+
+.page[data-page="hunt"] .hunt-equipment-head {
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin-bottom:10px;
+}
+
+.page[data-page="hunt"] .hunt-equipment-head span {
+  font-size:14px;
+  font-weight:900;
+  color:#f0d48a;
+}
+
+.page[data-page="hunt"] .hunt-equipment-head small {
+  font-size:11px;
+  color:#908572;
+}
+
+.page[data-page="hunt"] .side-detail-toggle,
+.page[data-page="hunt"] .field-care-details {
+  border:1px solid rgba(210,148,59,.20);
+  border-radius:16px;
+  background:rgba(13,12,10,.70);
+  overflow:hidden;
+}
+
+.page[data-page="hunt"] .side-detail-toggle > summary,
+.page[data-page="hunt"] .field-care-details > summary {
+  cursor:pointer;
+  list-style:none;
+  padding:14px 16px;
+  font-size:13px;
+  font-weight:900;
+  color:#f2d389;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.page[data-page="hunt"] .side-detail-toggle > summary::-webkit-details-marker,
+.page[data-page="hunt"] .field-care-details > summary::-webkit-details-marker {
+  display:none;
+}
+
+.page[data-page="hunt"] .side-detail-content {
+  padding:0 16px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.page[data-page="hunt"] .combat-stage-focused {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.page[data-page="hunt"] .combat-vitals-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.page[data-page="hunt"] .compact-meter {
+  margin:0;
+  padding:10px 12px;
+  border:1px solid rgba(212,151,60,.16);
+  border-radius:14px;
+  background:rgba(18,16,12,.68);
+}
+
+.page[data-page="hunt"] .compact-meter .meter-label {
+  margin-bottom:6px;
+  font-size:12px;
+}
+
+.page[data-page="hunt"] .compact-meter .meter {
+  height:10px;
+}
+
+.page[data-page="hunt"] .battle-reward-focus {
+  border:1px solid rgba(230,170,77,.24);
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(49,26,13,.78),rgba(18,14,11,.88));
+  padding:16px;
+  box-shadow:0 20px 40px rgba(0,0,0,.24);
+}
+
+.page[data-page="hunt"] .battle-reward-kicker {
+  font-size:10px;
+  letter-spacing:.18em;
+  color:#b89664;
+  margin-bottom:8px;
+}
+
+.page[data-page="hunt"] .battle-reward-head {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.page[data-page="hunt"] .battle-reward-title {
+  font-size:22px;
+  font-weight:1000;
+  line-height:1.18;
+  color:#f6e3b1;
+}
+
+.page[data-page="hunt"] .battle-reward-title.positive { color:#ffd98a; }
+.page[data-page="hunt"] .battle-reward-title.negative { color:#ff9d9d; }
+
+.page[data-page="hunt"] .battle-reward-summary,
+.page[data-page="hunt"] .battle-reward-empty {
+  margin-top:8px;
+  font-size:14px;
+  line-height:1.65;
+  color:#d8cab2;
+}
+
+.page[data-page="hunt"] .battle-reward-result {
+  flex:0 0 auto;
+  min-width:68px;
+  text-align:center;
+  padding:7px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:1000;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.04);
+}
+
+.page[data-page="hunt"] .battle-reward-result.positive { color:#f8d46f; }
+.page[data-page="hunt"] .battle-reward-result.negative { color:#ffb4b4; }
+
+.page[data-page="hunt"] .battle-reward-pills {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+
+.page[data-page="hunt"] .battle-reward-pill {
+  border:1px solid rgba(255,204,120,.16);
+  border-radius:14px;
+  padding:10px 12px;
+  background:rgba(255,255,255,.03);
+}
+
+.page[data-page="hunt"] .battle-reward-pill span {
+  display:block;
+  font-size:11px;
+  color:#a4947a;
+  margin-bottom:3px;
+}
+
+.page[data-page="hunt"] .battle-reward-pill strong {
+  display:block;
+  font-size:16px;
+  color:#fff1c8;
+}
+
+.page[data-page="hunt"] .battle-reward-grid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin-top:14px;
+}
+
+.page[data-page="hunt"] .battle-reward-list {
+  border:1px solid rgba(218,162,84,.12);
+  border-radius:14px;
+  padding:12px;
+  background:rgba(14,13,11,.62);
+  min-height:120px;
+}
+
+.page[data-page="hunt"] .battle-reward-list-title {
+  font-size:12px;
+  font-weight:900;
+  color:#e9c87d;
+  margin-bottom:8px;
+}
+
+.page[data-page="hunt"] .battle-reward-list-item {
+  font-size:13px;
+  line-height:1.55;
+  color:#ece3d2;
+  padding:4px 0;
+  border-top:1px solid rgba(255,255,255,.05);
+}
+
+.page[data-page="hunt"] .battle-reward-list-item:first-of-type {
+  border-top:none;
+  padding-top:0;
+}
+
+.page[data-page="hunt"] .battle-drop-grid {
+  display:grid;
+  gap:10px;
+}
+
+.page[data-page="hunt"] .compact-field-care {
+  margin-top:0;
+  border:none;
+  background:transparent;
+  padding:0 16px 16px;
+}
+
+.page[data-page="hunt"] .combat-log-prominent {
+  min-height:420px;
+}
+
+@media (max-width:980px) {
+  .page[data-page="hunt"] .battle-reward-pills,
+  .page[data-page="hunt"] .battle-reward-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:720px) {
+  .page[data-page="hunt"] .combat-vitals-grid,
+  .page[data-page="hunt"] .battle-reward-pills,
+  .page[data-page="hunt"] .battle-reward-grid {
+    grid-template-columns:1fr;
+  }
+
+  .page[data-page="hunt"] .battle-reward-head {
+    flex-direction:column;
+  }
+
+  .page[data-page="hunt"] .battle-reward-title {
+    font-size:19px;
+  }
+
+  .page[data-page="hunt"] .combat-log-prominent {
+    min-height:340px;
+  }
+}

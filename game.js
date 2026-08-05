@@ -1,4 +1,4 @@
-const VERSION = 50;
+const VERSION = 53;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -17,6 +17,49 @@ const VERSION = 50;
     const INVENTORY_EXPANSION_GROWTH = 1.6;
     const EQUIPMENT_CRIT_CAP = 10;
 
+
+
+    const RARE_MAP_BASE_CHANCE = .009;
+    const FEVER_MAP_MULTIPLIER = 1.45;
+
+    function calculateRareMapChance(stats,enemy,feverActive) {
+      const base = RARE_MAP_BASE_CHANCE+Math.max(0,Number(stats?.mapFind || 0))/100;
+      const rankMultiplier = enemy?.rank === "일반" ? 1 : 2.1;
+      const enemyMultiplier = Math.max(.1,Number(enemy?.mapMult || 1));
+      return Math.max(
+        0,
+        Math.min(.95,base*rankMultiplier*enemyMultiplier*(feverActive ? FEVER_MAP_MULTIPLIER : 1))
+      );
+    }
+
+    function rollRareMapDiscovery(stats,enemy,{feverActive=false,feverRemaining=0}={}) {
+      const chance = calculateRareMapChance(stats,enemy,feverActive);
+      const roll = Math.random();
+      const found = roll < chance;
+
+      if (feverActive) {
+        state.records.mapChecksDuringFever = (state.records.mapChecksDuringFever || 0)+1;
+      } else {
+        state.records.mapChecksOutsideFever = (state.records.mapChecksOutsideFever || 0)+1;
+      }
+
+      if (found) {
+        if (feverActive) {
+          state.records.rareMapsDuringFever = (state.records.rareMapsDuringFever || 0)+1;
+        } else {
+          state.records.rareMapsOutsideFever = (state.records.rareMapsOutsideFever || 0)+1;
+        }
+      }
+
+      return {
+        found,
+        chance,
+        roll,
+        feverActive,
+        feverRemaining,
+        lastFeverReward:feverActive && feverRemaining === 1
+      };
+    }
 
     const FIELD_SET_BASE_CHANCE = .009;
     const FIELD_SET_MAX_CHANCE = .025;
@@ -959,17 +1002,266 @@ const VERSION = 50;
     ];
 
     const zones = [
-      { id:"field", name:"버려진 들판", tier:1, rec:20, enemies:["굶주린 들쥐","떠돌이 약탈자","썩은 들개"], mult:1.0 },
-      { id:"camp", name:"도적 야영지", tier:2, rec:65, enemies:["도적 척후병","도적 투사","불량 용병"], mult:1.30 },
-      { id:"grave", name:"망자의 공동묘지", tier:3, rec:150, enemies:["해골 병사","울부짖는 망령","묘지 도굴꾼"], mult:1.75 },
-      { id:"mine", name:"악마의 광산", tier:4, rec:330, enemies:["광산 악마","쇠사슬 노예","검댕 골렘"], mult:2.35 },
-      { id:"citadel", name:"용암 성채", tier:5, rec:700, enemies:["화염 기사","용암 사냥개","뿔난 집행자"], mult:3.10 },
-      { id:"frost", name:"빙결 협곡", tier:6, rec:1400, enemies:["얼음 송곳니","서리 마녀","빙결 골렘"], mult:4.10 },
-      { id:"sunken", name:"침몰한 신전", tier:7, rec:2700, enemies:["심해 신관","익사한 기사","산호 괴수"], mult:5.50 },
-      { id:"spire", name:"별빛 첨탑", tier:8, rec:5000, enemies:["별의 파수꾼","공허 점성술사","수정 용"], mult:7.30 },
-      { id:"garden", name:"심연의 정원", tier:9, rec:9000, enemies:["심연 포식자","검은 꽃술사","타락한 수호목"], mult:9.80 },
-      { id:"throne", name:"재의 왕좌", tier:10, rec:16000, enemies:["재의 군주","종말의 기사","왕좌의 감시자"], mult:13.0 }
+      { id:"field", name:"버려진 들판", tier:1, rec:20, itemMin:1, itemMax:10, enemies:["굶주린 들쥐","떠돌이 약탈자","썩은 들개"], mult:1.0 },
+      { id:"camp", name:"도적 야영지", tier:2, rec:65, itemMin:8, itemMax:18, enemies:["도적 척후병","도적 투사","불량 용병"], mult:1.30 },
+      { id:"grave", name:"망자의 공동묘지", tier:3, rec:150, itemMin:16, itemMax:28, enemies:["해골 병사","울부짖는 망령","묘지 도굴꾼"], mult:1.75 },
+      { id:"mine", name:"악마의 광산", tier:4, rec:330, itemMin:26, itemMax:40, enemies:["광산 악마","쇠사슬 노예","검댕 골렘"], mult:2.35 },
+      { id:"citadel", name:"용암 성채", tier:5, rec:700, itemMin:38, itemMax:54, enemies:["화염 기사","용암 사냥개","뿔난 집행자"], mult:3.10 },
+      { id:"frost", name:"빙결 협곡", tier:6, rec:1400, itemMin:52, itemMax:68, enemies:["얼음 송곳니","서리 마녀","빙결 골렘"], mult:4.10 },
+      { id:"sunken", name:"침몰한 신전", tier:7, rec:2700, itemMin:66, itemMax:80, enemies:["심해 신관","익사한 기사","산호 괴수"], mult:5.50 },
+      { id:"spire", name:"별빛 첨탑", tier:8, rec:5000, itemMin:78, itemMax:90, enemies:["별의 파수꾼","공허 점성술사","수정 용"], mult:7.30 },
+      { id:"garden", name:"심연의 정원", tier:9, rec:9000, itemMin:88, itemMax:98, enemies:["심연 포식자","검은 꽃술사","타락한 수호목"], mult:9.80 },
+      { id:"throne", name:"재의 왕좌", tier:10, rec:16000, itemMin:96, itemMax:100, enemies:["재의 군주","종말의 기사","왕좌의 감시자"], mult:13.0 }
     ];
+
+    const ITEM_MEMORY_VERSION = 1;
+    const MAX_ITEM_LEVEL = 100;
+    const ITEM_LEVEL_GROWTH = 1.04;
+
+    function clampItemLevel(value) {
+      return Math.max(1,Math.min(MAX_ITEM_LEVEL,Math.round(Number(value) || 1)));
+    }
+
+    function itemLevelBase(itemLevel) {
+      return Math.pow(ITEM_LEVEL_GROWTH,clampItemLevel(itemLevel)-1);
+    }
+
+    function itemLevelFromBase(base) {
+      return clampItemLevel(1+Math.log(Math.max(1,Number(base) || 1))/Math.log(ITEM_LEVEL_GROWTH));
+    }
+
+    function highestAccessibleItemZone() {
+      const currentPower = typeof power === "function" ? power() : 0;
+      return [...zones].reverse().find(zoneDef => currentPower >= zoneDef.rec*.72) || zones[0];
+    }
+
+    function inferredZoneForItemLevel(itemLevel) {
+      const level = clampItemLevel(itemLevel);
+      return zones.find(zoneDef => level >= zoneDef.itemMin && level <= zoneDef.itemMax)
+        || [...zones].reverse().find(zoneDef => level >= zoneDef.itemMin)
+        || zones[0];
+    }
+
+    function enemyItemLevelBonus(enemy,inRareMap=false) {
+      let bonus = inRareMap ? 5 : 0;
+      if (!inRareMap) {
+        if (enemy?.rank === "정예") bonus += 2;
+        else if (enemy?.rank === "지역 지배자") bonus += 4;
+        else if (enemy?.rank === "희귀 몬스터") bonus += 3;
+      }
+      if (enemy?.specialType === "reliccarrier") bonus += 2;
+      return bonus;
+    }
+
+    function rollZoneItemLevel(zoneDef,{enemy=null,inRareMap=false,bonusLevel=0}={}) {
+      const source = zoneDef || zones[0];
+      const bonus = enemyItemLevelBonus(enemy,inRareMap)+Math.round(Number(bonusLevel) || 0);
+      const min = clampItemLevel(source.itemMin+bonus);
+      const max = clampItemLevel(source.itemMax+bonus);
+      return max <= min ? min : min+Math.floor(Math.random()*(max-min+1));
+    }
+
+    function resolveItemGenerationContext(itemContext={},fallbackBase=1) {
+      const context = itemContext || {};
+      const sourceZone = context.zoneDef
+        || zones.find(zoneDef => zoneDef.id === context.zoneId)
+        || inferredZoneForItemLevel(context.fixedItemLevel || itemLevelFromBase(fallbackBase));
+      const itemLevel = context.fixedItemLevel
+        ? clampItemLevel(context.fixedItemLevel)
+        : (context.zoneDef || context.zoneId)
+          ? rollZoneItemLevel(sourceZone,context)
+          : itemLevelFromBase(fallbackBase);
+      const base = Number.isFinite(context.fixedBase)
+        ? Math.max(1,context.fixedBase)
+        : itemLevelBase(itemLevel)*(.88+Math.random()*.24);
+      return {
+        itemLevel,base,
+        sourceZoneId:sourceZone?.id || "",
+        sourceZoneName:sourceZone?.name || "출처 미상",
+        sourceType:context.sourceType || (context.inRareMap ? "희귀 지도" : "전리품")
+      };
+    }
+
+    function rarityAffixScale(rarity) {
+      const key = rarity?.key || rarity?.rarity;
+      return key === "legendary" ? 1.24 : key === "epic" ? 1.12 : 1;
+    }
+
+    function affixRangeForItemLevel(def,itemLevel,rarity,kind) {
+      const center = def.factor*itemLevelBase(itemLevel)*Math.sqrt(Number(rarity?.mult || 1))*(kind === "suffix" ? .92 : 1)*rarityAffixScale(rarity);
+      if (def.percent) {
+        const min = Math.max(.1,+(center*.82).toFixed(1));
+        const max = Math.max(min,+(center*1.18).toFixed(1));
+        return {min,max};
+      }
+      const min = Math.max(1,Math.floor(center*.82));
+      const max = Math.max(min,Math.ceil(center*1.18));
+      return {min,max};
+    }
+
+    function randomValueInRange(min,max,percent=false) {
+      const low = Number(min);
+      const high = Math.max(low,Number(max));
+      if (percent) {
+        const steps = Math.max(0,Math.round((high-low)*10));
+        return +(low+Math.floor(Math.random()*(steps+1))/10).toFixed(1);
+      }
+      return Math.floor(low+Math.random()*(high-low+1));
+    }
+
+    function rarityMetaForItem(item) {
+      return rarityTable.find(entry => entry.key === item?.rarity) || {key:item?.rarity || "common",mult:1};
+    }
+
+    function median(values) {
+      const sorted = values.filter(Number.isFinite).sort((a,b) => a-b);
+      if (!sorted.length) return null;
+      const mid = Math.floor(sorted.length/2);
+      return sorted.length%2 ? sorted[mid] : (sorted[mid-1]+sorted[mid])/2;
+    }
+
+    function legacyNormalBaseCandidates(item) {
+      const rarity = rarityMetaForItem(item);
+      const values = [];
+      const intrinsic = item?.intrinsic || item?.stats || {};
+      if (item.slot === "weapon" && intrinsic.attack) values.push(intrinsic.attack/(5.5*rarity.mult));
+      if (item.slot === "armor") {
+        if (intrinsic.defense) values.push(intrinsic.defense/(3.2*rarity.mult));
+        if (intrinsic.maxHp) values.push(intrinsic.maxHp/(8*rarity.mult));
+      }
+      if (item.slot === "ring") {
+        if (intrinsic.attack) values.push(intrinsic.attack/(1.55*rarity.mult));
+        if (intrinsic.magicPower) values.push(intrinsic.magicPower/(1.55*rarity.mult));
+      }
+      if (item.slot === "amulet") {
+        if (intrinsic.maxHp) values.push(intrinsic.maxHp/(5.5*rarity.mult));
+        if (intrinsic.defense) values.push(intrinsic.defense/(1.2*rarity.mult));
+      }
+      (item.affixes || []).forEach(affix => {
+        const def = affixDefinition(affix.kind,affix.stat,affix.familyId);
+        if (!def || !Number.isFinite(Number(affix.value))) return;
+        const divisor = def.factor*Math.sqrt(rarity.mult)*(affix.kind === "suffix" ? .92 : 1)*rarityAffixScale(rarity);
+        if (divisor > 0) values.push(Number(affix.value)/divisor);
+      });
+      return values;
+    }
+
+    function legacySpecialBaseCandidates(item) {
+      const values = [];
+      const qualityMult = Math.max(.1,Number(item?.specialQuality?.statMult || 1));
+      const stats = item?.stats || {};
+      const percentageKeys = new Set(["crit","itemFind","mapFind","dodge","doubleHit"]);
+      let factors = null;
+      let specialScale = 1;
+      if (itemKind(item) === "set") {
+        factors = setCatalog[item.setId]?.pieces?.[item.slot]?.factors || null;
+        specialScale = 1.72*qualityMult;
+      } else if (itemKind(item) === "unique") {
+        factors = uniqueCatalog.find(entry => entry.id === item.uniqueId)?.factors || null;
+        specialScale = 1.95*qualityMult;
+      }
+      Object.entries(factors || {}).forEach(([key,factor]) => {
+        const value = Number(stats[key]);
+        if (!Number.isFinite(value) || value <= 0 || Number(factor) <= 0) return;
+        const effectiveBase = percentageKeys.has(key) ? Math.pow(value/Number(factor),2) : value/Number(factor);
+        values.push(effectiveBase/specialScale);
+      });
+      return values;
+    }
+
+    function estimateLegacyItemLevel(item) {
+      const candidates = itemKind(item) === "normal" ? legacyNormalBaseCandidates(item) : legacySpecialBaseCandidates(item);
+      const estimatedBase = median(candidates) || Math.max(1,Math.sqrt(Math.max(1,Number(item?.score || 1)))/2.5);
+      let level = itemLevelFromBase(estimatedBase);
+      if (itemKind(item) === "normal") {
+        const rarity = rarityMetaForItem(item);
+        for (let probe=level;probe<=MAX_ITEM_LEVEL;probe++) {
+          const fits = (item.affixes || []).every(affix => {
+            const def = affixDefinition(affix.kind,affix.stat,affix.familyId);
+            return !def || Number(affix.value || 0) <= affixRangeForItemLevel(def,probe,rarity,affix.kind).max;
+          });
+          if (fits) { level=probe; break; }
+        }
+      }
+      return clampItemLevel(level);
+    }
+
+    function attachAffixMemoryRange(item,affix,{preserveCurrent=false,force=false}={}) {
+      const def = affixDefinition(affix.kind,affix.stat,affix.familyId);
+      if (!def) return affix;
+      if (!force
+        && Number(affix.memoryLevel) === Number(item.itemLevel)
+        && Number.isFinite(Number(affix.reforgeMin))
+        && Number.isFinite(Number(affix.reforgeMax))) {
+        return affix;
+      }
+      const range = affixRangeForItemLevel(def,item.itemLevel,rarityMetaForItem(item),affix.kind);
+      const current = Number(affix.value || 0);
+      affix.reforgeMin = preserveCurrent ? Math.min(range.min,current) : range.min;
+      affix.reforgeMax = preserveCurrent ? Math.max(range.max,current) : range.max;
+      affix.memoryLevel = item.itemLevel;
+      return affix;
+    }
+
+    function ensureItemMemoryDensity(item) {
+      if (!item || typeof item !== "object") return item;
+      const legacy = !Number.isFinite(Number(item.itemLevel));
+      item.itemLevel = legacy ? estimateLegacyItemLevel(item) : clampItemLevel(item.itemLevel);
+      const sourceZone = zones.find(zoneDef => zoneDef.id === item.sourceZoneId) || inferredZoneForItemLevel(item.itemLevel);
+      item.sourceZoneId = item.sourceZoneId || sourceZone.id;
+      item.sourceZoneName = item.sourceZoneName || sourceZone.name;
+      item.sourceType = item.sourceType || (legacy ? "기존 장비 환산" : "전리품");
+      item.memoryVersion = ITEM_MEMORY_VERSION;
+      item.memoryLegacy = legacy || !!item.memoryLegacy;
+      if (itemKind(item) === "normal" && Array.isArray(item.affixes)) {
+        item.affixes.forEach(affix => {
+          applyAffixTierMetadata(affix);
+          if (!Number.isFinite(Number(affix.reforgeMin)) || !Number.isFinite(Number(affix.reforgeMax))) {
+            attachAffixMemoryRange(item,affix,{preserveCurrent:legacy});
+          }
+        });
+      }
+      return item;
+    }
+
+    function normalizeAllItemMemory(save) {
+      if (!save || typeof save !== "object") return save;
+      const seen = new Set();
+      const items = [
+        ...(Array.isArray(save.inventory) ? save.inventory : []),
+        ...Object.values(save.equipment || {}),
+        save.lastLoot,
+        save.gamble?.lastResult?.item
+      ].filter(Boolean);
+      items.forEach(item => {
+        const key = item.id || item;
+        if (seen.has(key)) return;
+        seen.add(key);
+        ensureItemMemoryDensity(item);
+      });
+      return save;
+    }
+
+    function itemMemoryRangeLabel(item,affix) {
+      ensureItemMemoryDensity(item);
+      attachAffixMemoryRange(item,affix);
+      const suffix = affix.percent ? "%" : "";
+      return `${affix.reforgeMin}${suffix}~${affix.reforgeMax}${suffix}`;
+    }
+
+    function sameTierAllowedRange(item,affix) {
+      ensureItemMemoryDensity(item);
+      applyAffixTierMetadata(affix);
+      attachAffixMemoryRange(item,affix);
+      const min = Math.max(Number(affix.rangeMin),Number(affix.reforgeMin));
+      const tierMax = Number(affix.rangeMax) >= 9999 ? Number(affix.reforgeMax) : Number(affix.rangeMax);
+      return {min,max:Math.max(min,Math.min(tierMax,Number(affix.reforgeMax)))};
+    }
+
+    function itemMemoryBadge(item) {
+      ensureItemMemoryDensity(item);
+      return `<div class="memory-density-row"><span class="memory-density-badge">기억 밀도 Lv.${item.itemLevel}</span><span>${item.sourceZoneName} · ${item.sourceType}</span></div>`;
+    }
 
 
     const classMemoryLines = {
@@ -1484,6 +1776,10 @@ const VERSION = 50;
         reforges: 0,
         dustSpent: 0,
         feverActivations: 0,
+        mapChecksDuringFever: 0,
+        mapChecksOutsideFever: 0,
+        rareMapsDuringFever: 0,
+        rareMapsOutsideFever: 0,
         bountiesClaimed: 0,
         dailyClears: 0,
         riftLocalFirstClear: null,
@@ -1543,7 +1839,21 @@ const VERSION = 50;
         inventoryExpansions: 0,
         inventoryExpansionGoldSpent: 0
       },
-      logs: ["잿더미 위에서 눈을 떴다. 가슴의 회귀 불씨가 아직 타고 있다. 이름을 되찾아야 한다."]
+      logs: ["잿더미 위에서 눈을 떴다. 가슴의 회귀 불씨가 아직 타고 있다. 이름을 되찾아야 한다."],
+      huntFeed: {
+        updatedAt:0,
+        outcome:"idle",
+        zoneName:"",
+        enemyName:"",
+        summary:"",
+        gold:0,
+        xp:0,
+        turns:0,
+        skills:0,
+        loots:[],
+        drops:[],
+        notes:[]
+      }
     });
 
     let state = loadState();
@@ -1666,6 +1976,7 @@ const VERSION = 50;
       recoveryCard: document.getElementById("recoveryCard"),
       skillBookDropCard: document.getElementById("skillBookDropCard"),
       lootCard: document.getElementById("lootCard"),
+      battleRewardFocus: document.getElementById("battleRewardFocus"),
       combatLog: document.getElementById("combatLog"),
       saveState: document.getElementById("saveState"),
       resetBtn: document.getElementById("resetBtn"),
@@ -1932,7 +2243,7 @@ const VERSION = 50;
         const migratedInventory = Array.isArray(loaded.inventory)
           ? loaded.inventory
           : (loaded.lastLoot ? [loaded.lastLoot] : []);
-        return {
+        const restored = {
           ...fresh,
           ...loaded,
           version:VERSION,
@@ -2082,6 +2393,8 @@ const VERSION = 50;
           market: { ...fresh.market, ...(loaded.market || {}), history: [...((loaded.market && loaded.market.history) || fresh.market.history)], ledger: [...((loaded.market && loaded.market.ledger) || [])] },
           records: { ...fresh.records, ...(loaded.records || {}) }
         };
+        normalizeAllItemMemory(restored);
+        return restored;
       } catch (e) {
         return defaultState();
       }
@@ -4320,12 +4633,10 @@ const VERSION = 50;
       return `접두 ${prefixes}/${item.prefixCapacity ?? prefixes} · 접미 ${suffixes}/${item.suffixCapacity ?? suffixes}`;
     }
 
-    function rollAffix(def, base, rarity, kind) {
-      const tierBonus = kind === "suffix" ? .92 : 1;
-      const quality = .82 + Math.random() * .36;
-      let value = def.factor * base * Math.sqrt(rarity.mult) * tierBonus * quality;
-      if (def.percent) value = Math.max(.1,+value.toFixed(1));
-      else value = Math.max(1,Math.round(value));
+    function rollAffix(def, base, rarity, kind, itemLevel=null) {
+      const resolvedLevel = itemLevel ? clampItemLevel(itemLevel) : itemLevelFromBase(base);
+      const range = affixRangeForItemLevel(def,resolvedLevel,rarity,kind);
+      const value = randomValueInRange(range.min,range.max,!!def.percent);
       const affix = {
         kind,
         familyId:def.id,
@@ -4334,7 +4645,10 @@ const VERSION = 50;
         label:def.label,
         value,
         baseValue:value,
-        percent:!!def.percent
+        percent:!!def.percent,
+        reforgeMin:range.min,
+        reforgeMax:range.max,
+        memoryLevel:resolvedLevel
       };
       return applyAffixTierMetadata(affix);
     }
@@ -4370,7 +4684,10 @@ const VERSION = 50;
       }) + Math.round(specialScore);
     }
 
-    function generateSetItem(base,slot) {
+    function generateSetItem(base,slot,itemContext=null) {
+      const generation = resolveItemGenerationContext(itemContext || {},base);
+      const itemLevel = generation.itemLevel;
+      base = generation.base;
       const classPreferred = state.classId === "arcanist" || state.classId === "oracle"
         ? "astral"
         : state.classId === "marksman" || state.classId === "shadow"
@@ -4413,12 +4730,20 @@ const VERSION = 50;
         specialQuality:{...quality},
         specialVerdict:{...verdict},
         specialBaseTier:setBaseValueTier(setId),
+        itemLevel,
+        sourceZoneId:generation.sourceZoneId,
+        sourceZoneName:generation.sourceZoneName,
+        sourceType:generation.sourceType,
+        memoryVersion:ITEM_MEMORY_VERSION,
         score,
         sellPrice:Math.max(40,Math.round(score*.72*12))
       };
     }
 
-    function generateUniqueItem(base,slot) {
+    function generateUniqueItem(base,slot,itemContext=null) {
+      const generation = resolveItemGenerationContext(itemContext || {},base);
+      const itemLevel = generation.itemLevel;
+      base = generation.base;
       let pool = uniqueCatalog.filter(item => item.slot === slot);
       const weightedPool = pool.map(template => {
         const preferred = !template.classIds || template.classIds.includes(state.classId);
@@ -4453,6 +4778,11 @@ const VERSION = 50;
         specialQuality:{...quality},
         specialVerdict:{...verdict},
         specialBaseTier:uniqueBaseValueTier(template),
+        itemLevel,
+        sourceZoneId:generation.sourceZoneId,
+        sourceZoneName:generation.sourceZoneName,
+        sourceType:generation.sourceType,
+        memoryVersion:ITEM_MEMORY_VERSION,
         score,
         sellPrice:Math.max(100,Math.round(score*.84*30))
       };
@@ -4482,11 +4812,13 @@ const VERSION = 50;
       return copy;
     }
 
-    function generateStandardItem(zoneMult,rareMapBonus=0,forcedSlot=null,forcedRarityKey=null,minRarityKey=null) {
+    function generateStandardItem(zoneMult,rareMapBonus=0,forcedSlot=null,forcedRarityKey=null,minRarityKey=null,itemContext=null) {
       const slot = forcedSlot || randomChoice(slots).key;
       const intrinsic = {};
       const playerFactor = 1+(state.level-1)*.08;
-      const base = playerFactor*zoneMult*(.85+Math.random()*.32);
+      const generation = resolveItemGenerationContext(itemContext || {},playerFactor*zoneMult);
+      const itemLevel = generation.itemLevel;
+      const base = generation.base;
       const rolledRarity = forcedRarityKey
         ? (rarityTable.find(entry => entry.key === forcedRarityKey) || chooseRarity(rareMapBonus+totalStats().itemFind/18))
         : chooseRarity(rareMapBonus+totalStats().itemFind/18);
@@ -4513,28 +4845,16 @@ const VERSION = 50;
       const suffixDefsForItem = shuffledCopy(affixPool(suffixDefs,slot)).slice(0,rarity.suffixCount);
 
       prefixDefsForItem.forEach(def => {
-        const affix = rollAffix(def,base,rarity,"prefix");
+        const affix = rollAffix(def,base,rarity,"prefix",itemLevel);
         affixes.push(affix);
         addItemStat(stats,affix.stat,affix.value);
       });
       suffixDefsForItem.forEach(def => {
-        const affix = rollAffix(def,base,rarity,"suffix");
+        const affix = rollAffix(def,base,rarity,"suffix",itemLevel);
         affixes.push(affix);
         addItemStat(stats,affix.stat,affix.value);
       });
 
-      if (rarity.key === "epic" || rarity.key === "legendary") {
-        const bonusRate = rarity.key === "legendary" ? .24 : .12;
-        affixes.forEach(affix => {
-          const bonus = affix.percent
-            ? +(affix.value*bonusRate).toFixed(1)
-            : Math.max(1,Math.round(affix.value*bonusRate));
-          affix.value = affix.percent ? +(affix.value+bonus).toFixed(1) : affix.value+bonus;
-          affix.baseValue = affix.value;
-          applyAffixTierMetadata(affix);
-          addItemStat(stats,affix.stat,bonus);
-        });
-      }
 
       const rawName = randomChoice(itemNames[slot]);
       const score = itemScoreFromStats(stats);
@@ -4550,6 +4870,11 @@ const VERSION = 50;
         itemKind:"normal",
         prefixCapacity:rarity.prefixCount,
         suffixCapacity:rarity.suffixCount,
+        itemLevel,
+        sourceZoneId:generation.sourceZoneId,
+        sourceZoneName:generation.sourceZoneName,
+        sourceType:generation.sourceType,
+        memoryVersion:ITEM_MEMORY_VERSION,
         intrinsic,
         affixes,
         stats,
@@ -4560,19 +4885,22 @@ const VERSION = 50;
       return item;
     }
 
-    function generateItem(zoneMult, rareMapBonus=0, minRarityKey=null) {
+    function generateItem(zoneMult,rareMapBonus=0,minRarityKey=null,itemContext=null) {
       const slot = randomChoice(slots).key;
       const playerFactor = 1+(state.level-1)*.08;
-      const base = playerFactor*zoneMult*(.88+Math.random()*.25);
-      const chances = fieldSpecialDropChances(
-        rareMapBonus,
-        totalStats().itemFind || 0
-      );
+      const generation = resolveItemGenerationContext(itemContext || {},playerFactor*zoneMult);
+      const context = {
+        ...(itemContext || {}),
+        fixedItemLevel:generation.itemLevel,
+        fixedBase:generation.base,
+        zoneId:generation.sourceZoneId,
+        sourceType:generation.sourceType
+      };
+      const chances = fieldSpecialDropChances(rareMapBonus,totalStats().itemFind || 0);
       const roll = Math.random();
-
-      if (roll < chances.unique) return generateUniqueItem(base,slot);
-      if (roll < chances.unique+chances.set) return generateSetItem(base,slot);
-      return generateStandardItem(zoneMult,rareMapBonus,slot,null,minRarityKey);
+      if (roll < chances.unique) return generateUniqueItem(generation.base,slot,context);
+      if (roll < chances.unique+chances.set) return generateSetItem(generation.base,slot,context);
+      return generateStandardItem(zoneMult,rareMapBonus,slot,null,minRarityKey,context);
     }
 
     function itemCritApplicationLine(item) {
@@ -4607,13 +4935,14 @@ const VERSION = 50;
       const percentStats = ["crit","goldFind","mapFind","itemFind","dodge","doubleHit"];
 
       if (Array.isArray(item.affixes) && item.affixes.length) {
+        ensureItemMemoryDensity(item);
         const rows = [];
         Object.entries(item.intrinsic || {}).filter(([,v]) => v).forEach(([k,v]) => {
           rows.push(`<span class="affix-source">기본</span>${labels[k] || k} +${v}${percentStats.includes(k) ? "%" : ""}`);
         });
         item.affixes.forEach(affix => {
           applyAffixTierMetadata(affix);
-          rows.push(`<span class="affix-source">${affix.kind === "prefix" ? "접두사" : "접미사"}</span>[${affix.name}] ${affix.label} +${affix.value}${affix.percent ? "%" : ""}<span class="affix-tier-tag">${affix.tierLabel}</span>`);
+          rows.push(`<span class="affix-source">${affix.kind === "prefix" ? "접두사" : "접미사"}</span>[${affix.name}] ${affix.label} +${affix.value}${affix.percent ? "%" : ""}<span class="affix-tier-tag">${affix.tierLabel}</span><span class="affix-memory-range">재련 ${itemMemoryRangeLabel(item,affix)}</span>`);
         });
         const critLine = itemCritApplicationLine(item);
         if (critLine) rows.push(critLine);
@@ -5197,7 +5526,7 @@ const VERSION = 50;
         state.records.abyssBestFloor = Math.max(state.records.abyssBestFloor || 0,floor);
         if (boss) {
           state.dust += Math.max(3,Math.floor(floor/2));
-          const item = generateItem(Math.max(1,1+floor*.12),8+Math.floor(floor/5));
+          const item = generateItem(Math.max(1,1+floor*.12),8+Math.floor(floor/5),null,{fixedItemLevel:clampItemLevel(8+floor*2),sourceType:`끝없는 심연 ${floor}층`});
           storeItem(item);
           recordDroppedItem(item);
         }
@@ -5271,10 +5600,12 @@ const VERSION = 50;
         state.records.totalGold += gold;
         state.dust += dust;
 
+        const bossZone = highestAccessibleItemZone();
+        const bossItemContext = {zoneDef:bossZone,bonusLevel:Math.round(difficulty.reward*3),sourceType:`일일 보스 · ${boss.name}`};
         let item = null;
-        if (boss.id === "nameless" && Math.random() < .10*difficulty.reward) item = generateSetItem(Math.max(1,1+state.level*.08),randomChoice(slots).key);
-        else if (boss.id === "star_eater_boss" && Math.random() < .025*difficulty.reward) item = generateUniqueItem(Math.max(1,1+state.level*.08),randomChoice(slots).key);
-        else item = generateItem(Math.max(1,1+state.level*.08),8+Math.round(difficulty.reward*3));
+        if (boss.id === "nameless" && Math.random() < .10*difficulty.reward) item = generateSetItem(Math.max(1,1+state.level*.08),randomChoice(slots).key,bossItemContext);
+        else if (boss.id === "star_eater_boss" && Math.random() < .025*difficulty.reward) item = generateUniqueItem(Math.max(1,1+state.level*.08),randomChoice(slots).key,bossItemContext);
+        else item = generateItem(Math.max(1,1+state.level*.08),8+Math.round(difficulty.reward*3),null,bossItemContext);
         storeItem(item);
         recordDroppedItem(item);
         state.dailyBoss.history.unshift(`${boss.name} ${difficulty.name} 승리 · 골드 +${fmt(gold)} · 별가루 +${fmt(dust)} · ${item.name}`);
@@ -5514,21 +5845,15 @@ const VERSION = 50;
       renderAll();
     }
 
-    function randomValueWithinAffixBand(affix) {
-      applyAffixTierMetadata(affix);
-      const min = Number(affix.rangeMin);
-      const max = Number(affix.rangeMax);
-      if (!Number.isFinite(min) || !Number.isFinite(max) || max >= 9999) {
-        const fallbackMax = affix.percent ? Math.max(min+.9,Number(affix.value)*1.25) : Math.max(min+9,Math.round(Number(affix.value)*1.25));
-        return affix.percent
-          ? +(min+Math.random()*(fallbackMax-min)).toFixed(1)
-          : Math.round(min+Math.random()*(fallbackMax-min));
-      }
-      if (affix.percent) {
-        const steps = Math.max(0,Math.round((max-min)*10));
-        return +(min+Math.floor(Math.random()*(steps+1))/10).toFixed(1);
-      }
-      return Math.floor(min+Math.random()*(max-min+1));
+    function randomValueWithinAffixBand(item,affix) {
+      const range = sameTierAllowedRange(item,affix);
+      return randomValueInRange(range.min,range.max,!!affix.percent);
+    }
+
+    function randomValueWithinItemMemory(item,affix) {
+      ensureItemMemoryDensity(item);
+      attachAffixMemoryRange(item,affix);
+      return randomValueInRange(affix.reforgeMin,affix.reforgeMax,!!affix.percent);
     }
 
     function rerollAffixWithinTier(itemId,affixIndex) {
@@ -5542,7 +5867,7 @@ const VERSION = 50;
       applyAffixTierMetadata(affix);
       const before = affix.value;
       let next = before;
-      for (let attempt=0;attempt<8 && next === before;attempt++) next = randomValueWithinAffixBand(affix);
+      for (let attempt=0;attempt<8 && next === before;attempt++) next = randomValueWithinAffixBand(item,affix);
 
       state.materials.sameTierRunes--;
       affix.value = next;
@@ -5558,36 +5883,25 @@ const VERSION = 50;
     }
 
     function applyDustReforge(item,cost,{tutorial=false}={}) {
-      if (!item || itemKind(item) !== "normal" || !Array.isArray(item.affixes) || !item.affixes.length) {
-        return toast("재련 가능한 일반 장비가 없습니다.");
-      }
-      if (item.locked && state.inventory.some(entry => entry.id === item.id)) {
-        return toast("잠금을 해제한 뒤 재련하세요.");
-      }
+      if (!item || itemKind(item) !== "normal" || !Array.isArray(item.affixes) || !item.affixes.length) return toast("재련 가능한 일반 장비가 없습니다.");
+      if (item.locked && state.inventory.some(entry => entry.id === item.id)) return toast("잠금을 해제한 뒤 재련하세요.");
       if (state.dust < cost) return toast(`별가루가 부족합니다. 필요 ${cost}`);
-
+      ensureItemMemoryDensity(item);
       const oldName = item.name;
+      const identityBefore = item.affixes.map(affix => `${affix.kind}:${affix.familyId || affix.stat}`).join("|");
       state.dust -= cost;
-      state.records.dustSpent = (state.records.dustSpent || 0) + cost;
+      state.records.dustSpent = (state.records.dustSpent || 0)+cost;
       item.affixes.forEach(affix => {
-        const base = affix.baseValue || affix.value;
-        const quality = .78 + Math.random() * .48;
-        affix.value = affix.percent
-          ? +(Math.max(.1,base*quality)).toFixed(1)
-          : Math.max(1,Math.round(base*quality));
-        affix.baseValue = affix.value;
+        affix.value = randomValueWithinItemMemory(item,affix);
         applyAffixTierMetadata(affix);
       });
+      const identityAfter = item.affixes.map(affix => `${affix.kind}:${affix.familyId || affix.stat}`).join("|");
       rebuildItemFromAffixes(item);
       rebuildStandardItemName(item);
-      state.records.reforges = (state.records.reforges || 0) + 1;
+      state.records.reforges = (state.records.reforges || 0)+1;
       if (tutorial) state.guide.dustTutorialUsed = true;
-
-      log(
-        `${tutorial ? "별가루 재련 체험" : "재련"} · ${oldName} → ${item.name} · 별가루 -${cost} · 접사 수치 재추첨`,
-        "rarity-epic"
-      );
-      toast(tutorial ? "별가루를 사용해 장비를 재련했습니다." : "접사 수치를 재련했습니다.");
+      log(`${tutorial ? "별가루 재련 체험" : "재련"} · 기억 밀도 Lv.${item.itemLevel} · ${oldName} → ${item.name} · 별가루 -${cost} · 접두·접미사 종류 ${identityBefore === identityAfter ? "고정" : "확인 필요"} · 고정 범위 내 수치 재추첨`,"rarity-epic");
+      toast(tutorial ? "별가루로 고정 범위 재련을 체험했습니다." : `기억 밀도 Lv.${item.itemLevel} 범위에서 재련했습니다.`);
       saveState();
       renderAll();
       return true;
@@ -5670,8 +5984,10 @@ const VERSION = 50;
             <div class="tier-reroll-title">동급 각인 · 보유 ${fmt(state.materials.sameTierRunes || 0)}개</div>
             ${item.affixes.map((affix,index) => {
               applyAffixTierMetadata(affix);
+              const allowed = sameTierAllowedRange(item,affix);
+              const allowedSuffix = affix.percent ? "%" : "";
               return `<div class="tier-reroll-row">
-                <span>${affix.kind === "prefix" ? "접두사" : "접미사"} [${affix.name}] ${affix.value}${affix.percent ? "%" : ""} · 범위 ${affix.tierLabel}</span>
+                <span>${affix.kind === "prefix" ? "접두사" : "접미사"} [${affix.name}] ${affix.value}${affix.percent ? "%" : ""} · 동급 범위 ${allowed.min}${allowedSuffix}~${allowed.max}${allowedSuffix}</span>
                 <button data-tier-reroll-item="${item.id}" data-tier-reroll-index="${index}" ${(state.materials.sameTierRunes || 0) <= 0 ? "disabled" : ""}>동급 재각인</button>
               </div>`;
             }).join("")}
@@ -5683,6 +5999,7 @@ const VERSION = 50;
             <div>
               ${proclamation ? `<div class="loot-proclamation">${proclamation}</div>` : ""}
               <div class="rarity ${item.rarityClass}">[${item.rarityName}] ${slots.find(s=>s.key===item.slot)?.label || item.slot}</div>
+              ${itemMemoryBadge(item)}
               <div class="item-name ${item.rarityClass}">${item.name}</div>
               ${kind === "normal" ? `<div class="affix-capacity-badge ${item.affixes?.length >= 6 ? "six-affix-mark" : ""}">${normalAffixCapacityText(item)}</div>` : ""}
               ${item.locked ? `<div class="lock-badge">🔒 보호됨</div>` : ""}
@@ -6104,12 +6421,12 @@ const VERSION = 50;
             <div class="info-card"><h3>접사 추출·계승</h3><p>장비를 파괴해 가장 강한 접사를 추출한다. 성공률은 등급에 따라 1~5%이며 성공한 접사는 다른 장비에 계승할 수 있다.</p></div>
             <div class="info-card"><h3>수집·칭호·용병</h3><p>세트·유니크 수집은 영구 능력치와 보상을 제공한다. 업적으로 칭호를 얻고 용병 한 명을 동행시킬 수 있다.</p></div>
             <div class="info-card"><h3 class="rarity-legendary">눈먼 행상인의 도박</h3><p>무기·갑옷·반지·부적 중 부위만 선택해 현재 성장 수준에 맞는 미확인 장비를 구매합니다.</p><p>도박에서도 세트는 희귀와 유니크 사이, 전설은 유니크보다 낮은 확률로 등장합니다. 장비 발견 수치는 도박 확률에 영향을 주지 않습니다.</p></div>
-            <div class="info-card"><h3>전리품 가방과 확장</h3><p>사냥 중 획득한 장비는 전리품 가방으로 즉시 들어갑니다. 가방은 40칸에서 시작하며 골드를 사용해 5칸씩, 최대 100칸까지 확장할 수 있습니다.</p><p>치명타 확률은 장비 한 개당 최대 10%까지만 적용되며 초과 수치는 전투와 장비 점수에서 제외됩니다.</p></div>
+            <div class="info-card"><h3>기억 밀도와 지역 성장</h3><p>장비에는 Lv.1~100의 기억 밀도가 있으며 지역마다 획득 가능한 범위가 정해집니다. 더 높은 지역으로 이동해야 더 높은 기본 능력치와 접사 범위의 장비를 얻을 수 있습니다.</p><p>가방은 40칸에서 시작해 골드로 5칸씩 최대 100칸까지 확장할 수 있으며, 치명타 확률은 장비 한 개당 최대 10%까지만 적용됩니다.</p></div>
             <div class="info-card"><h3>활력 제한</h3><p>일반 사냥은 활력 1, 희귀 지도는 활력 3을 사용합니다.</p><p>최대 60이며 10분마다 1 회복됩니다. 활력이 없으면 자동 사냥도 멈춥니다.</p></div>
             <div class="info-card"><h3>마나와 기술</h3><p>직업마다 고유 기술과 마나 소모량이 다릅니다. 마나가 부족하면 기본 공격으로 계속 전투합니다.</p><p>승리 후 최대 마나의 5%를 회복하고, 마나약과 혼합 영약으로 추가 회복할 수 있습니다.</p></div>
             <div class="info-card"><h3>회복품 선택</h3><p>전투 후 치유약·마나약·혼합 영약을 발견할 수 있습니다.</p><p>수동 사냥에서는 즉시 사용·보관·판매를 선택하며, 자동 사냥에서는 자동 보관됩니다.</p></div>
-            <div class="info-card"><h3>별가루 · 장비 분해와 재련</h3><p><strong>별가루</strong>는 필요 없는 장비를 분해하거나 의뢰·균열 보상으로 얻는 재련 재료입니다.</p><p>전리품 가방의 일반 장비에서 ‘재련 · 별가루 N’을 누르면 접두사·접미사의 종류는 유지하면서 수치만 다시 추첨합니다.</p></div>
-            <div class="info-card"><h3>전리품 피버</h3><p>승리·정예·변이 처치로 게이지가 차며, 100이 되면 다음 3회 보상이 크게 증가합니다.</p><p>피버 중에는 골드·경험치·장비·희귀 지도 확률이 상승합니다.</p></div>
+            <div class="info-card"><h3>별가루 · 기억 밀도 재련</h3><p><strong>별가루</strong>는 필요 없는 장비를 분해하거나 의뢰·균열 보상으로 얻는 재련 재료입니다.</p><p>접두사·접미사의 위치와 옵션 종류, 장비의 기억 밀도는 유지되며 해당 기억 밀도에 정해진 수치 범위 안에서만 다시 추첨합니다. 반복 재련으로 범위가 무한히 커지지 않습니다.</p></div>
+            <div class="info-card fever-map-rule-card"><h3>전리품 피버와 희귀 지도</h3><p>피버가 발동하면 다음 3회의 전투에 골드·경험치·장비 보상과 희귀 지도 확률 1.45배가 적용됩니다.</p><p><strong>세 번째 전투도 마지막 피버 보너스 대상</strong>이며, 그 전투의 지도 판정을 정확히 한 번 처리한 뒤 피버가 종료됩니다. 종료 순간 별도의 추가 지도 판정은 없습니다.</p></div>
             <div class="info-card"><h3>변이 몬스터</h3><p>황금빛·거대한·광폭한·보물에 홀린 몬스터가 낮은 확률로 출현합니다.</p><p>각 변이는 위험도와 보상 구조가 다르며 도감에도 기록됩니다.</p></div>
             <div class="info-card"><h3>느린 성장 곡선</h3><p>레벨업 요구 경험치가 크게 증가했고 일반 사냥 경험치와 골드가 감소했습니다.</p><p>레벨당 능력치 포인트는 2이며, 3레벨마다 스킬 포인트를 1 얻습니다.</p></div>
             <div class="info-card"><h3>직업 스킬</h3><p>직업별 기술 3개가 전투 턴에 맞춰 자동 사용됩니다.</p><p>기술서 포인트로 최대 10레벨까지 강화할 수 있습니다.</p></div>
@@ -6157,7 +6474,9 @@ const VERSION = 50;
           ["6접사 장비", fmt(r.sixAffixItems || 0)],
           ["특수 감정 꽝 / 대박", `${fmt(r.specialDuds || 0)} / ${fmt(r.specialJackpots || 0)}`],
           ["도감 점수", fmt(codexScoreValue())],
-          ["전설 / 세트 / 유니크", `${fmt(r.legendary)} / ${fmt(r.setItems || 0)} / ${fmt(r.uniqueItems || 0)}`], ["희귀 지도", fmt(r.rareMaps)],
+          ["전설 / 세트 / 유니크", `${fmt(r.legendary)} / ${fmt(r.setItems || 0)} / ${fmt(r.uniqueItems || 0)}`],
+          ["희귀 지도", `${fmt(r.rareMaps)} · 피버 중 ${fmt(r.rareMapsDuringFever || 0)} / 평상시 ${fmt(r.rareMapsOutsideFever || 0)}`],
+          ["지도 판정 횟수", `피버 중 ${fmt(r.mapChecksDuringFever || 0)} / 평상시 ${fmt(r.mapChecksOutsideFever || 0)}`],
           ["총 획득 골드", fmt(r.totalGold)], ["거래 횟수", fmt(state.market.trades || 0)]
         ];
         els.infoContent.innerHTML = `
@@ -6550,7 +6869,7 @@ const VERSION = 50;
 
       if (reward.lootBox) {
         const rewardZone = [...zones].reverse().find(zoneDef => power() >= zoneDef.rec*.72) || zones[0];
-        const item = generateItem(rewardZone.mult*1.18,10);
+        const item = generateItem(rewardZone.mult*1.18,10,null,{zoneDef:rewardZone,bonusLevel:3,sourceType:"출석 봉인 상자"});
         storeItem(item);
         recordDroppedItem(item);
         log(`출석 상자의 봉인이 풀렸다 · ${item.name}`, item.rarityClass);
@@ -7344,7 +7663,7 @@ const VERSION = 50;
       for (let i=0; i<itemCount; i++) {
         const bonus = difficulty.id === "nightmare" ? 8 : difficulty.id === "hard" ? 4 : 2;
         const dailyZone = [...zones].reverse().find(zone => power() >= zone.rec*.75) || zones[0];
-        const item = generateItem(dailyZone.mult*(1+difficulty.rewardMult*.18),bonus);
+        const item = generateItem(dailyZone.mult*(1+difficulty.rewardMult*.18),bonus,null,{zoneDef:dailyZone,bonusLevel:difficulty.id === "nightmare" ? 5 : difficulty.id === "hard" ? 3 : 1,sourceType:`오늘의 균열 · ${difficulty.name}`});
         storeItem(item);
         recordDroppedItem(item);
         rewardItems.push(item);
@@ -7996,7 +8315,7 @@ const VERSION = 50;
         state.records.totalGold += goldReward;
 
         const slot = randomChoice(slots).key;
-        const item = generateUniqueItem(Math.max(12,1+state.level*.18),slot);
+        const item = generateUniqueItem(Math.max(12,1+state.level*.18),slot,{fixedItemLevel:100,zoneDef:zones.at(-1),sourceType:"모험 최종장"});
         storeItem(item);
         recordDroppedItem(item);
         finale.rewardClaimed = true;
@@ -8552,9 +8871,11 @@ const VERSION = 50;
       const playerFactor = 1+(state.level-1)*.08;
       const specialBase = playerFactor*zoneMult*(.88+Math.random()*.25);
 
-      if (category === "unique") return generateUniqueItem(specialBase,slot);
-      if (category === "set") return generateSetItem(specialBase,slot);
-      return generateStandardItem(zoneMult,0,slot,category);
+      const gambleZone = highestAccessibleItemZone();
+      const itemContext = {zoneDef:gambleZone,sourceType:"눈먼 행상인의 도박"};
+      if (category === "unique") return generateUniqueItem(specialBase,slot,itemContext);
+      if (category === "set") return generateSetItem(specialBase,slot,itemContext);
+      return generateStandardItem(zoneMult,0,slot,category,null,itemContext);
     }
 
     function gambleAutoOutcome(item) {
@@ -8877,7 +9198,7 @@ const VERSION = 50;
       renderHuntMarketHud();
     }
 
-    function generateRareMap() {
+    function generateRareMap(discovery={}) {
       const types = [
         { name:"황금 고블린의 은신처", desc:"골드 보상이 크게 증가하며 고급 이상 장비만 등장합니다.", gold:3.5, item:1.15, difficulty:1.25, minRarity:"uncommon" },
         { name:"무기 제작자의 무덤", desc:"장비가 확정 드롭되며 고급 이상 무기 확률이 높습니다.", gold:1.15, item:2.0, difficulty:1.4, minRarity:"uncommon" },
@@ -8888,12 +9209,31 @@ const VERSION = 50;
       const t = randomChoice(types);
       state.rareMap = {
         ...t,
-        expiresAt: Date.now() + 10 * 60 * 1000,
-        sourceZone: state.currentZone
+        expiresAt:Date.now()+10*60*1000,
+        sourceZone:state.currentZone,
+        discoveryChance:Number(discovery.chance || 0),
+        discoveryRoll:Number(discovery.roll || 0),
+        discoveredDuringFever:!!discovery.feverActive,
+        lastFeverReward:!!discovery.lastFeverReward
       };
       state.records.rareMaps++;
-      log(`희미한 균열이 열렸습니다. [${t.name}] 발견!`, "rarity-epic");
-      toast("희귀 지도를 발견했습니다!");
+
+      const chanceLabel = discovery.chance
+        ? ` · 판정 확률 ${(discovery.chance*100).toFixed(2)}%`
+        : "";
+      const feverLabel = discovery.feverActive
+        ? discovery.lastFeverReward
+          ? " · 피버 마지막 보너스 적용"
+          : " · 피버 보너스 적용"
+        : "";
+
+      log(
+        `희미한 균열이 열렸습니다. [${t.name}] 발견!${chanceLabel}${feverLabel}`,
+        "rarity-epic"
+      );
+      toast(discovery.lastFeverReward
+        ? "피버 마지막 보상에서 희귀 지도를 발견했습니다!"
+        : "희귀 지도를 발견했습니다!");
     }
 
     function renderRareMap() {
@@ -8919,6 +9259,8 @@ const VERSION = 50;
           <div>골드 배율 ×${map.gold.toFixed(2)}</div>
           <div>장비 보상 ×${map.item.toFixed(2)}</div>
           <div>최저 장비 등급 ${rarityLabel(map.minRarity || "uncommon")} 이상</div>
+          <div>장비 기억 밀도 · 현재 지역 기본 범위 +5</div>
+          ${map.discoveryChance ? `<div>발견 판정 ${(map.discoveryChance*100).toFixed(2)}%${map.discoveredDuringFever ? map.lastFeverReward ? " · 피버 마지막 보너스" : " · 피버 보너스" : ""}</div>` : ""}
           <div>적 전투력 ×${map.difficulty.toFixed(2)}</div>
           <div>남은 시간 ${mm}:${ss}</div>
         </div>
@@ -9568,8 +9910,23 @@ const VERSION = 50;
       isBusy = true;
       els.huntBtn.disabled = true;
       const z = zone();
-      const feverActive = state.feverBattles > 0;
+      const feverRemainingBeforeBattle = Math.max(0,Number(state.feverBattles || 0));
+      const feverActive = feverRemainingBeforeBattle > 0;
       const enemy = createEnemy(inRareMap);
+      const battleFeed = {
+        updatedAt:Date.now(),
+        outcome:"idle",
+        zoneName:z.name,
+        enemyName:enemy.name,
+        summary:"전투 진행 중",
+        gold:0,
+        xp:0,
+        turns:0,
+        skills:0,
+        loots:[],
+        drops:[],
+        notes:[]
+      };
       els.enemyName.textContent = "사냥중";
       els.enemyName.classList.remove("status-idle");
       els.enemyName.classList.add("status-hunting");
@@ -9588,6 +9945,11 @@ const VERSION = 50;
 
       if (result.won) {
         const s = totalStats();
+        let mapFoundName = "";
+        battleFeed.outcome = "win";
+        battleFeed.turns = result.turns;
+        battleFeed.skills = result.skillUses;
+        battleFeed.summary = `${enemy.name}을 쓰러뜨렸습니다.`;
         const rareGold = inRareMap ? state.rareMap.gold : 1;
         const earnedGold = Math.max(1, Math.round(enemy.gold * .78 * rareGold * (1 + s.goldFind/100) * (feverActive ? 1.5 : 1)));
         const earnedXp = Math.max(1, Math.round(enemy.xp * .68 * (inRareMap ? 1.6 : 1) * (feverActive ? 1.2 : 1)));
@@ -9611,15 +9973,34 @@ const VERSION = 50;
         const manaBreath = Math.max(1, Math.round(s.maxMp * .05));
         state.mp = Math.min(s.maxMp, state.mp + manaBreath);
 
+        battleFeed.gold = earnedGold;
+        battleFeed.xp = earnedXp;
         log(`${enemy.name} 처치 · 경험치 +${fmt(earnedXp)} · 골드 +${fmt(earnedGold)} · ${result.turns}턴 · 기술 ${result.skillUses}회${result.specialCount ? ` · 직업 효과 ${result.specialCount}회` : ""}`, "positive");
         log(`전투 호흡 · 마나 +${fmt(manaBreath)} · 현재 MP ${fmt(state.mp)}/${fmt(s.maxMp)}`, "battle-heal");
 
         levelUpCheck();
 
-        const mapBase = .009;
-        const mapChance = (mapBase + (s.mapFind/100)) * (enemy.rank === "일반" ? 1 : 2.1) * enemy.mapMult * (feverActive ? 1.45 : 1);
-        if (!inRareMap && !state.rareMap && Math.random() < mapChance) generateRareMap();
+        if (feverActive) {
+          const feverStep = 4-feverRemainingBeforeBattle;
+          log(
+            `전리품 피버 ${feverStep}/3 보상 판정${feverRemainingBeforeBattle === 1 ? " · 마지막 피버 전투" : ""}`,
+            "rarity-legendary"
+          );
+        }
 
+        if (!inRareMap && !state.rareMap) {
+          const mapDiscovery = rollRareMapDiscovery(s,enemy,{
+            feverActive,
+            feverRemaining:feverRemainingBeforeBattle
+          });
+          if (mapDiscovery.found) {
+            generateRareMap(mapDiscovery);
+            mapFoundName = state.rareMap?.name || mapDiscovery.name || "희귀 지도";
+            battleFeed.notes.push(`지도 발견 · ${mapFoundName}`);
+          }
+        }
+
+        const dropMemoryContext = {zoneDef:z,enemy,inRareMap,sourceType:inRareMap ? `희귀 지도 · ${state.rareMap?.name || z.name}` : `${z.name} 사냥`};
         let droppedItem = null;
         const itemChance = enemy.specialType === "reliccarrier"
           ? 1
@@ -9627,21 +10008,21 @@ const VERSION = 50;
         if (Math.random() < itemChance) {
           const bonus = enemy.specialType === "reliccarrier" ? 12 : inRareMap ? 6 : enemy.rank === "일반" ? 0 : 2.5;
           droppedItem = enemy.specialType === "reliccarrier" && Math.random() < .22
-            ? (Math.random() < .82 ? generateSetItem(z.mult*1.65,randomChoice(slots).key) : generateUniqueItem(z.mult*1.65,randomChoice(slots).key))
-            : generateItem(
-                z.mult*(inRareMap ? 1.35 : 1),
-                bonus,
-                inRareMap ? (state.rareMap?.minRarity || "uncommon") : null
-              );
+            ? (Math.random() < .82
+                ? generateSetItem(z.mult*1.65,randomChoice(slots).key,{...dropMemoryContext,bonusLevel:2,sourceType:"유물 운반자"})
+                : generateUniqueItem(z.mult*1.65,randomChoice(slots).key,{...dropMemoryContext,bonusLevel:2,sourceType:"유물 운반자"}))
+            : generateItem(z.mult*(inRareMap ? 1.35 : 1),bonus,inRareMap ? (state.rareMap?.minRarity || "uncommon") : null,dropMemoryContext);
           storeItem(droppedItem);
           recordDroppedItem(droppedItem);
           const dropVerb = itemKind(droppedItem) === "unique" ? "유물이 모습을 드러냈다" : itemKind(droppedItem) === "set" ? "세트 전리품 발견" : "전리품 획득";
-          log(`${dropVerb} · [${droppedItem.rarityName}] ${droppedItem.name} · ${fmt(droppedItem.score)}점`, droppedItem.rarityClass);
+          battleFeed.loots.push(`[${droppedItem.rarityName}] ${droppedItem.name} · 기억 Lv.${droppedItem.itemLevel}`);
+          log(`${dropVerb} · [${droppedItem.rarityName}] ${droppedItem.name} · 기억 밀도 Lv.${droppedItem.itemLevel} · ${fmt(droppedItem.score)}점`, droppedItem.rarityClass);
 
           if (s.extraDropChance > 0 && Math.random() < s.extraDropChance) {
-            const bonusItem = generateStandardItem(z.mult*(inRareMap ? 1.35 : 1),bonus);
+            const bonusItem = generateStandardItem(z.mult*(inRareMap ? 1.35 : 1),bonus,null,null,inRareMap ? (state.rareMap?.minRarity || "uncommon") : null,{...dropMemoryContext,sourceType:"일곱 번째 행운"});
             storeItem(bonusItem);
             recordDroppedItem(bonusItem);
+            battleFeed.drops.push(`추가 전리품 · ${bonusItem.name}`);
             log(`일곱 번째 행운 · 전리품이 하나 더 떨어졌다: ${bonusItem.name}`, "rarity-unique");
           }
         }
@@ -9649,12 +10030,16 @@ const VERSION = 50;
         const skillBookDrop = enemy.specialType === "bookeater"
           ? generateSkillBook(state.classId,Math.random() < .18 ? "forbidden" : "complete")
           : rollSkillBookDrop(enemy,inRareMap);
-        if (skillBookDrop) storeSkillBook(skillBookDrop);
+        if (skillBookDrop) {
+          storeSkillBook(skillBookDrop);
+          battleFeed.drops.push(`스킬북 · ${skillBookDrop.name}`);
+        }
 
         const recoveryDrop = enemy.specialType === "greenwisp"
           ? {...recoveryItems.stamina,droppedAt:Date.now()}
           : rollRecoveryDrop(enemy,inRareMap);
         if (recoveryDrop) {
+          battleFeed.drops.push(`회복품 · ${recoveryDrop.name} x1`);
           state.records.recoveryDrops = (state.records.recoveryDrops || 0)+1;
           if (recoveryDrop.id === "stamina") state.records.staminaPotionDrops = (state.records.staminaPotionDrops || 0)+1;
           state.consumables[recoveryDrop.id] = (state.consumables[recoveryDrop.id] || 0)+1;
@@ -9665,9 +10050,12 @@ const VERSION = 50;
         updateCodex(enemy, result, droppedItem, recoveryDrop);
 
         if (feverActive) {
-          state.feverBattles = Math.max(0, state.feverBattles - 1);
-          log(`전리품 피버 보상 적용 · 남은 전투 ${state.feverBattles}회`, "rarity-legendary");
-          if (state.feverBattles === 0) log("전리품 피버가 종료되었습니다.", "neutral");
+          state.feverBattles = Math.max(0,state.feverBattles-1);
+          if (state.feverBattles > 0) {
+            log(`전리품 피버 보상 처리 완료 · 남은 전투 ${state.feverBattles}회`, "rarity-legendary");
+          } else {
+            log("전리품 피버 마지막 보상 처리 완료 · 피버 종료 · 추가 지도 판정 없음", "neutral");
+          }
         } else {
           state.fever = Math.min(100, state.fever + 12 + (enemy.rank !== "일반" ? 8 : 0) + (enemy.mutation ? 10 : 0));
           if (state.fever >= 100) {
@@ -9681,10 +10069,12 @@ const VERSION = 50;
 
         if (enemy.specialType === "goldrunner") {
           const bonusGold = Math.max(50,Math.round(enemy.gold*4));
+          battleFeed.gold += bonusGold;
+          battleFeed.notes.push(`황금 도망자 보너스 · +${fmt(bonusGold)}G`);
           state.gold += bonusGold;
           state.records.totalGold += bonusGold;
           for (let i=0;i<2;i++) {
-            const treasure = generateStandardItem(z.mult*1.25,7);
+            const treasure = generateStandardItem(z.mult*1.25,7,null,null,null,{zoneDef:z,enemy,bonusLevel:2,sourceType:"황금 도망자의 자루"});
             storeItem(treasure);
             recordDroppedItem(treasure);
           }
@@ -9692,10 +10082,19 @@ const VERSION = 50;
         }
 
         if (inRareMap) {
+          battleFeed.notes.push(`희귀 지도 공략 완료 · ${state.rareMap.name}`);
           log(`희귀 지도 [${state.rareMap.name}] 공략 완료!`, "rarity-epic");
           state.rareMap = null;
         }
+
+        if (!battleFeed.loots.length) battleFeed.loots.push("장비 획득 없음");
+        if (!battleFeed.drops.length) battleFeed.drops.push("골드와 경험치만 회수했습니다.");
       } else if (result.escaped) {
+        battleFeed.outcome = "escape";
+        battleFeed.turns = result.turns;
+        battleFeed.skills = result.skillUses;
+        battleFeed.summary = `${enemy.name}이 도망쳤습니다.`;
+        battleFeed.notes.push(`제한 턴 ${enemy.turnLimit}을 넘겼습니다.`);
         state.records.rareMonsterEscapes = (state.records.rareMonsterEscapes || 0)+1;
         state.streak = 0;
         state.hp = Math.max(1,result.heroHp);
@@ -9704,6 +10103,11 @@ const VERSION = 50;
         log(`${enemy.name}이 ${enemy.turnLimit}막 안에 쓰러지지 않아 도망쳤습니다.`, "negative");
       } else {
         const s = totalStats();
+        battleFeed.outcome = "defeat";
+        battleFeed.turns = result.turns;
+        battleFeed.skills = result.skillUses;
+        battleFeed.summary = `${enemy.name}에게 패배했습니다.`;
+        battleFeed.notes.push("자동 사냥은 패배 시 즉시 중지됩니다.");
         const autoStopped = !!autoTimer;
         if (autoTimer) toggleAuto();
 
@@ -9712,12 +10116,18 @@ const VERSION = 50;
         state.hp = Math.max(1,Math.round(s.maxHp*.45));
         state.mp = Math.max(0,Math.round(s.maxMp*.25));
         updateCodex(enemy,result,null,null);
-        if (feverActive) state.feverBattles = Math.max(0,state.feverBattles-1);
+        if (feverActive) {
+          state.feverBattles = Math.max(0,state.feverBattles-1);
+          if (state.feverBattles === 0) {
+            log("패배로 피버 마지막 횟수가 소모되었습니다 · 추가 지도 판정 없음", "neutral");
+          }
+        }
 
         defeatNotice = {enemy,result,autoStopped};
         log(`사냥 실패 · ${enemy.name}에게 패배${autoStopped ? " · 자동 사냥 중지" : ""} · 장비와 경험치 유지`, "negative");
       }
 
+      state.huntFeed = battleFeed;
       applyFieldCare();
       if (defeatNotice) showDefeatLog(defeatNotice);
       saveState();
@@ -10135,7 +10545,7 @@ const VERSION = 50;
             ${item ? `data-equipment-tooltip="${slot.key}" tabindex="0" aria-label="${slot.label} 장비 정보 보기"` : ""}>
             <div class="slot">${slot.label}</div>
             <div class="equip-name ${item ? item.rarityClass : "neutral"}">
-              ${item ? `${itemKind(item)==="unique" ? "◆ " : itemKind(item)==="set" ? "◇ " : ""}${item.name} · ${fmt(item.score)}` : "비어 있음"}
+              ${item ? `${itemKind(item)==="unique" ? "◆ " : itemKind(item)==="set" ? "◇ " : ""}${item.name} · 기억 Lv.${ensureItemMemoryDensity(item).itemLevel} · ${fmt(item.score)}` : "비어 있음"}
             </div>
             ${item ? `<span class="equipment-info-mark">i</span>` : ""}
           </div>
@@ -10146,7 +10556,7 @@ const VERSION = 50;
 
     function renderZones() {
       els.zoneSelect.innerHTML = zones.map(z => `
-        <option value="${z.id}">T${z.tier} · ${z.name} · 권장 ${fmt(z.rec)}</option>
+        <option value="${z.id}">T${z.tier} · ${z.name} · 기억 Lv.${z.itemMin}~${z.itemMax} · 권장 ${fmt(z.rec)}</option>
       `).join("");
       els.zoneSelect.value = state.currentZone;
 
@@ -10154,6 +10564,8 @@ const VERSION = 50;
       els.zoneSelectSummary.innerHTML = `
         <div><span>선택 던전</span><strong>${current.name}</strong></div>
         <div><span>권장 전투력</span><strong>${fmt(current.rec)}</strong></div>
+        <div><span>장비 기억 밀도</span><strong>Lv.${current.itemMin}~${current.itemMax}</strong></div>
+        <div><span>정예·지배자 보정</span><strong>최대 +4 · 지도 +5</strong></div>
         <div><span>현재 과열도</span><strong>${Math.round(state.heat[current.id] || 0)}%</strong></div>
       `;
 
@@ -10169,6 +10581,69 @@ const VERSION = 50;
         renderLog();
       };
     }
+
+
+function renderBattleRewardFocus() {
+  if (!els.battleRewardFocus) return;
+  const feed = state.huntFeed || {};
+  if (!feed.updatedAt) {
+    els.battleRewardFocus.innerHTML = `
+      <div class="battle-reward-kicker">RECENT BATTLE</div>
+      <div class="battle-reward-title">최근 전투 전리품</div>
+      <div class="battle-reward-empty">사냥을 시작하면 이곳에 최근 전투 결과와 획득 전리품이 크게 정리됩니다.</div>
+    `;
+    return;
+  }
+
+  const outcomeLabel = feed.outcome === "win"
+    ? "승리"
+    : feed.outcome === "defeat"
+      ? "패배"
+      : feed.outcome === "escape"
+        ? "미처리"
+        : "전투 기록";
+  const outcomeClass = feed.outcome === "win"
+    ? "positive"
+    : feed.outcome === "defeat"
+      ? "negative"
+      : "neutral";
+  const summary = feed.summary || `${feed.enemyName || "적"}와 전투했습니다.`;
+  const time = new Date(feed.updatedAt).toLocaleTimeString("ko-KR", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
+  const statPills = [
+    feed.gold ? `<div class="battle-reward-pill"><span>골드</span><strong>+${fmt(feed.gold)}</strong></div>` : "",
+    feed.xp ? `<div class="battle-reward-pill"><span>경험치</span><strong>+${fmt(feed.xp)}</strong></div>` : "",
+    feed.turns ? `<div class="battle-reward-pill"><span>전투 턴</span><strong>${fmt(feed.turns)}턴</strong></div>` : "",
+    Number.isFinite(feed.skills) && feed.skills > 0 ? `<div class="battle-reward-pill"><span>기술 사용</span><strong>${fmt(feed.skills)}회</strong></div>` : ""
+  ].filter(Boolean).join("");
+
+  const renderList = (title, values, cls="") => {
+    const list = (values || []).filter(Boolean);
+    if (!list.length) return "";
+    return `
+      <div class="battle-reward-list ${cls}">
+        <div class="battle-reward-list-title">${title}</div>
+        ${list.map(value => `<div class="battle-reward-list-item">${value}</div>`).join("")}
+      </div>
+    `;
+  };
+
+  els.battleRewardFocus.innerHTML = `
+    <div class="battle-reward-kicker">${feed.zoneName || "사냥 기록"} · ${time}</div>
+    <div class="battle-reward-head">
+      <div>
+        <div class="battle-reward-title ${outcomeClass}">${outcomeLabel} · ${feed.enemyName || "전투 결과"}</div>
+        <div class="battle-reward-summary">${summary}</div>
+      </div>
+      <span class="battle-reward-result ${outcomeClass}">${outcomeLabel}</span>
+    </div>
+    ${statPills ? `<div class="battle-reward-pills">${statPills}</div>` : ""}
+    <div class="battle-reward-grid">
+      ${renderList("획득 전리품", feed.loots, "loot")}
+      ${renderList("추가 획득", feed.drops, "drops")}
+      ${renderList("특이 사항", feed.notes, "notes")}
+    </div>
+  `;
+}
 
     function renderLoot() {
       state.lastLoot = null;
@@ -10222,7 +10697,7 @@ const VERSION = 50;
         els.enemyName.textContent = "대기중";
         els.enemyName.classList.remove("status-hunting");
         els.enemyName.classList.add("status-idle");
-        els.enemyMeta.textContent = `권장 전투력 ${fmt(z.rec)} · 현재 전투력 ${fmt(power())}`;
+        els.enemyMeta.textContent = `권장 전투력 ${fmt(z.rec)} · 현재 ${fmt(power())} · 장비 기억 Lv.${z.itemMin}~${z.itemMax}`;
       }
 
       els.hpText.textContent = `${fmt(state.hp)} / ${fmt(maxHp)}`;
@@ -10237,6 +10712,7 @@ const VERSION = 50;
       renderEquipment();
       renderZones();
       renderGuide();
+      renderBattleRewardFocus();
       renderLoot();
       renderRareMap();
       renderRecoveryCard();
