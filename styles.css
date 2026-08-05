@@ -11932,3 +11932,58 @@ button.purchase-warning:not(:disabled):hover {
     grid-template-columns:1fr;
   }
 }
+
+
+/* v57: 보스 전용 왕의 기술 */
+.boss-exclusive-skill {
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(213,144,48,.50) !important;
+  background:
+    radial-gradient(circle at 100% 0,rgba(227,139,38,.14),transparent 42%),
+    linear-gradient(180deg,rgba(42,25,13,.94),rgba(18,14,11,.96)) !important;
+  box-shadow:inset 0 0 28px rgba(170,91,23,.08);
+}
+
+.boss-exclusive-skill::before {
+  content:"BOSS";
+  position:absolute;
+  top:12px;
+  right:-26px;
+  width:100px;
+  padding:4px 0;
+  transform:rotate(38deg);
+  text-align:center;
+  color:#2b1709;
+  background:#d28e34;
+  font-size:7px;
+  font-weight:1000;
+  letter-spacing:.15em;
+  opacity:.78;
+}
+
+.boss-exclusive-skill.locked {
+  border-color:rgba(110,83,57,.34) !important;
+  filter:saturate(.48);
+}
+
+.boss-exclusive-skill.locked .skill-name {
+  color:#897b6a;
+}
+
+.boss-exclusive-skill.locked .skill-effect {
+  opacity:.68;
+}
+
+.skillbook-card:has(.rarity-legendary) {
+  border-color:rgba(210,137,42,.45);
+  background:
+    radial-gradient(circle at 100% 0,rgba(207,125,29,.10),transparent 36%),
+    #17120d;
+}
+
+@media (max-width:720px) {
+  .boss-exclusive-skill::before {
+    right:-31px;
+  }
+}

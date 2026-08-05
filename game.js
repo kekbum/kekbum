@@ -1,4 +1,4 @@
-const VERSION = 56;
+const VERSION = 57;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -339,6 +339,14 @@ const VERSION = 56;
           mult:2.18, growth:.14, critBonus:12, executeBonus:.58, executeHpRate:.35,
           desc:"가장 강한 검술입니다. 적 체력이 35% 이하이거나 결전의 호흡이 있으면 피해가 크게 증가합니다.",
           auto:"호흡 보유 또는 적 체력이 낮을 때 최우선"
+        },
+        {
+          id:"boss_royal_severance", name:"왕도 단절", role:"왕의 기술 · 절명", cost:32, every:3,
+          bossOnly:true, oncePerBattle:true, maxLevel:5,
+          mult:3.05, growth:.18, defensePierce:.72, accuracyBonus:.12, critBonus:22,
+          royalComboBonus:.60,
+          desc:"왕의 갑주마저 끊어내는 금단의 검격입니다. 방어가 파괴됐거나 결전의 호흡을 모은 적에게 피해가 폭증합니다.",
+          auto:"방어 파괴 또는 결전의 호흡이 준비되면 전투당 한 번 발동"
         }
       ],
       arcanist: [
@@ -359,6 +367,14 @@ const VERSION = 56;
           mult:2.42, growth:.16, manaBurnRate:.12, accuracyBonus:.04,
           desc:"기본 마나에 더해 최대 마나의 일부를 추가로 태우며, 소모한 마나만큼 피해가 증가합니다.",
           auto:"과부하 보유 또는 마나가 충분할 때 최우선"
+        },
+        {
+          id:"boss_forbidden_starfall", name:"금단성 붕락", role:"왕의 기술 · 멸성", cost:38, every:3,
+          bossOnly:true, oncePerBattle:true, maxLevel:5,
+          mult:3.20, growth:.20, manaBurnRate:.25, defensePierce:.48, accuracyBonus:.08,
+          aftershockRate:.48, aftershockTurns:2,
+          desc:"하늘에서 무너진 별의 기억을 끌어내 최대 마나를 태웁니다. 폭발 뒤에도 두 차례 비전 잔향이 적을 불태웁니다.",
+          auto:"마력 과부하가 있거나 마나가 충분하면 전투당 한 번 발동"
         }
       ],
       oracle: [
@@ -379,6 +395,15 @@ const VERSION = 56;
           mult:1.65, growth:.10, debuffBonus:.48, healRate:.08, defensePierce:.15,
           desc:"상태이상이나 방어 약화가 걸린 적에게 추가 피해를 주고 자신의 체력을 회복합니다.",
           auto:"적이 약화됐을 때 최우선"
+        },
+        {
+          id:"boss_rewinding_sanctuary", name:"되감는 성역", role:"왕의 기술 · 기적", cost:34, every:2,
+          bossOnly:true, oncePerBattle:true, maxLevel:5,
+          mult:1.25, growth:.08, healRate:.36, cleanse:true,
+          sanctuaryReduction:.48, sanctuaryTurns:2,
+          bindChance:.72, accuracyDown:.30, statusTurns:3,
+          desc:"죽음 직전의 시간을 되감아 대량 회복하고 2턴 동안 받는 피해를 줄입니다. 적의 행동까지 봉쇄할 수 있습니다.",
+          auto:"체력이 낮거나 적이 강공격을 준비하면 전투당 한 번 발동"
         }
       ],
       ironfist: [
@@ -399,6 +424,15 @@ const VERSION = 56;
           mult:1.45, growth:.10, missingHpBonus:1.00, recentDamageBonus:.45,
           desc:"잃은 체력과 직전에 받은 피해가 클수록 강해지는 체술 결정기입니다.",
           auto:"잃은 체력이 많거나 큰 피해를 받은 뒤 우선 사용"
+        },
+        {
+          id:"boss_heaven_reversal", name:"천추반진", role:"왕의 기술 · 반전", cost:30, every:2,
+          bossOnly:true, oncePerBattle:true, maxLevel:5,
+          mult:1.18, growth:.07, healRate:.10,
+          guardReduction:.72, guardTurns:2,
+          counterPower:1.78, counterTurns:2,
+          desc:"천근의 공격을 온몸으로 받아 흘립니다. 2턴 동안 피해를 크게 줄이고 피격할 때마다 파괴적인 반격을 가합니다.",
+          auto:"강공격 예고 또는 체력 저하 시 전투당 한 번 발동"
         }
       ],
       marksman: [
@@ -419,6 +453,14 @@ const VERSION = 56;
           mult:1.02, growth:.05, eagleEyeTurns:3, eyeAccuracy:.12, eyeCrit:18,
           desc:"3턴 동안 명중률과 치명타 확률을 크게 높입니다.",
           auto:"조준 강화가 없을 때 우선 사용"
+        },
+        {
+          id:"boss_star_piercer", name:"별을 꿰는 화살", role:"왕의 기술 · 필중", cost:31, every:3,
+          bossOnly:true, oncePerBattle:true, maxLevel:5,
+          mult:2.78, growth:.17, defensePierce:.78, accuracyBonus:1, forceCrit:true,
+          eliteBonus:.42,
+          desc:"별빛으로 궤도를 고정해 반드시 적중하는 한 발을 쏩니다. 치명타가 확정되고 지배자와 보스에게 더 강합니다.",
+          auto:"매의 눈이 활성화됐거나 강적을 상대할 때 전투당 한 번 발동"
         }
       ],
       shadow: [
@@ -439,6 +481,14 @@ const VERSION = 56;
           mult:1.66, growth:.10, dodgeBonus:.78, guaranteedCritAfterDodge:true,
           desc:"직전에 적의 공격을 피했다면 피해가 크게 증가하고 치명타가 확정됩니다.",
           auto:"회피 직후 최우선"
+        },
+        {
+          id:"boss_void_substitute", name:"무영대역", role:"왕의 기술 · 허상", cost:30, every:2,
+          bossOnly:true, oncePerBattle:true, maxLevel:5,
+          mult:1.32, growth:.08, guaranteedDodges:2, phantomCounterPower:.92,
+          poisonRate:.22, poisonTurns:4, accuracyDown:.18, statusTurns:4,
+          desc:"실체를 허상과 바꿔 다음 두 공격을 확정 회피합니다. 회피할 때마다 그림자가 적을 베고 독을 남깁니다.",
+          auto:"강공격 예고 또는 회피 연계를 준비할 때 전투당 한 번 발동"
         }
       ]
     };
@@ -447,7 +497,7 @@ const VERSION = 56;
       return Object.fromEntries(
         Object.entries(skillCatalog).map(([classId, skills]) => [
           classId,
-          Object.fromEntries(skills.map(skill => [skill.id, 1]))
+          Object.fromEntries(skills.map(skill => [skill.id, skill.bossOnly ? 0 : 1]))
         ])
       );
     }
@@ -482,7 +532,8 @@ const VERSION = 56;
     const skillBookGrades = [
       { id:"worn", name:"낡은 스킬북", className:"rarity-uncommon", weight:74, maxLevel:5, sell:65 },
       { id:"complete", name:"온전한 스킬북", className:"rarity-rare", weight:22, maxLevel:8, sell:150 },
-      { id:"forbidden", name:"금단의 스킬북", className:"rarity-epic", weight:4, maxLevel:10, sell:380 }
+      { id:"forbidden", name:"금단의 스킬북", className:"rarity-epic", weight:4, maxLevel:10, sell:380 },
+      { id:"boss", name:"왕의 기술서", className:"rarity-legendary", weight:0, maxLevel:5, sell:950 }
     ];
 
     const guideMissions = [
@@ -1909,6 +1960,8 @@ const VERSION = 56;
         numberBaseballPracticeWins: 0,
         staminaEarnedFromGames: 0,
         skillBooksDropped: 0,
+        bossSkillBooksDropped: 0,
+        bossSkillsUnlocked: 0,
         skillBooksUsed: 0,
         skillBooksSold: 0,
         itemsEquipped: 0,
@@ -4467,8 +4520,15 @@ const VERSION = 56;
       return bonus;
     }
 
+    function skillDefinition(classId,skillId) {
+      return (skillCatalog[classId] || []).find(skill => skill.id === skillId) || null;
+    }
+
     function baseSkillLevel(classId, skillId) {
-      return Math.max(1, Number(state.skills?.[classId]?.[skillId] || 1));
+      const skill = skillDefinition(classId,skillId);
+      const fallback = skill?.bossOnly ? 0 : 1;
+      const raw = Number(state.skills?.[classId]?.[skillId] ?? fallback);
+      return skill?.bossOnly ? Math.max(0,raw) : Math.max(1,raw || 1);
     }
 
     function skillNameById(skillId) {
@@ -5697,6 +5757,11 @@ const VERSION = 56;
           const item = generateItem(Math.max(1,1+floor*.12),8+Math.floor(floor/5),null,{fixedItemLevel:clampItemLevel(8+floor*2),sourceType:`끝없는 심연 ${floor}층`});
           storeItem(item);
           recordDroppedItem(item);
+          const bossBook = awardBossSkillBook({
+            chance:Math.min(.32,.06+floor*.004),
+            source:`끝없는 심연 ${floor}층 군주`
+          });
+          if (bossBook) state.abyss.history.unshift(`${floor}층 왕의 기술서 발견 · ${bossBook.skillName}`);
         }
         state.abyss.history.unshift(`${floor}층 돌파 · ${result.turns}막 · 골드 +${fmt(gold)}${boss ? " · 보스 전리품 획득" : ""}`);
         state.abyss.floor++;
@@ -5776,8 +5841,12 @@ const VERSION = 56;
         else item = generateItem(Math.max(1,1+state.level*.08),8+Math.round(difficulty.reward*3),null,bossItemContext);
         storeItem(item);
         recordDroppedItem(item);
-        state.dailyBoss.history.unshift(`${boss.name} ${difficulty.name} 승리 · 골드 +${fmt(gold)} · 별가루 +${fmt(dust)} · ${item.name}`);
-        toast("일일 보스 토벌 성공");
+        const bossBookChance = difficulty.id === "annihilation" ? .50 : difficulty.id === "raid" ? .30 : .15;
+        const bossBook = awardBossSkillBook({chance:bossBookChance,source:`일일 보스 · ${boss.name} ${difficulty.name}`});
+        state.dailyBoss.history.unshift(
+          `${boss.name} ${difficulty.name} 승리 · 골드 +${fmt(gold)} · 별가루 +${fmt(dust)} · ${item.name}${bossBook ? ` · 왕의 기술서 ${bossBook.skillName}` : ""}`
+        );
+        toast(bossBook ? "토벌 성공 · 왕의 기술서 발견" : "일일 보스 토벌 성공");
       } else {
         state.dailyBoss.history.unshift(`${boss.name} ${difficulty.name} 패배 · 다음 도전은 내일`);
         toast("일일 보스 도전 종료");
@@ -5793,7 +5862,7 @@ const VERSION = 56;
       const done = state.dailyBoss.attempted;
       els.dailyBossNavMark.textContent = done ? "" : "(!)";
       els.dailyBossNavBadge.textContent = done ? (state.dailyBoss.won ? "오늘 토벌 완료" : "오늘 도전 종료") : "오늘 도전 가능";
-      els.dailyBossCard.innerHTML = `<h3>${boss.name}</h3><p>${boss.trait}<br>주요 보상 · ${boss.reward}</p>`;
+      els.dailyBossCard.innerHTML = `<h3>${boss.name}</h3><p>${boss.trait}<br>주요 보상 · ${boss.reward}<br>추가 전리품 · 현재 직업의 왕의 기술서 출현 가능</p>`;
       els.dailyBossDifficultyGrid.innerHTML = dailyBossDifficulties.map(diff => `<article class="daily-boss-difficulty-card ${done ? "done" : ""}">
         <h3>${diff.name}</h3>
         <p>적 강함 ×${diff.mult.toFixed(2)} · 보상 ×${diff.reward.toFixed(1)}<br>입장 기회는 세 난이도 중 한 번만 사용한다.</p>
@@ -6330,11 +6399,11 @@ const VERSION = 56;
     function generateSkillBook(forcedClassId=null,forcedGradeId=null) {
       const classIds = Object.keys(classes);
       const classId = forcedClassId || (Math.random() < .80 && state.classId ? state.classId : randomChoice(classIds));
-      const skills = skillCatalog[classId] || [];
+      const skills = (skillCatalog[classId] || []).filter(skill => !skill.bossOnly);
       const skill = randomChoice(skills);
       const grade = forcedGradeId
         ? skillBookGradeById(forcedGradeId)
-        : weightedChoice(skillBookGrades.map(entry => ({value:entry,weight:entry.weight})));
+        : weightedChoice(skillBookGrades.filter(entry => entry.weight > 0).map(entry => ({value:entry,weight:entry.weight})));
       return {
         id:crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()),
         classId, skillId:skill.id, skillName:skill.name,
@@ -6342,6 +6411,61 @@ const VERSION = 56;
         gradeId:grade.id, gradeName:grade.name, gradeClass:grade.className,
         maxLevel:grade.maxLevel, sellPrice:grade.sell, droppedAt:Date.now()
       };
+    }
+
+
+    function bossSkillDefinition(classId=state.classId) {
+      return (skillCatalog[classId] || []).find(skill => skill.bossOnly) || null;
+    }
+
+    function generateBossSkillBook(classId=state.classId,source="보스 전리품") {
+      if (!classId) return null;
+      const skill = bossSkillDefinition(classId);
+      if (!skill) return null;
+      const grade = skillBookGradeById("boss");
+      return {
+        id:crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()),
+        classId,
+        skillId:skill.id,
+        skillName:skill.name,
+        className:classes[classId]?.name || "알 수 없는 직업",
+        gradeId:grade.id,
+        gradeName:grade.name,
+        gradeClass:grade.className,
+        maxLevel:Number(skill.maxLevel || grade.maxLevel || 5),
+        sellPrice:grade.sell,
+        bossOnly:true,
+        source,
+        droppedAt:Date.now()
+      };
+    }
+
+    function awardBossSkillBook({chance=0,source="보스 전리품",guaranteed=false}={}) {
+      if (!state.classId) return null;
+      const skill = bossSkillDefinition(state.classId);
+      if (!skill) return null;
+      const current = baseSkillLevel(state.classId,skill.id);
+      if (current >= Number(skill.maxLevel || 5)) return null;
+      if (!guaranteed && Math.random() >= Math.max(0,Math.min(1,chance))) return null;
+
+      const book = generateBossSkillBook(state.classId,source);
+      if (!book) return null;
+      state.records.bossSkillBooksDropped = (state.records.bossSkillBooksDropped || 0)+1;
+      storeSkillBook(book);
+      log(`보스 전용 전리품 · ${source}에서 ${book.skillName}의 왕의 기술서를 발견했다.`,"rarity-legendary");
+      return book;
+    }
+
+    function isBossEnemy(enemy) {
+      const rank = String(enemy?.rank || "");
+      return ["지역 지배자","지도 수호자","오늘의 균열 수호자","심연 군주"]
+        .some(label => rank.includes(label));
+    }
+
+    function rollFieldBossSkillBook(enemy) {
+      if (!isBossEnemy(enemy)) return null;
+      const chance = String(enemy.rank).includes("지도 수호자") ? .065 : .035;
+      return awardBossSkillBook({chance,source:`${enemy.name} 처치`});
     }
 
     function rollSkillBookDrop(enemy,inRareMap=false) {
@@ -6363,15 +6487,29 @@ const VERSION = 56;
       const index = state.skillBooks.findIndex(book => book.id === id);
       if (index < 0) return;
       const book = state.skillBooks[index];
+      const skill = skillDefinition(book.classId,book.skillId);
+      if (!skill) return toast("기술 정보를 찾지 못했습니다.");
+      if (skill.bossOnly && !book.bossOnly) return toast("왕의 기술은 보스 전용 기술서로만 해금할 수 있습니다.");
+
       const current = baseSkillLevel(book.classId,book.skillId);
-      if (current >= book.maxLevel) return toast(`${book.gradeName}으로는 Lv.${book.maxLevel}을 넘길 수 없습니다.`);
+      const maxLevel = Number(skill.maxLevel || book.maxLevel || 10);
+      if (current >= maxLevel) return toast(`${book.skillName}은 이미 최대 Lv.${maxLevel}입니다.`);
+
+      if (!state.skills[book.classId]) state.skills[book.classId] = {};
       state.skills[book.classId][book.skillId] = current+1;
       state.skillBooks.splice(index,1);
       if (state.lastSkillBook?.id === id) state.lastSkillBook = null;
       state.records.skillBooksUsed = (state.records.skillBooksUsed || 0)+1;
       state.records.skillUpgrades = (state.records.skillUpgrades || 0)+1;
-      log(`${book.skillName} Lv.${current+1} 습득 · ${book.gradeName} 사용`,book.gradeClass);
-      toast(`${book.skillName} Lv.${current+1}`);
+
+      if (skill.bossOnly && current === 0) {
+        state.records.bossSkillsUnlocked = (state.records.bossSkillsUnlocked || 0)+1;
+        log(`왕의 기술 해금 · ${classes[book.classId]?.name || book.className} — ${book.skillName} Lv.1`,"rarity-legendary");
+        toast(`왕의 기술 해금 · ${book.skillName}`);
+      } else {
+        log(`${book.skillName} Lv.${current+1} 습득 · ${book.gradeName} 사용`,book.gradeClass);
+        toast(`${book.skillName} Lv.${current+1}`);
+      }
       saveState();
       renderAll();
     }
@@ -6405,10 +6543,10 @@ const VERSION = 56;
               <article class="skillbook-card">
                 <div class="skillbook-grade ${book.gradeClass}">${book.gradeName}</div>
                 <div class="skillbook-name">${book.skillName}</div>
-                <div class="skillbook-meta">${book.className}<br>현재 훈련 Lv.${current}</div>
-                <div class="skillbook-limit">사용 가능 상한 Lv.${book.maxLevel}</div>
+                <div class="skillbook-meta">${book.className}<br>${book.bossOnly && current === 0 ? "왕의 기술 미해금" : `현재 훈련 Lv.${current}`}</div>
+                <div class="skillbook-limit">${book.bossOnly ? `보스 출처 · ${book.source || "이름 없는 보스"}` : `사용 가능 상한 Lv.${book.maxLevel}`}</div>
                 <div class="mini-buttons">
-                  <button class="primary" data-use-skillbook="${book.id}" ${usable ? "" : "disabled"}>${usable ? `읽기 · Lv.${current+1}` : "단계 제한"}</button>
+                  <button class="primary" data-use-skillbook="${book.id}" ${usable ? "" : "disabled"}>${usable ? book.bossOnly && current === 0 ? "해독 · 기술 해금" : `읽기 · Lv.${current+1}` : "단계 제한"}</button>
                   <button data-sell-skillbook="${book.id}">처분 +${fmt(book.sellPrice)}G</button>
                 </div>
               </article>`;
@@ -6427,6 +6565,7 @@ const VERSION = 56;
       if (!state.classId) return showClassModal();
       const skill = (skillCatalog[state.classId] || []).find(s => s.id === skillId);
       if (!skill) return;
+      if (skill.bossOnly) return toast("왕의 기술은 보스가 남긴 왕의 기술서로만 강화할 수 있습니다.");
       const level = baseSkillLevel(state.classId, skillId);
       if (level >= 10) return toast("훈련 가능한 최대 레벨입니다.");
       const cost = skillUpgradeCost(level);
@@ -6449,30 +6588,48 @@ const VERSION = 56;
         els.skillGrid.innerHTML = `<div class="inventory-empty">직업을 먼저 선택하세요.</div>`;
         return;
       }
+
       const combat = classCombatText[state.classId];
       els.skillGrid.innerHTML = (skillCatalog[state.classId] || []).map(skill => {
         const baseLevel = baseSkillLevel(state.classId,skill.id);
-        const level = skillLevel(state.classId, skill.id);
-        const gearBonus = level - baseLevel;
-        const cost = skillUpgradeCost(baseLevel);
-        const mult = skill.mult + (level - 1) * skill.growth;
+        const unlocked = !skill.bossOnly || baseLevel > 0;
+        const level = unlocked ? skillLevel(state.classId,skill.id) : 0;
+        const previewLevel = Math.max(1,level);
+        const gearBonus = unlocked ? level-baseLevel : 0;
+        const cost = skill.bossOnly ? 0 : skillUpgradeCost(baseLevel);
+        const mult = skill.mult+(previewLevel-1)*skill.growth;
+        const cycleLabel = skill.firstTurnOnly
+          ? "전투당 1회 선제 발동"
+          : skill.oncePerBattle
+            ? "전투당 1회 자동 발동"
+            : `${skill.every}턴 주기`;
+
         return `
-          <article class="skill-card ${level >= 10 ? "maxed" : ""}">
-            <div class="rarity rarity-epic">${cls.name} 기술</div>
+          <article class="skill-card ${skill.bossOnly ? "boss-exclusive-skill" : ""} ${!unlocked ? "locked" : ""} ${!skill.bossOnly && level >= 10 ? "maxed" : ""}">
+            <div class="rarity ${skill.bossOnly ? "rarity-legendary" : "rarity-epic"}">${skill.bossOnly ? "보스 전용 · 왕의 기술" : `${cls.name} 기술`}</div>
             <div class="skill-role">${skill.role || "전투 기술"}</div>
-            <div class="skill-name">${skill.name}</div>
-            <div class="skill-meta">마나 ${skill.cost} · ${skill.firstTurnOnly ? "전투당 1회 선제 발동" : `${skill.every}턴 주기`} · ${combat.damageType === "magic" ? "마법력" : "공격력"} 기반</div>
+            <div class="skill-name">${skill.bossOnly && !unlocked ? "??? · 봉인된 기술" : skill.name}</div>
+            <div class="skill-meta">마나 ${skill.cost} · ${cycleLabel} · ${combat.damageType === "magic" ? "마법력" : "공격력"} 기반</div>
             <div class="skill-effect">
               <div class="skill-damage-line">기본 피해 배율 <strong>${mult.toFixed(2)}배</strong></div>
               <p>${skill.desc}</p>
               <div class="skill-auto-rule"><span>AUTO</span>${skill.auto || "사용 가능한 기술 중 우선순위를 계산해 사용"}</div>
             </div>
-            <div class="skill-level">기술 Lv.${level}${gearBonus ? ` <span class="rarity-set">(장비 +${gearBonus})</span>` : ""} · 훈련 ${baseLevel}/10</div>
+            <div class="skill-level">
+              ${skill.bossOnly
+                ? unlocked
+                  ? `왕의 기술 Lv.${level}${gearBonus ? ` <span class="rarity-set">(장비 +${gearBonus})</span>` : ""} · 기술서 성장 ${baseLevel}/${skill.maxLevel || 5}`
+                  : "미해금 · 보스를 처치해 현재 직업의 왕의 기술서를 찾아야 합니다."
+                : `기술 Lv.${level}${gearBonus ? ` <span class="rarity-set">(장비 +${gearBonus})</span>` : ""} · 훈련 ${baseLevel}/10`}
+            </div>
             <div class="mini-buttons" style="margin-top:10px">
-              <button class="primary" data-upgrade-skill="${skill.id}" ${baseLevel >= 10 ? "disabled" : ""}>훈련 · ${cost}P</button>
+              ${skill.bossOnly
+                ? `<button disabled>${unlocked ? "왕의 기술서로만 강화" : "왕의 기술서 필요"}</button>`
+                : `<button class="primary" data-upgrade-skill="${skill.id}" ${baseLevel >= 10 ? "disabled" : ""}>훈련 · ${cost}P</button>`}
             </div>
           </article>`;
       }).join("");
+
       els.skillGrid.querySelectorAll("[data-upgrade-skill]").forEach(btn => btn.onclick = () => upgradeSkill(btn.dataset.upgradeSkill));
     }
 
@@ -6583,7 +6740,7 @@ const VERSION = 56;
             <div class="info-card"><h3 class="rarity-set">녹색 활력 물약</h3><p>몬스터의 회복품 드롭에서 낮은 확률로 등장하며 한 병당 활력 12를 회복한다.</p><p>수동 사냥에서는 즉시 사용·보관·판매를 고를 수 있고 연속 사냥에서는 자동으로 보관된다.</p></div>
             <div class="info-card"><h3>숫자 봉인</h3><p>활력 야영지에서 하루 5판까지 정상 보상을 받는 세 자리 숫자야구다. 최대 8번 안에 맞히면 시도 횟수에 따라 활력을 얻는다.</p><p>5판 이후에는 무제한 연습 대전으로 전환되며 활력 보상은 10%, 활력 물약은 지급되지 않는다. 연습 결과는 보상 대전 연승에 영향을 주지 않는다.</p></div>
             <div class="info-card"><h3>초보자 가이드 미션</h3><p>현재 단계 하나만 활성화되며 목표를 달성하고 보상을 받으면 다음 단계가 열린다. 가이드가 열리기 전에 수행한 장착·스탯 배분·수동 저장도 자동으로 인정된다.</p><p>사냥·장착·능력치·기술·도감·의뢰·야영지·일일 균열·저장까지 차례로 익힌다.</p></div>
-            <div class="info-card"><h3 class="rarity-epic">몬스터 스킬북</h3><p>몬스터는 낮은 확률로 특정 직업과 기술이 적힌 스킬북을 떨어뜨린다. 정예·보스·희귀 지도에서 확률이 높다.</p><p>낡은 책은 Lv.5, 온전한 책은 Lv.8, 금단의 책은 Lv.10까지 기술을 직접 올릴 수 있다.</p></div>
+            <div class="info-card"><h3 class="rarity-epic">몬스터 스킬북</h3><p>일반 스킬북은 정예·희귀 몬스터와 희귀 지도에서 발견할 수 있다. 낡은 책은 Lv.5, 온전한 책은 Lv.8, 금단의 책은 Lv.10까지 기술을 올린다.</p><p><strong>왕의 기술서</strong>는 보스에게서만 나오며 현재 직업의 네 번째 기술을 해금하거나 최대 Lv.5까지 성장시킨다.</p></div>
             <div class="info-card"><h3 class="rarity-set">야전 정비 계약</h3><p>한 판당 최대 지출액을 정하면 일반 사냥이 끝난 뒤 부족한 체력과 마나를 자동으로 복구한다.</p><p>1골드는 체력 2 또는 마나 1로 환산되며, 설정한 상한을 전부 쓰는 것이 아니라 실제 부족분에 필요한 골드만 사용한다.</p></div>
             <div class="info-card"><h3>끝없는 심연</h3><p>층마다 적이 강해지고 체력·마나가 다음 층으로 이어진다. 5층마다 보스와 장비 보상이 등장한다.</p></div>
             <div class="info-card"><h3>요일의 대적자</h3><p>하루 한 번 세 난이도 중 하나를 선택한다. 토요일은 세트, 일요일은 유니크 확률이 높다.</p></div>
@@ -6620,6 +6777,7 @@ const VERSION = 56;
           ["숫자 봉인 성공 / 도전", `${fmt(r.numberBaseballWins || 0)} / ${fmt(r.numberBaseballGames || 0)}`],
           ["미니게임 활력 획득", fmt(r.staminaEarnedFromGames || 0)],
           ["스킬북 발견 / 사용 / 판매", `${fmt(r.skillBooksDropped || 0)} / ${fmt(r.skillBooksUsed || 0)} / ${fmt(r.skillBooksSold || 0)}`],
+          ["왕의 기술서 / 기술 해금", `${fmt(r.bossSkillBooksDropped || 0)} / ${fmt(r.bossSkillsUnlocked || 0)}`],
           ["야전 정비 전투 / 지출", `${fmt(r.fieldCareBattles || 0)} / ${fmt(r.fieldCareGoldSpent || 0)}G`],
           ["야전 정비 HP / MP", `${fmt(r.fieldCareHpRestored || 0)} / ${fmt(r.fieldCareMpRestored || 0)}`],
           ["자동 판매 / 자동 분해", `${fmt(r.autoSoldItems || 0)} / ${fmt(r.autoSalvagedItems || 0)}`],
@@ -7853,6 +8011,10 @@ const VERSION = 56;
         );
       });
 
+      const coreBookChance = difficulty.id === "nightmare" ? .35 : difficulty.id === "hard" ? .20 : .10;
+      const coreBook = awardBossSkillBook({chance:coreBookChance,source:`오늘의 균열 · ${difficulty.name} 균열핵`});
+      if (coreBook) pushDailyRunLog(`왕의 기술서 · ${coreBook.className} — ${coreBook.skillName}`,"rarity-legendary",5);
+
       const line = `${difficulty.name} 정복 · ${dungeon.totalTurns}막 · 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)}`;
       dungeon.history.unshift(line);
       dungeon.history = dungeon.history.slice(0,5);
@@ -8489,9 +8651,10 @@ const VERSION = 56;
         storeItem(item);
         recordDroppedItem(item);
         finale.rewardClaimed = true;
+        const bossBook = awardBossSkillBook({guaranteed:true,source:"모험 최종장 · 회백의 왕"});
 
         pushFinaleLog(
-          `[종장 보상] 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)} · 스킬 포인트 +${skillReward} · 유니크 ${item.name}.`,
+          `[종장 보상] 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)} · 스킬 포인트 +${skillReward} · 유니크 ${item.name}${bossBook ? ` · 왕의 기술서 ${bossBook.skillName}` : ""}.`,
           "rarity-unique"
         );
       } else {
@@ -8500,7 +8663,11 @@ const VERSION = 56;
         state.gold += goldReward;
         state.dust += dustReward;
         state.records.totalGold += goldReward;
-        pushFinaleLog(`[회상전 보상] 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)}.`,"rarity-set");
+        const replayBossBook = awardBossSkillBook({chance:.35,source:"모험 최종장 회상전 · 회백의 왕"});
+        pushFinaleLog(
+          `[회상전 보상] 골드 +${fmt(goldReward)} · 별가루 +${fmt(dustReward)}${replayBossBook ? ` · 왕의 기술서 ${replayBossBook.skillName}` : ""}.`,
+          replayBossBook ? "rarity-legendary" : "rarity-set"
+        );
       }
 
       pushFinaleLog(
@@ -9519,11 +9686,15 @@ const VERSION = 56;
     }
 
     function skillLevel(classId, skillId) {
-      return Math.min(15, baseSkillLevel(classId,skillId) + equippedSkillBonus(classId,skillId));
+      const base = baseSkillLevel(classId,skillId);
+      if (base <= 0) return 0;
+      const skill = skillDefinition(classId,skillId);
+      const cap = skill?.bossOnly ? Number(skill.maxLevel || 5) : 15;
+      return Math.min(cap,base+equippedSkillBonus(classId,skillId));
     }
 
     function getCombatSkills() {
-      return skillCatalog[state.classId] || [];
+      return (skillCatalog[state.classId] || []).filter(skill => !skill.bossOnly || baseSkillLevel(state.classId,skill.id) > 0);
     }
 
     function simulateBattle(enemy) {
@@ -9539,6 +9710,7 @@ const VERSION = 56;
       let emergencyManaUsed = false;
       let revived = false;
       let firstSkillUsed = false;
+      let bossSkillUsed = false;
       let specialCount = 0;
       let skillUses = 0;
       const elite = enemy.rank !== "일반";
@@ -9570,6 +9742,12 @@ const VERSION = 56;
       let arcaneOverload = 0;
       let lastDodged = false;
       let recentDamage = 0;
+      let sanctuaryReduction = 0;
+      let sanctuaryTurns = 0;
+      let arcaneAftershockDamage = 0;
+      let arcaneAftershockTurns = 0;
+      let guaranteedDodges = 0;
+      let phantomCounterPower = 0;
 
       const effectiveSkill = skill => ({
         ...skill,
@@ -9582,16 +9760,19 @@ const VERSION = 56;
         const enemyHpRate = enemyHp/Math.max(1,enemy.hp);
         switch (state.classId) {
           case "vanguard":
+            if (skill.id === "boss_royal_severance") return enemyDefenseBreakTurns > 0 || vanguardFocus > 0 || enemyHpRate <= .55 ? 220 : 35;
             if (skill.id === "execute") return vanguardFocus > 0 || enemyHpRate <= .42 ? 140 : 70;
             if (skill.id === "whirlwind") return enemyDefenseBreakTurns <= 0 ? 125 : 55;
             if (skill.id === "bloodthirst") return vanguardFocus <= 0 ? 110 : 35;
             break;
           case "arcanist":
+            if (skill.id === "boss_forbidden_starfall") return arcaneOverload > 0 || heroMp >= s.maxMp*.68 ? 220 : 30;
             if (skill.id === "manasurge") return arcaneOverload > 0 || heroMp >= s.maxMp*.58 ? 140 : 50;
             if (skill.id === "chainlightning") return arcaneOverload <= 0 && heroMp >= s.maxMp*.32 ? 120 : 30;
             if (skill.id === "fireburst") return 85;
             break;
           case "oracle":
+            if (skill.id === "boss_rewinding_sanctuary") return hpRate <= .58 || strongIntent ? 230 : 25;
             if (skill.id === "lifewave") return hpRate <= .65 ? 160 : 35;
             if (skill.id === "judgment") return strongIntent || enemyAccuracyTurns <= 0 ? 130 : 55;
             if (skill.id === "purge") {
@@ -9600,15 +9781,18 @@ const VERSION = 56;
             }
             break;
           case "ironfist":
+            if (skill.id === "boss_heaven_reversal") return strongIntent || hpRate <= .65 ? 230 : 30;
             if (skill.id === "crushingfist") return strongIntent ? 160 : heroCounterTurns <= 0 ? 95 : 35;
             if (skill.id === "qiblast") return strongIntent || hpRate <= .55 ? 145 : 55;
             if (skill.id === "ironbreath") return hpRate <= .70 || recentDamage > s.maxHp*.12 ? 130 : 70;
             break;
           case "marksman":
+            if (skill.id === "boss_star_piercer") return eagleEyeTurns > 0 || elite || enemyHpRate <= .72 ? 225 : 50;
             if (skill.id === "weakpoint") return eagleEyeTurns <= 0 ? 125 : 45;
             if (skill.id === "piercingshot") return 100;
             return 0;
           case "shadow":
+            if (skill.id === "boss_void_substitute") return strongIntent || guaranteedDodges <= 0 ? 225 : 20;
             if (skill.id === "lifesteal") return lastDodged ? 170 : 55;
             if (skill.id === "shadowstrike") return strongIntent || heroEvasionTurns <= 0 ? 135 : 45;
             if (skill.id === "twinblade") return enemyPoisonTurns <= 0 ? 120 : 60;
@@ -9638,6 +9822,10 @@ const VERSION = 56;
           heroMp -= activeSkill.effectiveCost;
           skillUses++;
           specialCount++;
+          if (activeSkill.bossOnly) {
+            bossSkillUsed = true;
+            effects.push("왕의 기술");
+          }
           effects.push(`기술 Lv.${skillLv}`,`마나 -${activeSkill.effectiveCost}`);
 
           if (!firstSkillUsed && s.firstSkillDamage > 0) {
@@ -9661,23 +9849,40 @@ const VERSION = 56;
             effects.push(`매의 눈 ${eagleEyeTurns}턴`);
           }
 
-          if (activeSkill.id === "shadowstrike") {
+          if (activeSkill.evasionBuff) {
             heroEvasionBonus = activeSkill.evasionBuff;
             heroEvasionTurns = activeSkill.evasionTurns;
             effects.push(`다음 공격 회피 +${Math.round(heroEvasionBonus*100)}%`);
           }
 
-          if (activeSkill.id === "qiblast") {
+          if (activeSkill.guardReduction) {
             heroGuardReduction = activeSkill.guardReduction;
             heroGuardTurns = activeSkill.guardTurns;
-            effects.push(`다음 피해 -${Math.round(heroGuardReduction*100)}%`);
+            effects.push(`피해 경감 ${Math.round(heroGuardReduction*100)}% · ${heroGuardTurns}턴`);
           }
 
-          if (activeSkill.id === "crushingfist") {
+          if (activeSkill.counterPower) {
             heroCounterPower = activeSkill.counterPower+(skillLv-1)*.025;
             heroCounterTurns = activeSkill.counterTurns;
             effects.push(`반격태세 ${heroCounterTurns}턴`);
           }
+
+          if (activeSkill.sanctuaryReduction) {
+            sanctuaryReduction = activeSkill.sanctuaryReduction+(skillLv-1)*.012;
+            sanctuaryTurns = activeSkill.sanctuaryTurns;
+            effects.push(`되감는 성역 ${sanctuaryTurns}턴`);
+          }
+
+          if (activeSkill.guaranteedDodges) {
+            guaranteedDodges = activeSkill.guaranteedDodges;
+            phantomCounterPower = activeSkill.phantomCounterPower+(skillLv-1)*.025;
+            effects.push(`확정 회피 ${guaranteedDodges}회`);
+          }
+        }
+
+        if (activeSkill?.forceCrit) {
+          forceCrit = true;
+          effects.push("필중 치명타");
         }
 
         if (eagleEyeTurns > 0) {
@@ -9698,6 +9903,22 @@ const VERSION = 56;
 
         hit *= skillMultiplier;
 
+        if (activeSkill?.id === "boss_royal_severance") {
+          if (enemyDefenseBreakTurns > 0 || vanguardFocus > 0) {
+            hit *= 1+activeSkill.royalComboBonus;
+            effects.push("왕도 연계");
+          }
+          if (vanguardFocus > 0) {
+            vanguardFocus = 0;
+            effects.push("결전의 호흡 소모");
+          }
+        }
+
+        if (activeSkill?.eliteBonus && elite) {
+          hit *= 1+activeSkill.eliteBonus;
+          effects.push("강적 관통");
+        }
+
         if (activeSkill?.id === "execute") {
           if (enemyHp/enemy.hp <= activeSkill.executeHpRate) {
             hit *= 1+activeSkill.executeBonus;
@@ -9712,7 +9933,7 @@ const VERSION = 56;
           }
         }
 
-        if (activeSkill?.id === "manasurge") {
+        if (activeSkill?.manaBurnRate) {
           if (arcaneOverload > 0) {
             hit *= 1+arcaneOverload;
             arcaneOverload = 0;
@@ -9829,6 +10050,12 @@ const VERSION = 56;
             }
           }
 
+          if (landed && activeSkill.aftershockRate) {
+            arcaneAftershockDamage = Math.max(1,Math.round(hit*activeSkill.aftershockRate));
+            arcaneAftershockTurns = activeSkill.aftershockTurns;
+            events.push({text:`금단성 잔향 · 다음 ${arcaneAftershockTurns}막 동안 ${fmt(arcaneAftershockDamage)} 피해`,cls:"rarity-legendary"});
+          }
+
           if (landed && activeSkill.poisonRate) {
             enemyPoisonDamage = Math.max(1,Math.round(heroPower*(activeSkill.poisonRate+(skillLv-1)*.008)));
             enemyPoisonTurns = activeSkill.poisonTurns;
@@ -9883,6 +10110,13 @@ const VERSION = 56;
       while (heroHp > 0 && enemyHp > 0 && turns < (enemy.turnLimit || 60)) {
         turns++;
 
+        if (arcaneAftershockTurns > 0) {
+          enemyHp -= arcaneAftershockDamage;
+          events.push({text:`${turns}막 · 금단성 잔향 → ${fmt(arcaneAftershockDamage)} 피해 · 적 ${fmt(Math.max(0,enemyHp))}/${fmt(enemy.hp)}`,cls:"rarity-legendary"});
+          arcaneAftershockTurns--;
+          if (enemyHp <= 0) break;
+        }
+
         if (enemyPoisonTurns > 0) {
           enemyHp -= enemyPoisonDamage;
           events.push({text:`${turns}막 · 독 피해 → ${fmt(enemyPoisonDamage)} · 적 ${fmt(Math.max(0,enemyHp))}/${fmt(enemy.hp)}`,cls:"battle-status"});
@@ -9904,6 +10138,7 @@ const VERSION = 56;
 
         const usableSkills = skills
           .filter(skill => !skill.firstTurnOnly)
+          .filter(skill => !skill.oncePerBattle || !bossSkillUsed)
           .map(effectiveSkill)
           .filter(skill => turns % skill.effectiveEvery === 0 && heroMp >= skill.effectiveCost)
           .map(skill => ({...skill,decisionScore:skillScore(skill,strongIntent)}))
@@ -9941,12 +10176,14 @@ const VERSION = 56;
             Math.max(.15,.94-s.dodge-heroEvasionBonus-enemyAccuracyPenalty-(strongIntent ? .04 : 0))
           );
 
-          if (Math.random() < enemyHitChance) {
+          const forcedDodge = guaranteedDodges > 0;
+          if (!forcedDodge && Math.random() < enemyHitChance) {
             let enemyHit = Math.max(1,Math.round(enemy.attack*(.9+Math.random()*.2)-s.defense*.42));
             if (strongIntent) enemyHit = Math.round(enemyHit*1.72);
             let reduction = Math.min(.75,s.damageReduction || 0);
             if (heroHp < s.maxHp*.35) reduction = Math.min(.82,reduction+(s.lowHpDamageReduction || 0));
             if (heroGuardTurns > 0) reduction = Math.min(.90,reduction+heroGuardReduction);
+            if (sanctuaryTurns > 0) reduction = Math.min(.92,reduction+sanctuaryReduction);
             enemyHit = Math.max(1,Math.round(enemyHit*(1-reduction)));
             heroHp -= enemyHit;
             recentDamage = enemyHit;
@@ -9986,7 +10223,19 @@ const VERSION = 56;
             specialCount++;
             lastDodged = true;
             recentDamage = 0;
-            events.push({text:`회피 · ${enemy.name}의 공격이 허공을 갈랐다.`,cls:"battle-effect"});
+            if (forcedDodge) guaranteedDodges = Math.max(0,guaranteedDodges-1);
+            events.push({
+              text:`회피${forcedDodge ? " · 무영대역" : ""} · ${enemy.name}의 공격이 허공을 갈랐다.`,
+              cls:forcedDodge ? "rarity-legendary" : "battle-effect"
+            });
+
+            if (phantomCounterPower > 0) {
+              const phantomHit = Math.max(1,Math.round(heroPower*phantomCounterPower));
+              enemyHp -= phantomHit;
+              maxHit = Math.max(maxHit,phantomHit);
+              events.push({text:`허상 반격 → ${fmt(phantomHit)} 피해`,cls:"battle-counter"});
+              if (guaranteedDodges <= 0) phantomCounterPower = 0;
+            }
           }
         }
 
@@ -10012,6 +10261,9 @@ const VERSION = 56;
 
         heroCounterTurns = Math.max(0,heroCounterTurns-1);
         if (heroCounterTurns === 0) heroCounterPower = 0;
+
+        sanctuaryTurns = Math.max(0,sanctuaryTurns-1);
+        if (sanctuaryTurns === 0) sanctuaryReduction = 0;
 
         eagleEyeTurns = Math.max(0,eagleEyeTurns-1);
         if (eagleEyeTurns === 0) {
@@ -10519,7 +10771,12 @@ const VERSION = 56;
           : rollSkillBookDrop(enemy,inRareMap);
         if (skillBookDrop) {
           storeSkillBook(skillBookDrop);
-          battleFeed.drops.push(`스킬북 · ${skillBookDrop.name}`);
+          battleFeed.drops.push(`스킬북 · ${skillBookDrop.skillName}`);
+        }
+
+        const bossSkillBookDrop = rollFieldBossSkillBook(enemy);
+        if (bossSkillBookDrop) {
+          battleFeed.drops.push(`왕의 기술서 · ${bossSkillBookDrop.skillName}`);
         }
 
         const recoveryDrop = enemy.specialType === "greenwisp"
