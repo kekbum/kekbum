@@ -9113,3 +9113,301 @@
     width:100%;
   }
 }
+
+
+/* v43: 수동/자동 사냥 분리 + 모바일 그룹 메뉴 + 사냥 암시장 HUD */
+.top-tabs-primary,
+.top-tabs-expanded,
+.nav-menu-group,
+.nav-menu-group-buttons {
+  display:contents;
+}
+
+.nav-menu-group-title,
+.nav-more-toggle {
+  display:none;
+}
+
+.hunt-market-hud {
+  display:grid;
+  grid-template-columns:minmax(135px,1.1fr) minmax(115px,.75fr) minmax(160px,1fr) auto;
+  align-items:center;
+  gap:12px;
+  width:calc(100% - 24px);
+  margin:11px 12px 0;
+  padding:10px 12px;
+  border:1px solid rgba(177,132,61,.38);
+  border-radius:9px;
+  color:inherit;
+  background:
+    radial-gradient(circle at 100% 0,rgba(190,130,42,.10),transparent 42%),
+    linear-gradient(105deg,rgba(67,48,25,.26),rgba(16,16,18,.96) 52%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.035),
+    0 7px 18px rgba(0,0,0,.18);
+  text-align:left;
+  cursor:pointer;
+}
+
+.hunt-market-hud:hover {
+  border-color:rgba(218,169,83,.64);
+  background:
+    radial-gradient(circle at 100% 0,rgba(210,147,53,.15),transparent 42%),
+    linear-gradient(105deg,rgba(83,59,29,.34),rgba(20,19,19,.98) 52%);
+}
+
+.hunt-market-hud-title {
+  display:grid;
+  gap:3px;
+}
+
+.hunt-market-hud-title span {
+  color:#987648;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.14em;
+}
+
+.hunt-market-hud-title strong {
+  color:#dcc8a0;
+  font-size:12px;
+}
+
+.hunt-market-hud-quote {
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+  padding-left:11px;
+  border-left:1px solid rgba(255,255,255,.07);
+}
+
+.hunt-market-hud-quote strong {
+  color:#efca74;
+  font-size:17px;
+}
+
+.hunt-market-hud-quote span {
+  font-size:9px;
+  font-weight:950;
+  white-space:nowrap;
+}
+
+.hunt-market-hud-quote span.up {
+  color:#e37c72;
+}
+
+.hunt-market-hud-quote span.down {
+  color:#75a8dc;
+}
+
+.hunt-market-hud-quote span.flat {
+  color:#8e8b83;
+}
+
+.hunt-market-hud-position {
+  display:grid;
+  grid-template-columns:auto auto;
+  gap:3px 9px;
+  padding-left:11px;
+  border-left:1px solid rgba(255,255,255,.07);
+}
+
+.hunt-market-hud-position span {
+  color:#887f70;
+  font-size:8px;
+}
+
+.hunt-market-hud-position strong {
+  color:#c7b99d;
+  font-size:10px;
+  text-align:right;
+}
+
+.hunt-market-hud-position small {
+  grid-column:1/-1;
+  color:#847d72;
+  font-size:8px;
+  text-align:right;
+}
+
+.hunt-market-hud-position small.positive {
+  color:#8fc19a;
+}
+
+.hunt-market-hud-position small.negative {
+  color:#d68a91;
+}
+
+.hunt-market-hud-link {
+  color:#a68c60;
+  font-size:8px;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+@media (max-width:760px) {
+  .top-tabs {
+    display:block;
+    padding:7px;
+  }
+
+  .top-tabs-primary {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:5px;
+  }
+
+  .top-tabs-primary .top-tab,
+  .nav-more-toggle {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    min-width:0;
+    min-height:39px;
+    padding:6px 5px;
+    border:1px solid #393329;
+    border-radius:3px;
+    color:#aaa08e;
+    background:#191713;
+    font-size:10px;
+    font-weight:900;
+    line-height:1.2;
+    text-align:center;
+  }
+
+  .top-tabs-primary .top-tab span {
+    font-size:8px;
+  }
+
+  .nav-more-toggle {
+    color:#d1b77d;
+    border-color:#604a2d;
+    background:linear-gradient(#302619,#1b1711);
+    cursor:pointer;
+  }
+
+  .nav-more-toggle b {
+    color:#e1b65d;
+    font-size:14px;
+  }
+
+  .top-tabs-expanded {
+    display:none;
+    gap:8px;
+    margin-top:7px;
+  }
+
+  .top-tabs.mobile-expanded .top-tabs-expanded {
+    display:grid;
+  }
+
+  .nav-menu-group {
+    display:block;
+    overflow:hidden;
+    border:1px solid #39342b;
+    border-radius:5px;
+    background:#11100e;
+  }
+
+  .nav-menu-group-title {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:7px 8px;
+    border-bottom:1px solid rgba(255,255,255,.055);
+    background:linear-gradient(90deg,rgba(90,63,28,.18),rgba(21,19,15,.95));
+  }
+
+  .nav-menu-group-title span {
+    color:#806b4b;
+    font-size:7px;
+    font-weight:950;
+    letter-spacing:.12em;
+  }
+
+  .nav-menu-group-title strong {
+    color:#c2ad82;
+    font-size:10px;
+  }
+
+  .nav-menu-group-buttons {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:4px;
+    padding:5px;
+  }
+
+  .nav-menu-group-buttons .top-tab {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:0;
+    min-height:37px;
+    padding:5px 4px;
+    border-radius:2px;
+    font-size:9px;
+    line-height:1.2;
+    text-align:center;
+  }
+
+  .nav-menu-group-buttons .top-tab span {
+    font-size:7px;
+  }
+
+  .hunt-market-hud {
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:7px 10px;
+    width:calc(100% - 16px);
+    margin:8px 8px 0;
+    padding:9px 10px;
+  }
+
+  .hunt-market-hud-title strong {
+    font-size:11px;
+  }
+
+  .hunt-market-hud-quote {
+    justify-content:flex-end;
+    padding-left:0;
+    border-left:0;
+  }
+
+  .hunt-market-hud-quote strong {
+    font-size:15px;
+  }
+
+  .hunt-market-hud-position {
+    grid-column:1/-1;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:7px;
+    padding-top:7px;
+    padding-left:0;
+    border-top:1px solid rgba(255,255,255,.06);
+    border-left:0;
+  }
+
+  .hunt-market-hud-position strong,
+  .hunt-market-hud-position small {
+    grid-column:auto;
+    text-align:left;
+  }
+
+  .hunt-market-hud-link {
+    display:none;
+  }
+}
+
+@media (max-width:420px) {
+  .top-tabs-primary,
+  .nav-menu-group-buttons {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .hunt-market-hud-position {
+    flex-wrap:wrap;
+  }
+}

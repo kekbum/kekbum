@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=42">
+  <link rel="stylesheet" href="styles.css?v=43">
 
 </head>
 <body>
@@ -29,29 +29,64 @@
       </div>
     </div>
 
-    <nav class="top-tabs" aria-label="게임 메뉴">
-      <button class="top-tab active" data-page-target="hunt">사냥터</button>
-      <button class="top-tab" data-page-target="guide">초보자 길잡이 <span id="guideNavMark"></span></button>
-      <button class="top-tab" data-page-target="inventory">전리품 가방 <span id="inventoryNavCount"></span></button>
-      <button class="top-tab" data-page-target="character">능력치</button>
-      <button class="top-tab" data-page-target="info">정보</button>
-      <button class="top-tab" data-page-target="codex">몬스터 도감 <span id="codexNavCount"></span></button>
-      <button class="top-tab" data-page-target="bounties">현상수배 <span id="bountyNavCount"></span></button>
-      <button class="top-tab" data-page-target="skills">기술서 <span id="skillNavCount"></span></button>
-      <button class="top-tab" data-page-target="quests">의뢰 <span id="questNavCount"></span></button>
-      <button class="top-tab" data-page-target="attendance">출석부 <span id="attendanceNavMark"></span></button>
-      <button class="top-tab" data-page-target="staminacamp">활력 야영지 <span id="staminaCampNavMark"></span></button>
-      <button class="top-tab" data-page-target="daily">오늘의 균열</button>
-      <button class="top-tab" data-page-target="dailyboss">일일 보스 <span id="dailyBossNavMark"></span></button>
-      <button class="top-tab" data-page-target="abyss">끝없는 심연</button>
-      <button class="top-tab finale-nav-tab" data-page-target="finale">모험 최종장 <span id="finaleNavMark"></span></button>
-      <button class="top-tab" data-page-target="collection">수집·업적 <span id="achievementNavMark"></span></button>
-      <button class="top-tab" data-page-target="mercenary">용병단</button>
-      <button class="top-tab" data-page-target="arena">투기장 <span id="arenaNavCount"></span></button>
-      <button class="top-tab online-ranking-tab" data-page-target="ranking">온라인 랭킹 <span id="rankingNavMark"></span></button>
-      <button class="top-tab" data-page-target="savevault">기록 보관소</button>
-      <button class="top-tab" data-page-target="gamble">도박 상점</button>
-      <button class="top-tab" data-page-target="market">암시장</button>
+    <nav class="top-tabs" id="topTabs" aria-label="게임 메뉴">
+      <div class="top-tabs-primary">
+        <button class="top-tab active" data-page-target="hunt">사냥터</button>
+        <button class="top-tab" data-page-target="inventory">전리품 가방 <span id="inventoryNavCount"></span></button>
+        <button class="top-tab" data-page-target="character">능력치</button>
+        <button class="top-tab" data-page-target="skills">기술서 <span id="skillNavCount"></span></button>
+        <button class="top-tab" data-page-target="quests">의뢰 <span id="questNavCount"></span></button>
+        <button class="nav-more-toggle" id="navMoreToggle" type="button" aria-expanded="false" aria-controls="mobileNavExpanded">
+          <span id="navMoreLabel">전체 메뉴</span>
+          <b id="navMoreIcon">＋</b>
+        </button>
+      </div>
+
+      <div class="top-tabs-expanded" id="mobileNavExpanded">
+        <section class="nav-menu-group">
+          <div class="nav-menu-group-title">
+            <span>GROWTH & RECORDS</span>
+            <strong>성장·기록</strong>
+          </div>
+          <div class="nav-menu-group-buttons">
+            <button class="top-tab" data-page-target="guide">초보자 길잡이 <span id="guideNavMark"></span></button>
+            <button class="top-tab" data-page-target="info">기록 보관소</button>
+            <button class="top-tab" data-page-target="codex">몬스터 도감 <span id="codexNavCount"></span></button>
+            <button class="top-tab" data-page-target="bounties">현상수배 <span id="bountyNavCount"></span></button>
+            <button class="top-tab" data-page-target="attendance">출석부 <span id="attendanceNavMark"></span></button>
+            <button class="top-tab" data-page-target="collection">수집·업적 <span id="achievementNavMark"></span></button>
+            <button class="top-tab" data-page-target="savevault">세이브·기기 이전</button>
+          </div>
+        </section>
+
+        <section class="nav-menu-group">
+          <div class="nav-menu-group-title">
+            <span>EXPEDITIONS</span>
+            <strong>원정·도전</strong>
+          </div>
+          <div class="nav-menu-group-buttons">
+            <button class="top-tab" data-page-target="staminacamp">활력 야영지 <span id="staminaCampNavMark"></span></button>
+            <button class="top-tab" data-page-target="daily">오늘의 균열</button>
+            <button class="top-tab" data-page-target="dailyboss">일일 보스 <span id="dailyBossNavMark"></span></button>
+            <button class="top-tab" data-page-target="abyss">끝없는 심연</button>
+            <button class="top-tab finale-nav-tab" data-page-target="finale">모험 최종장 <span id="finaleNavMark"></span></button>
+            <button class="top-tab" data-page-target="arena">투기장 <span id="arenaNavCount"></span></button>
+          </div>
+        </section>
+
+        <section class="nav-menu-group">
+          <div class="nav-menu-group-title">
+            <span>COMPANIONS & TRADE</span>
+            <strong>동료·거래</strong>
+          </div>
+          <div class="nav-menu-group-buttons">
+            <button class="top-tab" data-page-target="mercenary">용병단</button>
+            <button class="top-tab online-ranking-tab" data-page-target="ranking">온라인 랭킹 <span id="rankingNavMark"></span></button>
+            <button class="top-tab" data-page-target="gamble">도박 상점</button>
+            <button class="top-tab" data-page-target="market">암시장</button>
+          </div>
+        </section>
+      </div>
     </nav>
 
     <section class="page active" data-page="hunt">
@@ -122,6 +157,24 @@
           <div class="enemy-name status-idle" id="enemyName">대기중</div>
           <div class="enemy-meta" id="enemyMeta"></div>
         </div>
+
+
+        <button class="hunt-market-hud" id="huntMarketHudBtn" type="button" aria-label="암시장 열기">
+          <div class="hunt-market-hud-title">
+            <span>BLACK COIN MARKET</span>
+            <strong>암시장 시세</strong>
+          </div>
+          <div class="hunt-market-hud-quote">
+            <strong id="huntMarketHudPrice">95 G</strong>
+            <span class="flat" id="huntMarketHudTrend">보합</span>
+          </div>
+          <div class="hunt-market-hud-position">
+            <span id="huntMarketHudTokens">보유 0개</span>
+            <strong id="huntMarketHudValue">평가 0 G</strong>
+            <small id="huntMarketHudProfit">미실현 ±0 G</small>
+          </div>
+          <span class="hunt-market-hud-link">거래소 열기 ›</span>
+        </button>
 
         <div class="combat-stage">
           <div class="meter-wrap">
@@ -1091,7 +1144,7 @@
   </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="game.js?v=42"></script>
+  <script src="game.js?v=43"></script>
 
 </body>
 </html>

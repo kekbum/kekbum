@@ -1,4 +1,4 @@
-const VERSION = 42;
+const VERSION = 43;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -1457,6 +1457,7 @@ const VERSION = 42;
     let transferCodeBusy = false;
     let activeTransferCode = "";
     let activeTransferCodeExpiresAt = 0;
+    let mobileNavExpanded = false;
 
     const els = {
       heroTitle: document.getElementById("heroTitle"),
@@ -1484,6 +1485,10 @@ const VERSION = 42;
       defeatLogBanner: document.getElementById("defeatLogBanner"),
       defeatLogTitle: document.getElementById("defeatLogTitle"),
       defeatLogText: document.getElementById("defeatLogText"),
+      topTabs: document.getElementById("topTabs"),
+      navMoreToggle: document.getElementById("navMoreToggle"),
+      navMoreLabel: document.getElementById("navMoreLabel"),
+      navMoreIcon: document.getElementById("navMoreIcon"),
       nicknameModal: document.getElementById("nicknameModal"),
       nicknameModalInput: document.getElementById("nicknameModalInput"),
       nicknameConfirmBtn: document.getElementById("nicknameConfirmBtn"),
@@ -1515,6 +1520,12 @@ const VERSION = 42;
       feverBar: document.getElementById("feverBar"),
       huntBtn: document.getElementById("huntBtn"),
       autoBtn: document.getElementById("autoBtn"),
+      huntMarketHudBtn: document.getElementById("huntMarketHudBtn"),
+      huntMarketHudPrice: document.getElementById("huntMarketHudPrice"),
+      huntMarketHudTrend: document.getElementById("huntMarketHudTrend"),
+      huntMarketHudTokens: document.getElementById("huntMarketHudTokens"),
+      huntMarketHudValue: document.getElementById("huntMarketHudValue"),
+      huntMarketHudProfit: document.getElementById("huntMarketHudProfit"),
       potionBtn: document.getElementById("potionBtn"),
       manaPotionBtn: document.getElementById("manaPotionBtn"),
       elixirBtn: document.getElementById("elixirBtn"),
@@ -4427,6 +4438,18 @@ const VERSION = 42;
       els.dailyBossHistory.innerHTML = state.dailyBoss.history.length ? state.dailyBoss.history.map(line => `<div class="expedition-history-row">${line}</div>`).join("") : `<div class="expedition-history-row">아직 일일 보스 기록이 없다.</div>`;
     }
 
+    function setMobileNavExpanded(expanded) {
+      mobileNavExpanded = !!expanded;
+      els.topTabs?.classList.toggle("mobile-expanded",mobileNavExpanded);
+      els.navMoreToggle?.setAttribute("aria-expanded",String(mobileNavExpanded));
+      if (els.navMoreLabel) els.navMoreLabel.textContent = mobileNavExpanded ? "메뉴 접기" : "전체 메뉴";
+      if (els.navMoreIcon) els.navMoreIcon.textContent = mobileNavExpanded ? "－" : "＋";
+    }
+
+    function toggleMobileNav() {
+      setMobileNavExpanded(!mobileNavExpanded);
+    }
+
     function switchPage(page) {
       document.querySelectorAll(".page").forEach(el => el.classList.toggle("active", el.dataset.page === page));
       document.querySelectorAll(".top-tab").forEach(el => el.classList.toggle("active", el.dataset.pageTarget === page));
@@ -4454,6 +4477,9 @@ const VERSION = 42;
       if (page === "savevault") renderSaveVault();
       if (page === "gamble") renderGambleShop();
       if (page === "market") renderMarket();
+      if (window.matchMedia("(max-width: 760px)").matches) {
+        setMobileNavExpanded(false);
+      }
     }
 
     function rarityRank(item) {
@@ -7715,6 +7741,29 @@ const VERSION = 42;
       renderAll();
     }
 
+    function renderHuntMarketHud() {
+      if (!els.huntMarketHudBtn) return;
+      const history = state.market.history.length ? state.market.history : [state.market.price];
+      const current = Number(state.market.price || 0);
+      const previous = Number(history.length > 1 ? history[history.length-2] : current);
+      const change = current-previous;
+      const changeRate = previous > 0 ? change/previous*100 : 0;
+      const sellUnit = Math.floor(current*.98);
+      const tokens = Math.max(0,Number(state.market.tokens || 0));
+      const positionValue = sellUnit*tokens;
+      const unrealized = Math.round((sellUnit-Number(state.market.avgCost || 0))*tokens);
+
+      els.huntMarketHudPrice.textContent = `${fmt(current)} G`;
+      els.huntMarketHudTrend.textContent = change === 0
+        ? "보합"
+        : `${change > 0 ? "▲" : "▼"} ${Math.abs(change)}G · ${Math.abs(changeRate).toFixed(1)}%`;
+      els.huntMarketHudTrend.className = change > 0 ? "up" : change < 0 ? "down" : "flat";
+      els.huntMarketHudTokens.textContent = `보유 ${fmt(tokens)}개`;
+      els.huntMarketHudValue.textContent = `평가 ${fmt(positionValue)} G`;
+      els.huntMarketHudProfit.textContent = `미실현 ${unrealized >= 0 ? "+" : ""}${fmt(unrealized)} G`;
+      els.huntMarketHudProfit.className = unrealized > 0 ? "positive" : unrealized < 0 ? "negative" : "";
+    }
+
     function renderMarket() {
       updateMarket();
       const history = state.market.history.length ? state.market.history : [state.market.price];
@@ -7758,6 +7807,7 @@ const VERSION = 42;
         : `<div class="notice">아직 거래 기록이 없습니다.</div>`;
 
       renderMarketTradePreviews();
+      renderHuntMarketHud();
     }
 
     function generateRareMap() {
@@ -8648,17 +8698,20 @@ const VERSION = 42;
       els.autoBtn.textContent = `자동 사냥 중지 · 다음 ${seconds}초`;
     }
 
-    function toggleAuto() {
-      if (autoTimer) {
-        clearInterval(autoTimer);
-        autoTimer = null;
-        autoNextAt = 0;
-        updateAutoButton();
-        return;
-      }
+    function stopAutoHunt({announce=false}={}) {
+      if (!autoTimer) return false;
+      clearInterval(autoTimer);
+      autoTimer = null;
+      autoNextAt = 0;
+      updateAutoButton();
+      if (announce) toast("자동 사냥을 중지했습니다.");
+      return true;
+    }
+
+    function startAutoHunt() {
       recoverOffline();
       if (state.stamina < 1) return toast("활력이 부족합니다.");
-      hunt(false);
+
       autoNextAt = Date.now() + AUTO_HUNT_INTERVAL_MS;
       autoTimer = setInterval(() => {
         if (!isBusy) {
@@ -8666,7 +8719,26 @@ const VERSION = 42;
           hunt(false);
         }
       }, AUTO_HUNT_INTERVAL_MS);
+
+      hunt(false);
       updateAutoButton();
+    }
+
+    function toggleAuto() {
+      if (autoTimer) {
+        stopAutoHunt({announce:true});
+        return;
+      }
+      startAutoHunt();
+    }
+
+    function manualHunt() {
+      const stoppedAuto = stopAutoHunt();
+      if (stoppedAuto) {
+        log("수동 사냥 전환 · 자동 사냥 대기 시간을 즉시 초기화했습니다.","neutral");
+        toast("자동 사냥 중지 · 수동 사냥으로 전환");
+      }
+      hunt(false);
     }
 
     function log(text, cls="") {
@@ -9122,6 +9194,7 @@ const VERSION = 42;
     }
 
     document.querySelectorAll(".top-tab").forEach(btn => btn.onclick = () => switchPage(btn.dataset.pageTarget));
+    els.navMoreToggle.onclick = toggleMobileNav;
     document.querySelectorAll(".info-tab").forEach(btn => btn.onclick = () => {
       activeInfoTab = btn.dataset.infoTarget;
       renderInfo();
@@ -9191,8 +9264,9 @@ const VERSION = 42;
       toast("활력이 모두 회복되었습니다.");
     };
 
-    els.huntBtn.onclick = () => hunt(false);
+    els.huntBtn.onclick = manualHunt;
     els.autoBtn.onclick = toggleAuto;
+    els.huntMarketHudBtn.onclick = () => switchPage("market");
     document.addEventListener("click",event => {
       if (!event.target.closest("[data-equipment-tooltip]") && !event.target.closest("#equipmentTooltip")) {
         hideEquipmentTooltip();
