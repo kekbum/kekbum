@@ -11987,3 +11987,29 @@ button.purchase-warning:not(:disabled):hover {
     right:-31px;
   }
 }
+
+
+/* v58: 상시 도전 콘텐츠 통합 */
+.top-subnav[data-nav-group="arena"] {
+  gap:7px;
+}
+
+.top-subnav[data-nav-group="arena"] .top-tab {
+  position:relative;
+}
+
+.top-subnav[data-nav-group="arena"] .top-tab[data-page-target="finale"] {
+  border-color:rgba(199,128,48,.36);
+}
+
+@media (max-width:760px) {
+  .top-subnav[data-nav-group="arena"] {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:420px) {
+  .top-subnav[data-nav-group="arena"] {
+    grid-template-columns:1fr;
+  }
+}

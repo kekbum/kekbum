@@ -1,4 +1,4 @@
-const VERSION = 57;
+const VERSION = 58;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -161,8 +161,8 @@ const VERSION = 57;
       info:{label:"정보",defaultPage:"guide",pages:["guide","info","codex","collection","savevault"]},
       board:{label:"게시판",defaultPage:"inquiry",pages:["inquiry","ranking"]},
       quest:{label:"퀘스트",defaultPage:"quests",pages:["quests","bounties","staminacamp"]},
-      arena:{label:"투기장",defaultPage:"arena",pages:["arena"]},
-      event:{label:"이벤트",defaultPage:"attendance",pages:["attendance","daily","dailyboss","abyss","finale"]}
+      arena:{label:"도전",defaultPage:"arena",pages:["arena","daily","dailyboss","abyss","finale"]},
+      event:{label:"이벤트",defaultPage:"attendance",pages:["attendance"]}
     };
 
     const navSectionByPage = Object.fromEntries(
