@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=53">
+  <link rel="stylesheet" href="styles.css?v=56">
 
 </head>
 <body>
@@ -37,7 +37,7 @@
 
     <nav class="top-tabs top-tabs-category-layout" id="topTabs" aria-label="게임 메뉴">
       <div class="top-section-tabs" id="topSectionTabs">
-        <button class="top-section-tab active" data-nav-section="hunt">사냥터</button>
+        <button class="top-section-tab active" data-nav-section="hunt">메인</button>
         <button class="top-section-tab" data-nav-section="info">정보</button>
         <button class="top-section-tab" data-nav-section="board">게시판</button>
         <button class="top-section-tab" data-nav-section="quest">퀘스트</button>
@@ -47,7 +47,7 @@
 
       <div class="top-subnav-shell">
         <div class="top-subnav active" data-nav-group="hunt">
-          <button class="top-tab active" data-page-target="hunt">사냥 메인</button>
+          <button class="top-tab active" data-page-target="hunt">사냥터</button>
           <button class="top-tab" data-page-target="inventory">전리품 가방 <span id="inventoryNavCount"></span></button>
           <button class="top-tab" data-page-target="character">능력치</button>
           <button class="top-tab" data-page-target="skills">기술서 <span id="skillNavCount"></span></button>
@@ -306,8 +306,16 @@
           </details>
         </div>
 
-        <div class="panel-title">전투 연대기</div>
-        <div class="log combat-log-prominent" id="combatLog"></div>
+        <details class="combat-chronicle-details">
+          <summary>
+            <span>
+              <small>BATTLE CHRONICLE</small>
+              <strong>전투 연대기</strong>
+            </span>
+            <b>눌러서 전체 기록 보기</b>
+          </summary>
+          <div class="log combat-log-prominent" id="combatLog"></div>
+        </details>
       </section>
 
       <section class="right-column">
@@ -326,12 +334,6 @@
           <div class="panel-title">현재 가이드 미션</div>
           <div class="panel-body">
             <div id="guideMiniTracker"></div>
-            <div class="danger-zone character-delete-zone">
-              <div class="character-delete-warning">
-                현재 캐릭터와 장비·수집 기록·수동 저장 슬롯을 모두 삭제합니다.
-              </div>
-              <button class="action danger" id="resetBtn" style="width:100%">캐릭터 삭제</button>
-            </div>
           </div>
         </div>
       </section>
@@ -557,6 +559,23 @@
           <button class="info-tab" data-info-target="drops">드롭 정보</button>
         </div>
         <div class="info-content" id="infoContent"></div>
+
+        <details class="character-management-details">
+          <summary>
+            <span>
+              <small>ACCOUNT MANAGEMENT</small>
+              <strong>캐릭터 관리</strong>
+            </span>
+            <b>위험 설정 열기</b>
+          </summary>
+          <div class="character-management-body">
+            <div>
+              <strong>현재 캐릭터 삭제</strong>
+              <p>캐릭터, 장비, 수집 기록과 수동 저장 슬롯을 모두 삭제합니다. 일반 플레이 중 실수로 누르지 않도록 정보 화면 안쪽으로 이동했습니다.</p>
+            </div>
+            <button class="action danger" id="resetBtn" type="button">캐릭터 삭제</button>
+          </div>
+        </details>
       </div>
     </section>
 
@@ -860,6 +879,7 @@
           <span class="badge" id="mercenaryActiveBadge">동행 용병 없음</span>
         </div>
         <div class="mercenary-summary" id="mercenarySummary"></div>
+        <div class="purchase-feedback hidden" id="mercenaryPurchaseFeedback" role="status" aria-live="polite"></div>
         <div class="mercenary-grid" id="mercenaryGrid"></div>
       </div>
     </section>
@@ -1498,7 +1518,7 @@
   </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="game.js?v=53"></script>
+  <script src="game.js?v=56"></script>
 
 </body>
 </html>

@@ -1,4 +1,4 @@
-const VERSION = 53;
+const VERSION = 56;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -157,7 +157,7 @@ const VERSION = 53;
 
 
     const navSections = {
-      hunt:{label:"사냥터",defaultPage:"hunt",pages:["hunt","inventory","character","skills","mercenary","market","gamble"]},
+      hunt:{label:"메인",defaultPage:"hunt",pages:["hunt","inventory","character","skills","mercenary","market","gamble"]},
       info:{label:"정보",defaultPage:"guide",pages:["guide","info","codex","collection","savevault"]},
       board:{label:"게시판",defaultPage:"inquiry",pages:["inquiry","ranking"]},
       quest:{label:"퀘스트",defaultPage:"quests",pages:["quests","bounties","staminacamp"]},
@@ -242,37 +242,37 @@ const VERSION = 53;
     const classes = {
       vanguard: {
         name:"검투사", line:"검술 계열", main:"str", secondary:"vit",
-        desc:"묵직한 한 방과 높은 치명타 피해를 노리는 직업입니다.",
-        passive:"치명타 피해 +35% · 첫 공격 피해 +25%",
+        desc:"적의 방어를 베어 열고 호흡을 모아 결정적인 일격으로 끝냅니다.",
+        passive:"치명타 피해 +35% · 첫 공격 피해 +25% · 강한 한 방 연계",
         start:{str:6,vit:3}, critDamage:.35, firstStrike:.25
       },
       arcanist: {
         name:"원소술사", line:"마술 계열", main:"int", secondary:"spi",
-        desc:"피해 편차가 작고 3턴마다 강한 주문 폭발을 일으킵니다.",
-        passive:"최소 피해 상승 · 매 3턴 주문 폭발 70% 추가 피해",
-        start:{int:6,spi:3}, stableDamage:true, spellBurst:.70
+        desc:"마력을 과부하시킨 뒤 막대한 마나를 태워 가장 강한 마법을 사용합니다.",
+        passive:"피해 편차 감소 · 매 3턴 주문 폭발 · 마력 과부하 연계",
+        start:{int:6,spi:3}, stableDamage:true, spellBurst:.55
       },
       oracle: {
         name:"성직자", line:"신술 계열", main:"spi", secondary:"int",
-        desc:"위기에서 스스로 회복하며 긴 사냥을 안정적으로 이어갑니다.",
+        desc:"체력을 회복하고 적의 행동을 봉쇄한 뒤 약화된 적을 심판합니다.",
         passive:"전투 중 1회 긴급 회복 · 승리 후 체력 추가 회복",
         start:{spi:6,int:3}, emergencyHeal:.25, postHeal:.15
       },
       ironfist: {
         name:"권사", line:"체술 계열", main:"vit", secondary:"str",
-        desc:"높은 체력과 방어력으로 버티며 일정 확률로 반격합니다.",
+        desc:"강공격을 버티고 반격하며 잃은 체력이 많을수록 강한 붕권을 날립니다.",
         passive:"최대 체력 +18% · 방어력 +12% · 피격 시 반격",
-        start:{vit:6,str:3}, hpMult:.18, defenseMult:.12, counter:.24
+        start:{vit:6,str:3}, hpMult:.18, defenseMult:.12, counter:.18
       },
       marksman: {
         name:"사냥꾼", line:"궁술 계열", main:"luck", secondary:"spd",
-        desc:"치명타와 고급 장비 획득에 특화된 파밍형 직업입니다.",
-        passive:"치명타 +7% · 고급 장비 발견 +8% · 정예 피해 +15%",
-        start:{luck:6,spd:3}, crit:7, itemFind:8, eliteDamage:.15
+        desc:"전투가 시작되기 전에 먼저 쏘고, 높은 적중률로 회피형 적을 추적합니다.",
+        passive:"전투 개시 선제사격 · 명중 +5% · 치명타 +7% · 정예 피해 +15%",
+        start:{luck:6,spd:3}, accuracy:.05, crit:7, itemFind:8, eliteDamage:.15
       },
       shadow: {
         name:"그림자", line:"인술 계열", main:"spd", secondary:"luck",
-        desc:"연속 공격과 회피, 희귀 지도 탐색에 강합니다.",
+        desc:"연막으로 공격을 흘리고 독을 남긴 뒤 회피 직후 급소를 베어냅니다.",
         passive:"연속 공격 확률 30% · 회피 +12% · 지도 발견 +0.6%",
         start:{spd:6,luck:3}, doubleHit:.30, dodge:.12, mapFind:.6
       }
@@ -322,34 +322,124 @@ const VERSION = 53;
 
     const skillCatalog = {
       vanguard: [
-        { id:"whirlwind", name:"회전 베기", cost:8, every:3, mult:1.42, growth:.09, desc:"주변을 크게 베는 안정적인 주력기입니다." },
-        { id:"execute", name:"처형", cost:14, every:5, mult:2.00, growth:.13, critBonus:15, desc:"강한 일격과 추가 치명타 확률을 얻습니다." },
-        { id:"bloodthirst", name:"피의 갈증", cost:11, every:4, mult:1.28, growth:.07, healRate:.07, desc:"피해를 주고 최대 체력 일부를 회복합니다." }
+        {
+          id:"whirlwind", name:"파갑참", role:"방어 파괴", cost:8, every:3,
+          mult:1.28, growth:.08, defenseBreak:.22, defenseBreakTurns:3,
+          desc:"갑옷의 이음새를 베어 3턴 동안 적 방어력을 22% 낮춥니다.",
+          auto:"방어 약화가 없을 때 우선 사용"
+        },
+        {
+          id:"bloodthirst", name:"결전의 호흡", role:"연계 준비", cost:10, every:4,
+          mult:1.02, growth:.04, focusPower:.42,
+          desc:"공격과 함께 호흡을 가다듬어 다음 회천일섬의 피해와 명중을 강화합니다.",
+          auto:"호흡이 없고 회천일섬을 준비할 때 사용"
+        },
+        {
+          id:"execute", name:"회천일섬", role:"결정기", cost:18, every:6,
+          mult:2.18, growth:.14, critBonus:12, executeBonus:.58, executeHpRate:.35,
+          desc:"가장 강한 검술입니다. 적 체력이 35% 이하이거나 결전의 호흡이 있으면 피해가 크게 증가합니다.",
+          auto:"호흡 보유 또는 적 체력이 낮을 때 최우선"
+        }
       ],
       arcanist: [
-        { id:"fireburst", name:"화염 폭발", cost:14, every:2, mult:1.62, growth:.10, desc:"자주 사용하는 고화력 마법입니다." },
-        { id:"chainlightning", name:"연쇄 번개", cost:18, every:4, mult:1.38, growth:.08, extraHit:.52, desc:"본 피해 뒤에 추가 번개 피해가 발생합니다." },
-        { id:"manasurge", name:"마나 분출", cost:12, every:5, mult:1.46, growth:.08, manaRestore:7, desc:"공격 후 마나를 일부 되찾습니다." }
+        {
+          id:"fireburst", name:"마력창", role:"주력 마법", cost:11, every:2,
+          mult:1.52, growth:.10, defensePierce:.28, accuracyBonus:.08,
+          desc:"응축한 마력을 직선으로 쏘아 방어력을 무시하는 안정적인 마법 공격을 가합니다.",
+          auto:"다른 연계가 준비되지 않았을 때 사용"
+        },
+        {
+          id:"chainlightning", name:"마력 과부하", role:"연계 준비", cost:12, every:4,
+          mult:1.00, growth:.04, overloadPower:.55,
+          desc:"마력 회로를 과열시켜 다음 공격 마법의 피해를 55% 이상 강화합니다.",
+          auto:"과부하가 없고 충분한 마나가 있을 때 사용"
+        },
+        {
+          id:"manasurge", name:"붕괴의 별", role:"초고위력 마법", cost:24, every:6,
+          mult:2.42, growth:.16, manaBurnRate:.12, accuracyBonus:.04,
+          desc:"기본 마나에 더해 최대 마나의 일부를 추가로 태우며, 소모한 마나만큼 피해가 증가합니다.",
+          auto:"과부하 보유 또는 마나가 충분할 때 최우선"
+        }
       ],
       oracle: [
-        { id:"judgment", name:"심판의 빛", cost:12, every:2, mult:1.48, growth:.09, desc:"신성력을 응축해 적을 공격합니다." },
-        { id:"lifewave", name:"생명의 파동", cost:15, every:4, mult:1.12, growth:.06, healRate:.13, desc:"공격과 동시에 체력을 크게 회복합니다." },
-        { id:"purge", name:"정화의 불꽃", cost:17, every:5, mult:1.82, growth:.11, defensePierce:.25, desc:"적 방어력 일부를 무시하는 신성 공격입니다." }
+        {
+          id:"lifewave", name:"성광 회복", role:"회복", cost:14, every:3,
+          mult:.72, growth:.04, healRate:.20, cleanse:true,
+          desc:"적에게 성광을 비추며 최대 체력의 20% 이상을 회복하고 자신에게 남은 약화 효과를 정화합니다.",
+          auto:"체력이 65% 이하일 때 최우선"
+        },
+        {
+          id:"judgment", name:"속박의 인장", role:"상태이상", cost:12, every:4,
+          mult:1.00, growth:.05, bindChance:.50, accuracyDown:.20, statusTurns:2,
+          desc:"적을 속박해 행동을 한 차례 봉쇄할 수 있습니다. 실패해도 2턴 동안 적 명중률을 낮춥니다.",
+          auto:"적이 강공격을 준비하거나 약화가 없을 때 사용"
+        },
+        {
+          id:"purge", name:"심판의 빛", role:"약화 연계", cost:18, every:5,
+          mult:1.65, growth:.10, debuffBonus:.48, healRate:.08, defensePierce:.15,
+          desc:"상태이상이나 방어 약화가 걸린 적에게 추가 피해를 주고 자신의 체력을 회복합니다.",
+          auto:"적이 약화됐을 때 최우선"
+        }
       ],
       ironfist: [
-        { id:"qiblast", name:"기공파", cost:9, every:3, mult:1.39, growth:.08, desc:"기운을 뿜어내는 안정적인 기술입니다." },
-        { id:"crushingfist", name:"붕권", cost:13, every:5, mult:1.88, growth:.12, critBonus:12, desc:"치명타 가능성이 높은 일격입니다." },
-        { id:"ironbreath", name:"철산고", cost:10, every:4, mult:1.31, growth:.07, healRate:.05, defensePierce:.15, desc:"방어를 뚫고 자신의 호흡을 회복합니다." }
+        {
+          id:"qiblast", name:"금강체", role:"피해 경감", cost:9, every:3,
+          mult:.82, growth:.04, guardReduction:.55, guardTurns:1, healRate:.06,
+          desc:"몸을 굳혀 다음에 받는 피해를 55% 줄이고 체력을 소량 회복합니다.",
+          auto:"체력이 낮거나 적이 강공격을 준비할 때 사용"
+        },
+        {
+          id:"crushingfist", name:"반격태세", role:"반격", cost:11, every:4,
+          mult:.78, growth:.04, counterPower:1.05, counterTurns:2,
+          desc:"2턴 동안 공격을 맞으면 즉시 공격력 기반의 강한 반격을 날립니다.",
+          auto:"적이 강공격을 준비할 때 최우선"
+        },
+        {
+          id:"ironbreath", name:"붕권", role:"역전 일격", cost:15, every:5,
+          mult:1.45, growth:.10, missingHpBonus:1.00, recentDamageBonus:.45,
+          desc:"잃은 체력과 직전에 받은 피해가 클수록 강해지는 체술 결정기입니다.",
+          auto:"잃은 체력이 많거나 큰 피해를 받은 뒤 우선 사용"
+        }
       ],
       marksman: [
-        { id:"piercingshot", name:"관통 사격", cost:10, every:3, mult:1.48, growth:.09, defensePierce:.30, desc:"방어력을 크게 무시하는 화살입니다." },
-        { id:"multishot", name:"연발 사격", cost:15, every:4, mult:1.22, growth:.07, extraHit:.68, desc:"추가 화살이 한 번 더 적중합니다." },
-        { id:"weakpoint", name:"약점 저격", cost:17, every:5, mult:1.76, growth:.11, critBonus:22, desc:"높은 치명타 확률로 약점을 노립니다." }
+        {
+          id:"multishot", name:"선제사격", role:"전투 개시", cost:12, every:99,
+          mult:1.15, growth:.06, firstTurnOnly:true, accuracyBonus:.30,
+          desc:"전투가 시작되기 전에 한 번 먼저 공격합니다. 명중률이 매우 높습니다.",
+          auto:"전투당 한 번 자동 발동"
+        },
+        {
+          id:"piercingshot", name:"관통화살", role:"고명중 주력기", cost:10, every:3,
+          mult:1.50, growth:.09, defensePierce:.35, accuracyBonus:.22,
+          desc:"적의 방어력 35%를 무시하고 높은 명중률로 정확하게 관통합니다.",
+          auto:"매 3턴 안정적으로 사용"
+        },
+        {
+          id:"weakpoint", name:"매의 눈", role:"조준 강화", cost:13, every:4,
+          mult:1.02, growth:.05, eagleEyeTurns:3, eyeAccuracy:.12, eyeCrit:18,
+          desc:"3턴 동안 명중률과 치명타 확률을 크게 높입니다.",
+          auto:"조준 강화가 없을 때 우선 사용"
+        }
       ],
       shadow: [
-        { id:"shadowstrike", name:"그림자 습격", cost:11, every:3, mult:1.55, growth:.09, desc:"그림자 속에서 빠르게 파고듭니다." },
-        { id:"twinblade", name:"쌍날 난무", cost:16, every:4, mult:1.18, growth:.07, extraHit:.82, desc:"추가 공격 비율이 매우 높은 기술입니다." },
-        { id:"lifesteal", name:"흡혈 칼날", cost:14, every:5, mult:1.52, growth:.09, healRate:.10, desc:"적의 생명력을 빼앗아 체력을 회복합니다." }
+        {
+          id:"shadowstrike", name:"연막보", role:"회피 준비", cost:10, every:4,
+          mult:.88, growth:.04, evasionBuff:.55, evasionTurns:1,
+          desc:"연막 속으로 사라져 다음 적 공격에 대한 회피 확률을 크게 높입니다.",
+          auto:"적이 강공격을 준비하거나 회피 강화가 없을 때 사용"
+        },
+        {
+          id:"twinblade", name:"독영침", role:"지속 약화", cost:13, every:3,
+          mult:1.00, growth:.05, poisonRate:.18, poisonTurns:3, accuracyDown:.12, statusTurns:3,
+          desc:"독을 남겨 3턴 동안 지속 피해를 주고 적 명중률을 낮춥니다.",
+          auto:"적에게 독이 없을 때 우선 사용"
+        },
+        {
+          id:"lifesteal", name:"그림자 반월", role:"회피 연계", cost:16, every:5,
+          mult:1.66, growth:.10, dodgeBonus:.78, guaranteedCritAfterDodge:true,
+          desc:"직전에 적의 공격을 피했다면 피해가 크게 증가하고 치명타가 확정됩니다.",
+          auto:"회피 직후 최우선"
+        }
       ]
     };
 
@@ -360,6 +450,19 @@ const VERSION = 53;
           Object.fromEntries(skills.map(skill => [skill.id, 1]))
         ])
       );
+    }
+
+
+    function normalizeSavedSkillBookNames(save) {
+      if (!save || typeof save !== "object") return save;
+      const update = book => {
+        if (!book) return;
+        const skill = (skillCatalog[book.classId] || []).find(entry => entry.id === book.skillId);
+        if (skill) book.skillName = skill.name;
+      };
+      (save.skillBooks || []).forEach(update);
+      update(save.lastSkillBook);
+      return save;
     }
 
     const questDefinitions = [
@@ -2144,6 +2247,7 @@ const VERSION = 53;
       titleGrid: document.getElementById("titleGrid"),
       mercenaryActiveBadge: document.getElementById("mercenaryActiveBadge"),
       mercenarySummary: document.getElementById("mercenarySummary"),
+      mercenaryPurchaseFeedback: document.getElementById("mercenaryPurchaseFeedback"),
       mercenaryGrid: document.getElementById("mercenaryGrid"),
       arenaNavCount: document.getElementById("arenaNavCount"),
       arenaRatingBadge: document.getElementById("arenaRatingBadge"),
@@ -2394,6 +2498,7 @@ const VERSION = 53;
           records: { ...fresh.records, ...(loaded.records || {}) }
         };
         normalizeAllItemMemory(restored);
+        normalizeSavedSkillBookNames(restored);
         return restored;
       } catch (e) {
         return defaultState();
@@ -3805,10 +3910,14 @@ const VERSION = 53;
     }
 
     function showStoryIntroModal(replay=false) {
+      if (!els.storyIntroModal || !els.storyIntroScene) {
+        toast("시작 장면을 불러오지 못했습니다.");
+        return;
+      }
       storyIntroIndex = 0;
-      storyIntroReplay = replay;
-      renderStoryIntroScene();
+      storyIntroReplay = !!replay;
       els.storyIntroModal.classList.remove("hidden");
+      renderStoryIntroScene();
     }
 
     function renderStoryIntroScene() {
@@ -3822,10 +3931,13 @@ const VERSION = 53;
       els.storyIntroScene.innerHTML = scene.paragraphs
         .map(paragraph => `<p>${paragraph.replaceAll("{name}",name)}</p>`)
         .join("");
-      els.storyIntroNextBtn.textContent = storyIntroIndex === storyIntroScenes.length-1
-        ? "첫 번째 기억을 선택한다"
+      const finalScene = storyIntroIndex === storyIntroScenes.length-1;
+      els.storyIntroNextBtn.textContent = finalScene
+        ? storyIntroReplay
+          ? "장면 닫기"
+          : "첫 번째 기억을 선택한다"
         : "다음";
-      els.storyIntroSkipBtn.textContent = replay ? "닫기" : "장면 건너뛰기";
+      els.storyIntroSkipBtn.textContent = storyIntroReplay ? "닫기" : "장면 건너뛰기";
     }
 
     function finishStoryIntro() {
@@ -3955,7 +4067,7 @@ const VERSION = 53;
               <div class="story-reader-body">
                 ${selected.body.map((paragraph,index) => `<p><i>${String(index+1).padStart(2,"0")}</i><span>${paragraph}</span></p>`).join("")}
               </div>
-              ${selected.id === "prologue" ? `<button class="story-replay-button" id="storyReplayIntroBtn"><span>↻</span> 시작 장면 다시 보기</button>` : ""}
+              ${selected.id === "prologue" ? `<button class="story-replay-button" id="storyReplayIntroBtn" type="button"><span>↻</span> 시작 장면 다시 보기</button>` : ""}
             ` : `
               <div class="story-reader-locked">
                 <strong>아직 되찾은 이야기가 없습니다.</strong>
@@ -3975,7 +4087,12 @@ const VERSION = 53;
       });
 
       const replayButton = document.getElementById("storyReplayIntroBtn");
-      if (replayButton) replayButton.onclick = () => showStoryIntroModal(true);
+      if (replayButton) {
+        replayButton.onclick = () => {
+          showStoryIntroModal(true);
+          toast("시작 장면을 다시 재생합니다.");
+        };
+      }
 
       if (els.storyInfoMark) {
         const unread = storyUnreadIds().length;
@@ -4416,6 +4533,7 @@ const VERSION = 53;
         itemFind: a.luck * .11,
         doubleHit: Math.min(.20, a.spd * .0025),
         dodge: Math.min(.15, a.spd * .0016),
+        accuracy:0,
         firstStrike:0, spellBurst:0, emergencyHeal:0, postHeal:0, counter:0, eliteDamage:0,
         stableDamage:false,
         skillDamageBonus:0, skillManaReduction:0, skillEveryReduction:0, skillEcho:0,
@@ -4430,6 +4548,7 @@ const VERSION = 53;
         if (classCombatText[state.classId]?.damageType === "magic") s.magicPower *= mainBonus * masteryMult;
         else s.attack *= mainBonus * masteryMult;
         s.crit += cls.crit || 0;
+        s.accuracy += cls.accuracy || 0;
         s.critDamage += cls.critDamage || 0;
         s.firstStrike += cls.firstStrike || 0;
         s.spellBurst += cls.spellBurst || 0;
@@ -4488,6 +4607,7 @@ const VERSION = 53;
       s.crit = Math.min(70, s.crit);
       s.doubleHit = Math.min(.55, s.doubleHit);
       s.dodge = Math.min(.35, s.dodge);
+      s.accuracy = Math.min(.12,Math.max(0,s.accuracy || 0));
       return s;
     }
 
@@ -5219,16 +5339,58 @@ const VERSION = 53;
       }).join(" · ");
     }
 
+
+    function purchaseFailure(message,{surface="구매",feedbackElement=null}={}) {
+      const fullMessage = `${surface} 실패 · ${message}`;
+      toast(fullMessage);
+      log(fullMessage,"negative");
+      if (feedbackElement) {
+        feedbackElement.classList.remove("hidden","success");
+        feedbackElement.classList.add("error");
+        feedbackElement.innerHTML = `<strong>${surface} 실패</strong><span>${message}</span>`;
+      }
+      renderLog();
+      return false;
+    }
+
+    function purchaseSuccess(message,{surface="구매",feedbackElement=null}={}) {
+      if (feedbackElement) {
+        feedbackElement.classList.remove("hidden","error");
+        feedbackElement.classList.add("success");
+        feedbackElement.innerHTML = `<strong>${surface} 완료</strong><span>${message}</span>`;
+      }
+      return true;
+    }
+
     function hireMercenary(id) {
       const mercenary = mercenaryCatalog.find(entry => entry.id === id);
-      if (!mercenary || state.mercenaries.owned[id]) return;
-      if (!mercenary.check()) return toast(`고용 조건: ${mercenary.condition}`);
-      if (state.gold < mercenary.cost) return toast(`골드가 부족합니다. 필요 ${fmt(mercenary.cost)}G`);
+      const feedbackElement = els.mercenaryPurchaseFeedback;
+      if (!mercenary) {
+        return purchaseFailure("선택한 용병 정보를 찾지 못했습니다.",{surface:"용병 고용",feedbackElement});
+      }
+      if (state.mercenaries.owned[id]) {
+        return purchaseFailure("이미 고용한 용병입니다. 동행 선택 버튼을 이용해 주세요.",{surface:"용병 고용",feedbackElement});
+      }
+      if (!mercenary.check()) {
+        return purchaseFailure(`조건 미충족 · ${mercenary.condition}`,{surface:"용병 고용",feedbackElement});
+      }
+      if (state.gold < mercenary.cost) {
+        const shortage = mercenary.cost-state.gold;
+        return purchaseFailure(
+          `골드 부족 · 필요 ${fmt(mercenary.cost)}G / 보유 ${fmt(state.gold)}G / ${fmt(shortage)}G 부족`,
+          {surface:"용병 고용",feedbackElement}
+        );
+      }
+
       state.gold -= mercenary.cost;
       state.mercenaries.owned[id] = true;
       state.mercenaries.activeId = id;
       state.records.mercenariesHired = (state.records.mercenariesHired || 0)+1;
       log(`용병 고용 · ${mercenary.name} · ${fmt(mercenary.cost)}G`, "rarity-set");
+      purchaseSuccess(
+        `${mercenary.name}을 고용하고 즉시 동행시켰습니다.`,
+        {surface:"용병 고용",feedbackElement}
+      );
       saveState();
       renderAll();
     }
@@ -5258,7 +5420,13 @@ const VERSION = 53;
           <div class="mercenary-effect">${mercenary.effect}</div>
           ${owned
             ? `<button data-activate-mercenary="${activeNow ? "" : mercenary.id}">${activeNow ? "동행 해제" : "동행 선택"}</button>`
-            : `<button data-hire-mercenary="${mercenary.id}" ${unlocked ? "" : "disabled"}>고용 · ${fmt(mercenary.cost)}G</button>`}
+            : `<button class="${!unlocked || state.gold < mercenary.cost ? "purchase-warning" : ""}" data-hire-mercenary="${mercenary.id}">
+                ${!unlocked
+                  ? `조건 확인 · ${mercenary.condition}`
+                  : state.gold < mercenary.cost
+                    ? `고용 시도 · ${fmt(mercenary.cost)}G (부족 ${fmt(mercenary.cost-state.gold)}G)`
+                    : `고용 · ${fmt(mercenary.cost)}G`}
+              </button>`}
         </article>`;
       }).join("");
 
@@ -5360,7 +5528,7 @@ const VERSION = 53;
       if (!item || itemKind(item) !== "normal" || !(item.affixes || []).length) return;
       if (item.locked) return toast("잠금을 해제한 뒤 추출하세요.");
       const cost = Math.max(250,rarityRank(item)*350);
-      if (state.gold < cost) return toast(`추출 비용이 부족합니다. 필요 ${fmt(cost)}G`);
+      if (state.gold < cost) return purchaseFailure(`골드 부족 · 접사 추출에 ${fmt(cost)}G 필요 / 보유 ${fmt(state.gold)}G`,{surface:"접사 추출"});
       const target = [...item.affixes].sort((a,b) => (b.tierIndex || 0)-(a.tierIndex || 0) || Number(b.value)-Number(a.value))[0];
       const chance = extractionChance(item);
       if (!confirm(`${item.name}을 파괴하고 가장 강한 접사 [${target.name}]을 추출할까요?\n성공률 ${Math.round(chance*1000)/10}% · 비용 ${fmt(cost)}G`)) return;
@@ -5395,7 +5563,7 @@ const VERSION = 53;
       const def = affixDefinition(affix.kind,affix.stat,affix.familyId);
       if (!def?.slots?.includes(item.slot)) return toast("이 장비 부위에는 계승할 수 없습니다.");
       const cost = 1200+(affix.tierIndex || 0)*450;
-      if (state.gold < cost) return toast(`계승 비용이 부족합니다. 필요 ${fmt(cost)}G`);
+      if (state.gold < cost) return purchaseFailure(`골드 부족 · 접사 계승에 ${fmt(cost)}G 필요 / 보유 ${fmt(state.gold)}G`,{surface:"접사 계승"});
 
       const sameKind = item.affixes.filter(entry => entry.kind === affix.kind);
       const capacity = affix.kind === "prefix" ? item.prefixCapacity : item.suffixCapacity;
@@ -5430,7 +5598,7 @@ const VERSION = 53;
       const current = specialQualityTable[currentIndex];
       const next = specialQualityTable[currentIndex+1];
       const cost = [1000,1800,3200,6000][currentIndex] || 6000;
-      if (state.gold < cost) return toast(`진화 비용이 부족합니다. 필요 ${fmt(cost)}G`);
+      if (state.gold < cost) return purchaseFailure(`골드 부족 · 유니크 진화에 ${fmt(cost)}G 필요 / 보유 ${fmt(state.gold)}G`,{surface:"유니크 진화"});
       if (!confirm(`${duplicate.name}을 제물로 사용해 ${item.name}을 ${next.name}(으)로 진화할까요?`)) return;
 
       state.gold -= cost;
@@ -6077,7 +6245,8 @@ const VERSION = 53;
       els.inventoryExpansionBar.style.width = `${progress}%`;
       els.inventoryExpansionPrice.textContent = maxed ? "최대 확장" : `${fmt(cost)} G`;
       els.inventoryExpansionBtn.textContent = maxed ? "최대치 도달" : `5칸 확장 · ${fmt(cost)}G`;
-      els.inventoryExpansionBtn.disabled = maxed || state.gold < cost;
+      els.inventoryExpansionBtn.disabled = maxed;
+      els.inventoryExpansionBtn.classList.toggle("purchase-warning",!maxed && state.gold < cost);
       els.inventoryExpansionHint.textContent = maxed
         ? "더 이상 확장할 수 없습니다."
         : state.gold < cost
@@ -6089,12 +6258,15 @@ const VERSION = 53;
     function purchaseInventoryExpansion() {
       state.inventoryCapacity = normalizeInventoryCapacity(state.inventoryCapacity);
       if (state.inventoryCapacity >= MAX_INVENTORY_CAPACITY) {
-        return toast("전리품 가방은 이미 최대 100칸입니다.");
+        return purchaseFailure("전리품 가방은 이미 최대 100칸입니다.",{surface:"가방 확장"});
       }
 
       const cost = inventoryExpansionCost();
       if (state.gold < cost) {
-        return toast(`골드가 부족합니다. 필요 ${fmt(cost)}G`);
+        return purchaseFailure(
+          `골드 부족 · 필요 ${fmt(cost)}G / 보유 ${fmt(state.gold)}G / ${fmt(cost-state.gold)}G 부족`,
+          {surface:"가방 확장"}
+        );
       }
 
       const before = state.inventoryCapacity;
@@ -6287,15 +6459,13 @@ const VERSION = 53;
         return `
           <article class="skill-card ${level >= 10 ? "maxed" : ""}">
             <div class="rarity rarity-epic">${cls.name} 기술</div>
+            <div class="skill-role">${skill.role || "전투 기술"}</div>
             <div class="skill-name">${skill.name}</div>
-            <div class="skill-meta">마나 ${skill.cost} · ${skill.every}턴마다 판정 · ${combat.damageType === "magic" ? "마법력" : "공격력"} 기반</div>
+            <div class="skill-meta">마나 ${skill.cost} · ${skill.firstTurnOnly ? "전투당 1회 선제 발동" : `${skill.every}턴 주기`} · ${combat.damageType === "magic" ? "마법력" : "공격력"} 기반</div>
             <div class="skill-effect">
-              피해 배율 <strong>${mult.toFixed(2)}배</strong><br>
-              ${skill.desc}
-              ${skill.extraHit ? `<br>추가타 ${Math.round(skill.extraHit*100)}%` : ""}
-              ${skill.healRate ? `<br>체력 회복 ${Math.round(skill.healRate*100)}%` : ""}
-              ${skill.defensePierce ? `<br>방어 무시 ${Math.round(skill.defensePierce*100)}%` : ""}
-              ${skill.critBonus ? `<br>치명타 확률 +${skill.critBonus}%` : ""}
+              <div class="skill-damage-line">기본 피해 배율 <strong>${mult.toFixed(2)}배</strong></div>
+              <p>${skill.desc}</p>
+              <div class="skill-auto-rule"><span>AUTO</span>${skill.auto || "사용 가능한 기술 중 우선순위를 계산해 사용"}</div>
             </div>
             <div class="skill-level">기술 Lv.${level}${gearBonus ? ` <span class="rarity-set">(장비 +${gearBonus})</span>` : ""} · 훈련 ${baseLevel}/10</div>
             <div class="mini-buttons" style="margin-top:10px">
@@ -8953,9 +9123,20 @@ const VERSION = 53;
       }
 
       if (!completed) {
-        if (stoppedReason === "gold") toast("도박에 필요한 골드가 부족합니다.");
-        else if (stoppedReason === "inventory") toast("전리품 가방이 가득 찼습니다.");
-        return;
+        const price = gamblePriceFor(state.gamble.selectedSlot);
+        if (stoppedReason === "gold") {
+          return purchaseFailure(
+            `골드 부족 · 1회 ${fmt(price)}G / 보유 ${fmt(state.gold)}G / ${fmt(Math.max(0,price-state.gold))}G 부족`,
+            {surface:"봉인품 구매"}
+          );
+        }
+        if (stoppedReason === "inventory") {
+          return purchaseFailure(
+            `전리품 가방이 가득 찼습니다. 현재 ${fmt(state.inventory.length)}/${fmt(state.inventoryCapacity)}칸`,
+            {surface:"봉인품 구매"}
+          );
+        }
+        return purchaseFailure("알 수 없는 이유로 구매를 완료하지 못했습니다.",{surface:"봉인품 구매"});
       }
 
       if (completed < count) {
@@ -8987,8 +9168,10 @@ const VERSION = 53;
       els.gambleSelectedSlot.textContent = gambleSlotConfig[selected].label;
       els.gamblePrice.textContent = `${fmt(price)} G`;
       els.gambleTenPrice.textContent = `${fmt(price*10)} G`;
-      els.gambleOnceBtn.disabled = state.gold < price;
-      els.gambleTenBtn.disabled = state.gold < price;
+      els.gambleOnceBtn.disabled = false;
+      els.gambleTenBtn.disabled = false;
+      els.gambleOnceBtn.classList.toggle("purchase-warning",state.gold < price);
+      els.gambleTenBtn.classList.toggle("purchase-warning",state.gold < price);
 
       els.gambleSlotGrid.innerHTML = Object.entries(gambleSlotConfig).map(([slot,config]) => `
         <button class="gamble-slot-card ${selected === slot ? "active" : ""}" data-gamble-slot="${slot}">
@@ -9087,14 +9270,21 @@ const VERSION = 53;
       els.marketSellProfitPreview.textContent = `${previewProfit >= 0 ? "+" : ""}${fmt(previewProfit)}G`;
       els.marketSellProfitPreview.className = previewProfit >= 0 ? "positive" : "negative";
 
-      els.marketBuyBtn.disabled = buyQty <= 0;
+      els.marketBuyBtn.disabled = false;
+      els.marketBuyBtn.classList.toggle("purchase-warning",buyMax <= 0);
       els.marketSellBtn.disabled = sellQty <= 0;
     }
 
     function buyMarket(qty) {
       updateMarket();
-      const cost = state.market.price * qty;
-      if (cost > state.gold) return toast("골드가 부족합니다.");
+      qty = Math.max(1,Math.floor(Number(qty) || 1));
+      const cost = state.market.price*qty;
+      if (cost > state.gold) {
+        return purchaseFailure(
+          `골드 부족 · ${fmt(qty)}개 구매에 ${fmt(cost)}G 필요 / 보유 ${fmt(state.gold)}G`,
+          {surface:"검은 주화 구매"}
+        );
+      }
       const oldTokens = state.market.tokens;
       const totalCost = state.market.avgCost * oldTokens + cost;
       state.gold -= cost;
@@ -9359,62 +9549,214 @@ const VERSION = 53;
       }];
       const enemyActions = ["할퀴기","난타","돌진","흉포한 일격"];
 
-      while (heroHp > 0 && enemyHp > 0 && turns < (enemy.turnLimit || 60)) {
-        turns++;
+      let enemyDefenseBreak = 0;
+      let enemyDefenseBreakTurns = 0;
+      let enemyAccuracyPenalty = 0;
+      let enemyAccuracyTurns = 0;
+      let enemyStunTurns = 0;
+      let enemyPoisonTurns = 0;
+      let enemyPoisonDamage = 0;
 
-        if (!emergencyManaUsed && s.emergencyManaRate > 0 && heroMp < s.maxMp*.20) {
-          const before = heroMp;
-          heroMp = Math.min(s.maxMp,heroMp+Math.round(s.maxMp*s.emergencyManaRate));
-          emergencyManaUsed = true;
-          events.push({text:`마지막 숨의 유리병이 깨졌다 · MP +${fmt(heroMp-before)}`,cls:"battle-heal"});
+      let heroEvasionBonus = 0;
+      let heroEvasionTurns = 0;
+      let heroGuardReduction = 0;
+      let heroGuardTurns = 0;
+      let heroCounterPower = 0;
+      let heroCounterTurns = 0;
+      let eagleEyeTurns = 0;
+      let eagleEyeAccuracy = 0;
+      let eagleEyeCrit = 0;
+      let vanguardFocus = 0;
+      let arcaneOverload = 0;
+      let lastDodged = false;
+      let recentDamage = 0;
+
+      const effectiveSkill = skill => ({
+        ...skill,
+        effectiveEvery:Math.max(2,skill.every-Math.round(s.skillEveryReduction || 0)),
+        effectiveCost:Math.max(1,Math.round(skill.cost*(1-Math.min(.65,s.skillManaReduction || 0))))
+      });
+
+      const skillScore = (skill,strongIntent) => {
+        const hpRate = heroHp/Math.max(1,s.maxHp);
+        const enemyHpRate = enemyHp/Math.max(1,enemy.hp);
+        switch (state.classId) {
+          case "vanguard":
+            if (skill.id === "execute") return vanguardFocus > 0 || enemyHpRate <= .42 ? 140 : 70;
+            if (skill.id === "whirlwind") return enemyDefenseBreakTurns <= 0 ? 125 : 55;
+            if (skill.id === "bloodthirst") return vanguardFocus <= 0 ? 110 : 35;
+            break;
+          case "arcanist":
+            if (skill.id === "manasurge") return arcaneOverload > 0 || heroMp >= s.maxMp*.58 ? 140 : 50;
+            if (skill.id === "chainlightning") return arcaneOverload <= 0 && heroMp >= s.maxMp*.32 ? 120 : 30;
+            if (skill.id === "fireburst") return 85;
+            break;
+          case "oracle":
+            if (skill.id === "lifewave") return hpRate <= .65 ? 160 : 35;
+            if (skill.id === "judgment") return strongIntent || enemyAccuracyTurns <= 0 ? 130 : 55;
+            if (skill.id === "purge") {
+              const debuffed = enemyDefenseBreakTurns > 0 || enemyAccuracyTurns > 0 || enemyPoisonTurns > 0 || enemyStunTurns > 0;
+              return debuffed ? 145 : 65;
+            }
+            break;
+          case "ironfist":
+            if (skill.id === "crushingfist") return strongIntent ? 160 : heroCounterTurns <= 0 ? 95 : 35;
+            if (skill.id === "qiblast") return strongIntent || hpRate <= .55 ? 145 : 55;
+            if (skill.id === "ironbreath") return hpRate <= .70 || recentDamage > s.maxHp*.12 ? 130 : 70;
+            break;
+          case "marksman":
+            if (skill.id === "weakpoint") return eagleEyeTurns <= 0 ? 125 : 45;
+            if (skill.id === "piercingshot") return 100;
+            return 0;
+          case "shadow":
+            if (skill.id === "lifesteal") return lastDodged ? 170 : 55;
+            if (skill.id === "shadowstrike") return strongIntent || heroEvasionTurns <= 0 ? 135 : 45;
+            if (skill.id === "twinblade") return enemyPoisonTurns <= 0 ? 120 : 60;
+            break;
         }
+        return skill.effectiveEvery;
+      };
 
-        const usableSkills = skills
-          .map(skill => ({
-            ...skill,
-            effectiveEvery:Math.max(2,skill.every-Math.round(s.skillEveryReduction || 0)),
-            effectiveCost:Math.max(1,Math.round(skill.cost*(1-Math.min(.65,s.skillManaReduction || 0))))
-          }))
-          .filter(skill => turns % skill.effectiveEvery === 0 && heroMp >= skill.effectiveCost)
-          .sort((a,b) => b.effectiveEvery-a.effectiveEvery);
+      const enemyEvasion = () => {
+        let chance = enemy.rank === "일반" ? .03 : enemy.rank === "정예" ? .06 : .085;
+        if (enemy.specialType) chance += .025;
+        if (enemy.mutation?.id === "frenzied") chance += .025;
+        return Math.min(.16,chance);
+      };
 
-        const activeSkill = usableSkills[0] || null;
-        const skillLv = activeSkill ? skillLevel(state.classId,activeSkill.id) : 0;
+      const performHeroStrike = (activeSkill,skillLv,{preemptive=false,strongIntent=false}={}) => {
         const actionName = activeSkill ? activeSkill.name : combat.action;
-        const critChance = s.crit + (activeSkill?.critBonus || 0);
-        const crit = Math.random()*100 < critChance;
-        const variance = s.stableDamage ? .96+Math.random()*.08 : .86+Math.random()*.28;
-        const defensePierce = activeSkill?.defensePierce || 0;
-        let hit = Math.max(1,heroPower*variance-enemy.defense*.35*(1-defensePierce));
         const effects = [];
+        let forceCrit = false;
+        let accuracyBonus = Number(activeSkill?.accuracyBonus || 0);
+        let critBonus = Number(activeSkill?.critBonus || 0);
+        let skillMultiplier = activeSkill
+          ? activeSkill.mult+(skillLv-1)*activeSkill.growth+(s.skillDamageBonus || 0)
+          : 1;
 
-        if (heroHp < s.maxHp*.35 && s.lowHpDamageBonus > 0) {
-          hit *= 1+s.lowHpDamageBonus;
-          effects.push("빈사 투지");
-        }
         if (activeSkill) {
           heroMp -= activeSkill.effectiveCost;
-          hit *= activeSkill.mult+(skillLv-1)*activeSkill.growth+(s.skillDamageBonus || 0);
           skillUses++;
           specialCount++;
           effects.push(`기술 Lv.${skillLv}`,`마나 -${activeSkill.effectiveCost}`);
+
           if (!firstSkillUsed && s.firstSkillDamage > 0) {
-            hit *= 1+s.firstSkillDamage;
+            skillMultiplier *= 1+s.firstSkillDamage;
             firstSkillUsed = true;
             effects.push("유니크 발동");
           } else if (!firstSkillUsed) {
             firstSkillUsed = true;
           }
+
           if (s.manaOnSkill > 0) {
             const restored = Math.min(s.maxMp-heroMp,Math.round(s.manaOnSkill));
             heroMp += restored;
             if (restored) effects.push(`마나 환류 +${restored}`);
           }
-          if (defensePierce) effects.push(`방어 무시 ${Math.round(defensePierce*100)}%`);
+
+          if (activeSkill.id === "weakpoint") {
+            eagleEyeTurns = activeSkill.eagleEyeTurns;
+            eagleEyeAccuracy = activeSkill.eyeAccuracy;
+            eagleEyeCrit = activeSkill.eyeCrit;
+            effects.push(`매의 눈 ${eagleEyeTurns}턴`);
+          }
+
+          if (activeSkill.id === "shadowstrike") {
+            heroEvasionBonus = activeSkill.evasionBuff;
+            heroEvasionTurns = activeSkill.evasionTurns;
+            effects.push(`다음 공격 회피 +${Math.round(heroEvasionBonus*100)}%`);
+          }
+
+          if (activeSkill.id === "qiblast") {
+            heroGuardReduction = activeSkill.guardReduction;
+            heroGuardTurns = activeSkill.guardTurns;
+            effects.push(`다음 피해 -${Math.round(heroGuardReduction*100)}%`);
+          }
+
+          if (activeSkill.id === "crushingfist") {
+            heroCounterPower = activeSkill.counterPower+(skillLv-1)*.025;
+            heroCounterTurns = activeSkill.counterTurns;
+            effects.push(`반격태세 ${heroCounterTurns}턴`);
+          }
         }
-        if (turns === 1 && s.firstStrike) {
+
+        if (eagleEyeTurns > 0) {
+          accuracyBonus += eagleEyeAccuracy;
+          critBonus += eagleEyeCrit;
+          effects.push("조준 강화");
+        }
+
+        let variance = s.stableDamage ? .96+Math.random()*.08 : .86+Math.random()*.28;
+        const defensePierce = activeSkill?.defensePierce || 0;
+        const effectiveDefense = enemy.defense*(1-enemyDefenseBreak);
+        let hit = Math.max(1,heroPower*variance-effectiveDefense*.35*(1-defensePierce));
+
+        if (heroHp < s.maxHp*.35 && s.lowHpDamageBonus > 0) {
+          hit *= 1+s.lowHpDamageBonus;
+          effects.push("빈사 투지");
+        }
+
+        hit *= skillMultiplier;
+
+        if (activeSkill?.id === "execute") {
+          if (enemyHp/enemy.hp <= activeSkill.executeHpRate) {
+            hit *= 1+activeSkill.executeBonus;
+            effects.push("마무리 일격");
+          }
+          if (vanguardFocus > 0) {
+            hit *= 1+vanguardFocus;
+            accuracyBonus += .12;
+            critBonus += 18;
+            vanguardFocus = 0;
+            effects.push("결전의 호흡 소모");
+          }
+        }
+
+        if (activeSkill?.id === "manasurge") {
+          if (arcaneOverload > 0) {
+            hit *= 1+arcaneOverload;
+            arcaneOverload = 0;
+            effects.push("마력 과부하 소모");
+          }
+          const manaBurn = Math.min(heroMp,Math.max(1,Math.round(s.maxMp*activeSkill.manaBurnRate)));
+          heroMp -= manaBurn;
+          hit *= 1+(manaBurn/Math.max(1,s.maxMp))*1.8;
+          effects.push(`추가 마나 연소 -${manaBurn}`);
+        } else if (activeSkill && state.classId === "arcanist" && activeSkill.id !== "chainlightning" && arcaneOverload > 0) {
+          hit *= 1+arcaneOverload;
+          arcaneOverload = 0;
+          effects.push("마력 과부하 소모");
+        }
+
+        if (activeSkill?.id === "purge") {
+          const debuffed = enemyDefenseBreakTurns > 0 || enemyAccuracyTurns > 0 || enemyPoisonTurns > 0 || enemyStunTurns > 0;
+          if (debuffed) {
+            hit *= 1+activeSkill.debuffBonus;
+            effects.push("약화 심판");
+          }
+        }
+
+        if (activeSkill?.id === "ironbreath") {
+          const missingRate = 1-heroHp/Math.max(1,s.maxHp);
+          hit *= 1+missingRate*activeSkill.missingHpBonus;
+          if (recentDamage > 0) {
+            hit *= 1+Math.min(activeSkill.recentDamageBonus,recentDamage/Math.max(1,s.maxHp));
+            effects.push("받은 충격 전환");
+            recentDamage = 0;
+          }
+          if (missingRate > .20) effects.push("잃은 체력 비례");
+        }
+
+        if (activeSkill?.id === "lifesteal" && state.classId === "shadow" && lastDodged) {
+          hit *= 1+activeSkill.dodgeBonus;
+          forceCrit = !!activeSkill.guaranteedCritAfterDodge;
+          lastDodged = false;
+          effects.push("회피 연계");
+        }
+
+        if (turns === 1 && !preemptive && s.firstStrike) {
           hit *= 1+s.firstStrike;
-          effects.push("선제 강화");
+          effects.push("첫 일격 강화");
         }
         if (elite && s.eliteDamage) {
           hit *= 1+s.eliteDamage;
@@ -9425,28 +9767,84 @@ const VERSION = 53;
           specialCount++;
           effects.push("주문 폭발");
         }
+
+        const baseAccuracy = .93+(s.accuracy || 0);
+        const hitChance = Math.min(.995,Math.max(.55,baseAccuracy+accuracyBonus-enemyEvasion()));
+        const landed = Math.random() < hitChance;
+        const critChance = s.crit+critBonus;
+        const crit = landed && (forceCrit || Math.random()*100 < critChance);
+
         if (crit) {
           hit *= s.critDamage;
-          effects.push("치명타");
+          effects.push(forceCrit ? "회피 연계 확정 치명타" : "치명타");
         }
 
-        hit = Math.round(hit);
-        enemyHp -= hit;
-        maxHit = Math.max(maxHit,hit);
+        hit = landed ? Math.max(1,Math.round(hit)) : 0;
+        if (landed) {
+          enemyHp -= hit;
+          maxHit = Math.max(maxHit,hit);
+        }
+
         events.push({
-          text:`${turns}막 · ${actionName} → ${fmt(hit)} 피해${effects.length ? ` (${effects.join(", ")})` : ""} · 적 ${fmt(Math.max(0,enemyHp))}/${fmt(enemy.hp)} · MP ${fmt(heroMp)}/${fmt(s.maxMp)}`,
-          cls:crit ? "battle-turn positive" : "battle-turn"
+          text:preemptive
+            ? `전투 개시 전 · ${actionName} → ${landed ? `${fmt(hit)} 피해` : "빗나감"}${effects.length ? ` (${effects.join(", ")})` : ""} · 적 ${fmt(Math.max(0,enemyHp))}/${fmt(enemy.hp)}`
+            : `${turns}막 · ${actionName} → ${landed ? `${fmt(hit)} 피해` : "빗나감"}${effects.length ? ` (${effects.join(", ")})` : ""} · 적 ${fmt(Math.max(0,enemyHp))}/${fmt(enemy.hp)} · MP ${fmt(heroMp)}/${fmt(s.maxMp)}`,
+          cls:landed ? crit ? "battle-turn positive" : "battle-turn" : "battle-turn negative"
         });
 
-        if (activeSkill?.extraHit && enemyHp > 0) {
-          const extra = Math.max(1,Math.round(hit*activeSkill.extraHit));
-          enemyHp -= extra;
-          maxHit = Math.max(maxHit,extra);
-          specialCount++;
-          events.push({text:`${activeSkill.name} 추가타 → ${fmt(extra)} 피해`,cls:"battle-effect"});
+        if (activeSkill) {
+          if (activeSkill.focusPower) {
+            vanguardFocus = activeSkill.focusPower+(skillLv-1)*.015;
+            events.push({text:`결전의 호흡 축적 · 다음 회천일섬 강화`,cls:"battle-status"});
+          }
+          if (activeSkill.overloadPower) {
+            arcaneOverload = activeSkill.overloadPower+(skillLv-1)*.018;
+            events.push({text:`마력 과부하 축적 · 다음 공격 마법 강화`,cls:"battle-status"});
+          }
+
+          if (activeSkill.healRate) {
+            const before = heroHp;
+            heroHp = Math.min(s.maxHp,heroHp+Math.round(s.maxHp*(activeSkill.healRate+(skillLv-1)*.003)));
+            if (heroHp > before) {
+              events.push({text:`${activeSkill.name} · HP +${fmt(heroHp-before)}`,cls:"battle-heal"});
+            }
+          }
+
+          if (landed && activeSkill.defenseBreak) {
+            enemyDefenseBreak = activeSkill.defenseBreak+Math.min(.08,(skillLv-1)*.006);
+            enemyDefenseBreakTurns = activeSkill.defenseBreakTurns;
+            events.push({text:`방어 파괴 · 적 방어력 -${Math.round(enemyDefenseBreak*100)}% · ${enemyDefenseBreakTurns}턴`,cls:"battle-status"});
+          }
+
+          if (landed && activeSkill.bindChance) {
+            const bossResist = enemy.rank === "지역 지배자" || enemy.specialType ? .55 : 1;
+            const bindChance = Math.min(.82,(activeSkill.bindChance+(skillLv-1)*.015)*bossResist);
+            enemyAccuracyPenalty = Math.max(enemyAccuracyPenalty,activeSkill.accuracyDown);
+            enemyAccuracyTurns = Math.max(enemyAccuracyTurns,activeSkill.statusTurns);
+            if (Math.random() < bindChance) {
+              enemyStunTurns = Math.max(enemyStunTurns,1);
+              events.push({text:`속박 성공 · ${enemy.name}의 다음 행동 봉쇄`,cls:"battle-status"});
+            } else {
+              events.push({text:`속박 저항 · 대신 적 명중률 -${Math.round(activeSkill.accuracyDown*100)}%`,cls:"battle-status"});
+            }
+          }
+
+          if (landed && activeSkill.poisonRate) {
+            enemyPoisonDamage = Math.max(1,Math.round(heroPower*(activeSkill.poisonRate+(skillLv-1)*.008)));
+            enemyPoisonTurns = activeSkill.poisonTurns;
+            enemyAccuracyPenalty = Math.max(enemyAccuracyPenalty,activeSkill.accuracyDown);
+            enemyAccuracyTurns = Math.max(enemyAccuracyTurns,activeSkill.statusTurns);
+            events.push({text:`독영침 · 매턴 ${fmt(enemyPoisonDamage)} 독 피해 · 적 명중률 감소`,cls:"battle-status"});
+          }
+
+          if (activeSkill.cleanse) {
+            events.push({text:`성광 정화 · 자신에게 남은 약화 효과 제거`,cls:"battle-heal"});
+          }
+
+          if (defensePierce) effects.push(`방어 무시 ${Math.round(defensePierce*100)}%`);
         }
 
-        if (activeSkill && s.skillEcho > 0 && enemyHp > 0 && Math.random() < s.skillEcho) {
+        if (landed && activeSkill && s.skillEcho > 0 && enemyHp > 0 && Math.random() < s.skillEcho) {
           const echo = Math.max(1,Math.round(hit*.55));
           enemyHp -= echo;
           maxHit = Math.max(maxHit,echo);
@@ -9454,31 +9852,67 @@ const VERSION = 53;
           events.push({text:`별의 잔향 → ${fmt(echo)} 추가 피해`,cls:"battle-effect"});
         }
 
-        if (activeSkill?.healRate) {
-          const before = heroHp;
-          heroHp = Math.min(s.maxHp,heroHp+Math.round(s.maxHp*activeSkill.healRate));
-          events.push({text:`${activeSkill.name} · HP +${fmt(heroHp-before)}`,cls:"battle-heal"});
-        }
-
-        if (activeSkill?.manaRestore) {
-          const before = heroMp;
-          heroMp = Math.min(s.maxMp,heroMp+activeSkill.manaRestore+skillLv);
-          events.push({text:`마나 환류 · MP +${fmt(heroMp-before)}`,cls:"battle-heal"});
-        }
-
-        if (enemyHp > 0 && s.executeThreshold > 0 && enemyHp/enemy.hp <= s.executeThreshold) {
+        if (landed && enemyHp > 0 && s.executeThreshold > 0 && enemyHp/enemy.hp <= s.executeThreshold) {
           enemyHp = 0;
           specialCount++;
           events.push({text:`처형선 도달 · ${enemy.name}의 숨통을 끊었다.`,cls:"rarity-unique"});
         }
 
-        if (enemyHp > 0 && Math.random() < s.doubleHit) {
+        if (landed && enemyHp > 0 && Math.random() < s.doubleHit) {
           const extra = Math.max(1,Math.round(hit*.58));
           enemyHp -= extra;
           maxHit = Math.max(maxHit,extra);
           specialCount++;
           events.push({text:`연속 공격 → ${fmt(extra)} 피해`,cls:"battle-effect"});
         }
+
+        return landed;
+      };
+
+      // 궁술은 전투 시작 전에 실제로 한 번 더 공격한다.
+      if (state.classId === "marksman") {
+        const firstShot = effectiveSkill(skills.find(skill => skill.id === "multishot"));
+        if (firstShot && heroMp >= firstShot.effectiveCost) {
+          const firstShotLv = skillLevel(state.classId,firstShot.id);
+          performHeroStrike(firstShot,firstShotLv,{preemptive:true});
+        } else {
+          events.push({text:`선제사격 실패 · 마나 부족`,cls:"negative"});
+        }
+      }
+
+      while (heroHp > 0 && enemyHp > 0 && turns < (enemy.turnLimit || 60)) {
+        turns++;
+
+        if (enemyPoisonTurns > 0) {
+          enemyHp -= enemyPoisonDamage;
+          events.push({text:`${turns}막 · 독 피해 → ${fmt(enemyPoisonDamage)} · 적 ${fmt(Math.max(0,enemyHp))}/${fmt(enemy.hp)}`,cls:"battle-status"});
+          enemyPoisonTurns--;
+          if (enemyHp <= 0) break;
+        }
+
+        if (!emergencyManaUsed && s.emergencyManaRate > 0 && heroMp < s.maxMp*.20) {
+          const before = heroMp;
+          heroMp = Math.min(s.maxMp,heroMp+Math.round(s.maxMp*s.emergencyManaRate));
+          emergencyManaUsed = true;
+          events.push({text:`마지막 숨의 유리병이 깨졌다 · MP +${fmt(heroMp-before)}`,cls:"battle-heal"});
+        }
+
+        const strongIntent = turns % (enemy.specialType ? 3 : 4) === 0;
+        if (strongIntent) {
+          events.push({text:`${enemy.name}이 강공격을 준비한다 · 이번 막에 큰 피해 예상`,cls:"battle-warning"});
+        }
+
+        const usableSkills = skills
+          .filter(skill => !skill.firstTurnOnly)
+          .map(effectiveSkill)
+          .filter(skill => turns % skill.effectiveEvery === 0 && heroMp >= skill.effectiveCost)
+          .map(skill => ({...skill,decisionScore:skillScore(skill,strongIntent)}))
+          .sort((a,b) => b.decisionScore-a.decisionScore);
+
+        const activeSkill = usableSkills[0] || null;
+        const skillLv = activeSkill ? skillLevel(state.classId,activeSkill.id) : 0;
+        performHeroStrike(activeSkill,skillLv,{strongIntent});
+
         const mercenary = activeMercenaryDefinition();
         if (enemyHp > 0 && s.companionStrikeEvery > 0 && turns % Math.round(s.companionStrikeEvery) === 0) {
           const companionHit = Math.max(1,Math.round(heroPower*s.companionStrikeRate));
@@ -9497,31 +9931,63 @@ const VERSION = 53;
         }
         if (enemyHp <= 0) break;
 
-        if (Math.random() >= s.dodge) {
-          let enemyHit = Math.max(1,Math.round(enemy.attack*(.9+Math.random()*.2)-s.defense*.42));
-          let reduction = Math.min(.75,s.damageReduction || 0);
-          if (heroHp < s.maxHp*.35) reduction = Math.min(.82,reduction+(s.lowHpDamageReduction || 0));
-          enemyHit = Math.max(1,Math.round(enemyHit*(1-reduction)));
-          heroHp -= enemyHit;
-          events.push({text:`${enemy.name}의 ${randomChoice(enemyActions)} → ${fmt(enemyHit)} 피해 · 내 HP ${fmt(Math.max(0,heroHp))}/${fmt(s.maxHp)}`,cls:"battle-enemy"});
-
-          if (heroHp <= 0 && !revived && s.reviveRate > 0) {
-            heroHp = Math.max(1,Math.round(s.maxHp*s.reviveRate));
-            revived = true;
-            specialCount++;
-            events.push({text:`죽지 않는 자의 마지막 밤 · HP ${fmt(heroHp)}로 부활`,cls:"rarity-unique"});
-          }
-
-          if (heroHp > 0 && Math.random() < s.counter) {
-            const counterHit = Math.max(1,Math.round(heroPower*.72));
-            enemyHp -= counterHit;
-            maxHit = Math.max(maxHit,counterHit);
-            specialCount++;
-            events.push({text:`반격 → ${fmt(counterHit)} 피해`,cls:"battle-effect"});
-          }
+        if (enemyStunTurns > 0) {
+          events.push({text:`${enemy.name}은 속박되어 행동하지 못했다.`,cls:"battle-status"});
+          enemyStunTurns--;
+          recentDamage = 0;
         } else {
-          specialCount++;
-          events.push({text:`회피 · 공격이 허공을 갈랐다.`,cls:"battle-effect"});
+          const enemyHitChance = Math.min(
+            .98,
+            Math.max(.15,.94-s.dodge-heroEvasionBonus-enemyAccuracyPenalty-(strongIntent ? .04 : 0))
+          );
+
+          if (Math.random() < enemyHitChance) {
+            let enemyHit = Math.max(1,Math.round(enemy.attack*(.9+Math.random()*.2)-s.defense*.42));
+            if (strongIntent) enemyHit = Math.round(enemyHit*1.72);
+            let reduction = Math.min(.75,s.damageReduction || 0);
+            if (heroHp < s.maxHp*.35) reduction = Math.min(.82,reduction+(s.lowHpDamageReduction || 0));
+            if (heroGuardTurns > 0) reduction = Math.min(.90,reduction+heroGuardReduction);
+            enemyHit = Math.max(1,Math.round(enemyHit*(1-reduction)));
+            heroHp -= enemyHit;
+            recentDamage = enemyHit;
+            lastDodged = false;
+            events.push({
+              text:`${enemy.name}의 ${strongIntent ? "예고된 강공격" : randomChoice(enemyActions)} → ${fmt(enemyHit)} 피해 · 내 HP ${fmt(Math.max(0,heroHp))}/${fmt(s.maxHp)}${heroGuardTurns > 0 ? " · 금강체 적용" : ""}`,
+              cls:strongIntent ? "battle-enemy battle-warning" : "battle-enemy"
+            });
+
+            if (heroHp <= 0 && !revived && s.reviveRate > 0) {
+              heroHp = Math.max(1,Math.round(s.maxHp*s.reviveRate));
+              revived = true;
+              specialCount++;
+              events.push({text:`죽지 않는 자의 마지막 밤 · HP ${fmt(heroHp)}로 부활`,cls:"rarity-unique"});
+            }
+
+            if (heroHp > 0) {
+              let counterMultiplier = 0;
+              let counterName = "";
+              if (heroCounterTurns > 0) {
+                counterMultiplier = heroCounterPower;
+                counterName = "반격태세";
+              } else if (Math.random() < s.counter) {
+                counterMultiplier = .72;
+                counterName = "본능 반격";
+              }
+
+              if (counterMultiplier > 0) {
+                const counterHit = Math.max(1,Math.round(heroPower*counterMultiplier));
+                enemyHp -= counterHit;
+                maxHit = Math.max(maxHit,counterHit);
+                specialCount++;
+                events.push({text:`${counterName} → ${fmt(counterHit)} 피해`,cls:"battle-counter"});
+              }
+            }
+          } else {
+            specialCount++;
+            lastDodged = true;
+            recentDamage = 0;
+            events.push({text:`회피 · ${enemy.name}의 공격이 허공을 갈랐다.`,cls:"battle-effect"});
+          }
         }
 
         if (!emergencyUsed && s.emergencyHeal > 0 && heroHp > 0 && heroHp < s.maxHp*.35) {
@@ -9530,6 +9996,27 @@ const VERSION = 53;
           emergencyUsed = true;
           specialCount++;
           events.push({text:`긴급 회복 · HP +${fmt(heroHp-before)}`,cls:"battle-heal"});
+        }
+
+        enemyDefenseBreakTurns = Math.max(0,enemyDefenseBreakTurns-1);
+        if (enemyDefenseBreakTurns === 0) enemyDefenseBreak = 0;
+
+        enemyAccuracyTurns = Math.max(0,enemyAccuracyTurns-1);
+        if (enemyAccuracyTurns === 0) enemyAccuracyPenalty = 0;
+
+        heroEvasionTurns = Math.max(0,heroEvasionTurns-1);
+        if (heroEvasionTurns === 0) heroEvasionBonus = 0;
+
+        heroGuardTurns = Math.max(0,heroGuardTurns-1);
+        if (heroGuardTurns === 0) heroGuardReduction = 0;
+
+        heroCounterTurns = Math.max(0,heroCounterTurns-1);
+        if (heroCounterTurns === 0) heroCounterPower = 0;
+
+        eagleEyeTurns = Math.max(0,eagleEyeTurns-1);
+        if (eagleEyeTurns === 0) {
+          eagleEyeAccuracy = 0;
+          eagleEyeCrit = 0;
         }
       }
 

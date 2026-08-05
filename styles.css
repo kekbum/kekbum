@@ -11639,3 +11639,296 @@
     min-height:340px;
   }
 }
+
+
+/* v54: 메뉴 명칭 정리, 캐릭터 관리 이동, 전투 연대기 접기 */
+.combat-chronicle-details {
+  margin-top:0;
+  border-top:1px solid rgba(208,147,58,.22);
+  background:rgba(12,11,9,.86);
+}
+
+.combat-chronicle-details > summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:62px;
+  padding:13px 17px;
+  list-style:none;
+  cursor:pointer;
+  user-select:none;
+  background:
+    radial-gradient(circle at 100% 50%,rgba(171,109,36,.10),transparent 35%),
+    linear-gradient(180deg,rgba(36,29,19,.96),rgba(20,17,12,.96));
+}
+
+.combat-chronicle-details > summary::-webkit-details-marker {
+  display:none;
+}
+
+.combat-chronicle-details > summary span {
+  display:grid;
+  gap:3px;
+}
+
+.combat-chronicle-details > summary small {
+  color:#9e7744;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.16em;
+}
+
+.combat-chronicle-details > summary strong {
+  color:#f0d28a;
+  font-size:16px;
+}
+
+.combat-chronicle-details > summary b {
+  padding:6px 9px;
+  border:1px solid rgba(204,145,60,.27);
+  border-radius:999px;
+  color:#bba477;
+  background:rgba(82,54,24,.20);
+  font-size:10px;
+  font-weight:900;
+}
+
+.combat-chronicle-details[open] > summary {
+  border-bottom:1px solid rgba(208,147,58,.18);
+}
+
+.combat-chronicle-details[open] > summary b {
+  color:#ebca7c;
+}
+
+.combat-chronicle-details .combat-log-prominent {
+  min-height:360px;
+  margin:0;
+  border:0;
+  border-radius:0;
+}
+
+.character-management-details {
+  margin:18px 16px 16px;
+  overflow:hidden;
+  border:1px solid rgba(139,67,70,.35);
+  border-radius:12px;
+  background:
+    radial-gradient(circle at 100% 0,rgba(144,53,58,.08),transparent 38%),
+    #120e0f;
+}
+
+.character-management-details > summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:56px;
+  padding:12px 14px;
+  list-style:none;
+  cursor:pointer;
+  user-select:none;
+}
+
+.character-management-details > summary::-webkit-details-marker {
+  display:none;
+}
+
+.character-management-details > summary span {
+  display:grid;
+  gap:3px;
+}
+
+.character-management-details > summary small {
+  color:#84585b;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.14em;
+}
+
+.character-management-details > summary strong {
+  color:#cba0a3;
+  font-size:13px;
+}
+
+.character-management-details > summary b {
+  color:#956f71;
+  font-size:9px;
+}
+
+.character-management-details[open] > summary {
+  border-bottom:1px solid rgba(139,67,70,.24);
+}
+
+.character-management-body {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:14px;
+  padding:14px;
+}
+
+.character-management-body strong {
+  color:#d2a6a9;
+  font-size:12px;
+}
+
+.character-management-body p {
+  margin:5px 0 0;
+  color:#887577;
+  font-size:9px;
+  line-height:1.6;
+}
+
+.character-management-body button {
+  min-width:150px;
+  min-height:40px;
+}
+
+@media (max-width:600px) {
+  .combat-chronicle-details > summary,
+  .character-management-details > summary {
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .character-management-body {
+    grid-template-columns:1fr;
+  }
+
+  .character-management-body button {
+    width:100%;
+  }
+}
+
+
+/* v55: 시작 장면 다시보기 작동 상태 */
+.story-replay-button:active {
+  transform:translateY(1px);
+}
+
+.story-intro-modal:not(.hidden) .story-intro-card {
+  animation:storyReplayOpen .18s ease-out;
+}
+
+@keyframes storyReplayOpen {
+  from {
+    opacity:.35;
+    transform:translateY(8px) scale(.99);
+  }
+  to {
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+}
+
+
+/* v56: 직업 전투 정체성과 구매 실패 피드백 */
+.skill-role {
+  display:inline-flex;
+  width:max-content;
+  margin:7px 0 3px;
+  padding:4px 8px;
+  border:1px solid rgba(116,151,172,.38);
+  border-radius:999px;
+  color:#b8d8e6;
+  background:rgba(55,104,126,.13);
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.06em;
+}
+
+.skill-effect p {
+  margin:8px 0;
+  color:#9aa6ac;
+  line-height:1.65;
+}
+
+.skill-damage-line {
+  color:#938b7b;
+}
+
+.skill-auto-rule {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:start;
+  gap:7px;
+  margin-top:9px;
+  padding:8px 9px;
+  border:1px solid rgba(94,125,139,.25);
+  border-radius:8px;
+  color:#90a6b0;
+  background:rgba(35,67,80,.10);
+  font-size:8px;
+  line-height:1.5;
+}
+
+.skill-auto-rule span {
+  color:#b8d5df;
+  font-weight:950;
+  letter-spacing:.10em;
+}
+
+.battle-warning {
+  color:#f0ad75 !important;
+  font-weight:900;
+}
+
+.battle-status {
+  color:#b8c8f0 !important;
+}
+
+.battle-counter {
+  color:#f2c977 !important;
+  font-weight:900;
+}
+
+.purchase-feedback {
+  display:grid;
+  gap:4px;
+  margin:0 16px 12px;
+  padding:11px 13px;
+  border:1px solid;
+  border-radius:9px;
+  font-size:9px;
+  line-height:1.5;
+}
+
+.purchase-feedback strong {
+  font-size:11px;
+}
+
+.purchase-feedback.error {
+  border-color:rgba(173,74,79,.48);
+  color:#d8a1a4;
+  background:
+    radial-gradient(circle at 0 50%,rgba(152,54,60,.12),transparent 38%),
+    #171012;
+}
+
+.purchase-feedback.success {
+  border-color:rgba(77,139,98,.44);
+  color:#abd1b4;
+  background:
+    radial-gradient(circle at 0 50%,rgba(51,133,75,.12),transparent 38%),
+    #101611;
+}
+
+button.purchase-warning:not(:disabled) {
+  border-color:#9a6444 !important;
+  color:#dfb18e !important;
+  background:
+    linear-gradient(#3b271c,#241914) !important;
+}
+
+button.purchase-warning:not(:disabled):hover {
+  border-color:#c47e51 !important;
+  filter:brightness(1.08);
+}
+
+@media (max-width:520px) {
+  .skill-auto-rule {
+    grid-template-columns:1fr;
+  }
+}
