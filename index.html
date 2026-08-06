@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=67">
+  <link rel="stylesheet" href="styles.css?v=68">
 
 </head>
 <body>
@@ -199,6 +199,16 @@
       </div>
     </section>
 
+    <section class="invasion-warning hidden" id="invasionWarning" role="alert">
+      <div class="invasion-warning-symbol">!</div>
+      <div class="invasion-warning-copy">
+        <span>사냥꾼 잔영 침입</span>
+        <strong id="invasionWarningTitle">침입자가 접근 중입니다.</strong>
+        <small id="invasionWarningTimer">대응을 선택할 수 있습니다.</small>
+      </div>
+      <button id="invasionOpenBtn" type="button">대응 선택</button>
+    </section>
+
     <section class="page active" data-page="hunt">
       <main class="hunt-report-layout">
         <aside class="panel hunt-control-panel">
@@ -272,6 +282,10 @@
                 <label>
                   <input type="checkbox" id="autoManaPotionToggle" />
                   <span><strong>자동 마나약</strong><small>전투 후 마나가 가득 찰 때까지 사용</small></span>
+                </label>
+                <label class="auto-return-setting">
+                  <input type="checkbox" id="autoResumeAfterDefeatToggle" />
+                  <span><strong>사망 후 자동 복귀</strong><small>여관에서 회복한 뒤 같은 사냥터의 연속 사냥을 재개</small></span>
                 </label>
               </div>
 
@@ -397,6 +411,15 @@
           벽난로의 잔불이 조용히 흔들립니다.
         </div>
 
+        <div class="inn-auto-resume-panel hidden" id="innAutoResumePanel">
+          <div>
+            <span>AUTO RETURN</span>
+            <strong id="innAutoResumeTitle">자동사냥 복귀 준비</strong>
+            <small id="innAutoResumeText">잠시 후 사냥터로 돌아갑니다.</small>
+          </div>
+          <button id="innAutoResumeCancelBtn" type="button">여관에 머물기</button>
+        </div>
+
         <div class="inn-status-grid">
           <article>
             <span>현재 체력</span>
@@ -426,6 +449,18 @@
             <small id="innStaminaActionHint">활력을 최대치까지 회복한 뒤 사냥터로 출발합니다.</small>
           </button>
         </div>
+      </section>
+
+      <section class="inn-defense-panel" id="innDefensePanel">
+        <header class="inn-defense-header">
+          <div>
+            <span>GUARD DESK</span>
+            <h3>경비대 책상</h3>
+            <p>다른 사냥꾼의 기록을 본뜬 잔영 침입에 대응하고 기본 방어 태세를 지정합니다.</p>
+          </div>
+          <strong id="innDefenseStatus">침입 없음</strong>
+        </header>
+        <div id="innDefenseContent"></div>
       </section>
 
       <section class="inn-story-grid">
@@ -1704,7 +1739,7 @@
   </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="game.js?v=67"></script>
+  <script src="game.js?v=68"></script>
 
 </body>
 </html>

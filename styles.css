@@ -15085,3 +15085,520 @@ button.purchase-warning:not(:disabled):hover {
     grid-template-columns:1fr;
   }
 }
+
+
+/* v68: 사망 후 자동 복귀 + 침입 대응 */
+.auto-potion-controls .auto-return-setting {
+  border-color:rgba(181,123,56,.25) !important;
+  background:rgba(35,24,14,.48) !important;
+}
+
+.auto-potion-controls .auto-return-setting strong {
+  color:#dfbb75 !important;
+}
+
+.inn-auto-resume-panel {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin:12px 18px 0;
+  padding:11px 13px;
+  border:1px solid rgba(91,139,175,.36);
+  border-radius:9px;
+  background:
+    radial-gradient(circle at 0 0,rgba(67,116,160,.16),transparent 42%),
+    rgba(12,20,29,.82);
+}
+
+.inn-auto-resume-panel.hidden {
+  display:none;
+}
+
+.inn-auto-resume-panel > div {
+  display:grid;
+  gap:2px;
+}
+
+.inn-auto-resume-panel span {
+  color:#739bb7;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.13em;
+}
+
+.inn-auto-resume-panel strong {
+  color:#cadce8;
+  font-size:11px;
+}
+
+.inn-auto-resume-panel small {
+  color:#7f929f;
+  font-size:8px;
+}
+
+.inn-auto-resume-panel button {
+  appearance:none;
+  min-height:34px;
+  padding:7px 11px;
+  border:1px solid rgba(119,142,157,.32);
+  border-radius:8px;
+  color:#aab8c1;
+  background:#17212a;
+  font-size:8px;
+}
+
+.invasion-warning {
+  display:grid;
+  grid-template-columns:38px minmax(0,1fr) auto;
+  align-items:center;
+  gap:11px;
+  margin:10px 0;
+  padding:10px 12px;
+  border:1px solid rgba(186,79,70,.48);
+  border-radius:11px;
+  background:
+    radial-gradient(circle at 0 50%,rgba(171,52,42,.20),transparent 36%),
+    linear-gradient(90deg,rgba(52,19,16,.94),rgba(22,14,13,.95));
+  box-shadow:0 10px 28px rgba(0,0,0,.18);
+}
+
+.invasion-warning.hidden {
+  display:none;
+}
+
+.invasion-warning-symbol {
+  display:grid;
+  place-items:center;
+  width:34px;
+  height:34px;
+  border:1px solid rgba(222,106,92,.45);
+  border-radius:50%;
+  color:#efb0a7;
+  background:rgba(118,34,28,.32);
+  font-size:15px;
+  font-weight:950;
+}
+
+.invasion-warning-copy {
+  display:grid;
+  gap:2px;
+  min-width:0;
+}
+
+.invasion-warning-copy span {
+  color:#b96a61;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.12em;
+}
+
+.invasion-warning-copy strong {
+  overflow:hidden;
+  color:#e2b4ad;
+  font-size:11px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.invasion-warning-copy small {
+  color:#9a7671;
+  font-size:8px;
+}
+
+.invasion-warning button {
+  appearance:none;
+  min-height:36px;
+  padding:8px 12px;
+  border:1px solid rgba(220,104,87,.48);
+  border-radius:8px;
+  color:#f0b9af;
+  background:linear-gradient(145deg,#5b211b,#2b1513);
+  font-size:9px;
+  font-weight:900;
+}
+
+.inn-defense-panel {
+  overflow:hidden;
+  border:1px solid rgba(114,133,151,.28);
+  border-radius:14px;
+  background:
+    radial-gradient(circle at 100% 0,rgba(62,97,126,.12),transparent 35%),
+    rgba(13,16,19,.94);
+}
+
+.inn-defense-header {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  padding:15px 17px;
+  border-bottom:1px solid rgba(114,133,151,.17);
+}
+
+.inn-defense-header > div {
+  display:grid;
+  gap:3px;
+}
+
+.inn-defense-header span {
+  color:#6e8ca3;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.13em;
+}
+
+.inn-defense-header h3 {
+  margin:0;
+  color:#c9d8e1;
+  font-size:17px;
+}
+
+.inn-defense-header p {
+  margin:0;
+  color:#77858e;
+  font-size:8px;
+}
+
+.inn-defense-header > strong {
+  padding:6px 9px;
+  border:1px solid rgba(110,140,159,.24);
+  border-radius:999px;
+  color:#9fb3bf;
+  background:rgba(8,12,15,.42);
+  font-size:8px;
+  white-space:nowrap;
+}
+
+#innDefenseContent {
+  display:grid;
+  gap:10px;
+  padding:12px;
+}
+
+.default-defense-section,
+.pending-invasion-card,
+.retaliation-card,
+.invasion-battle-record,
+.invasion-history-details {
+  border:1px solid rgba(112,132,145,.17);
+  border-radius:10px;
+  background:rgba(7,9,11,.46);
+}
+
+.default-defense-section {
+  padding:10px;
+}
+
+.default-defense-heading {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+
+.default-defense-heading > div {
+  display:grid;
+  gap:2px;
+}
+
+.default-defense-heading span {
+  color:#718899;
+  font-size:7px;
+  font-weight:950;
+}
+
+.default-defense-heading strong {
+  color:#c2d1da;
+  font-size:11px;
+}
+
+.default-defense-heading small {
+  color:#6f7a80;
+  font-size:7px;
+}
+
+.defense-stance-grid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+}
+
+.defense-stance-card {
+  appearance:none;
+  display:grid;
+  gap:3px;
+  min-height:88px;
+  padding:9px;
+  border:1px solid rgba(113,131,143,.20);
+  border-radius:8px;
+  color:#aab9c1;
+  background:#11171b;
+  text-align:left;
+}
+
+.defense-stance-card.active {
+  border-color:rgba(196,143,67,.50);
+  color:#e1c17d;
+  background:
+    radial-gradient(circle at 0 0,rgba(170,106,31,.14),transparent 45%),
+    #21180f;
+}
+
+.defense-stance-card strong {
+  font-size:10px;
+}
+
+.defense-stance-card span {
+  color:#7e8a90;
+  font-size:7px;
+  line-height:1.45;
+}
+
+.defense-stance-card small {
+  align-self:end;
+  color:#69767c;
+  font-size:7px;
+}
+
+.pending-invasion-card {
+  display:grid;
+  gap:8px;
+  padding:11px;
+  border-color:rgba(176,78,70,.30);
+  background:rgba(39,15,14,.42);
+}
+
+.pending-invasion-card.empty {
+  border-color:rgba(112,132,145,.17);
+  background:rgba(7,9,11,.40);
+}
+
+.pending-invasion-head {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.pending-invasion-head > div {
+  display:grid;
+  gap:2px;
+}
+
+.pending-invasion-head span {
+  color:#b4655d;
+  font-size:7px;
+  font-weight:950;
+}
+
+.pending-invasion-head strong {
+  color:#dfb0aa;
+  font-size:11px;
+}
+
+.pending-invasion-head b {
+  color:#e3a49a;
+  font-size:12px;
+}
+
+.pending-invasion-card p,
+.pending-invasion-card.empty span {
+  margin:0;
+  color:#887773;
+  font-size:8px;
+}
+
+.pending-invasion-card.empty strong {
+  color:#98a7af;
+  font-size:10px;
+}
+
+.pending-invasion-actions {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+}
+
+.pending-invasion-actions button,
+.retaliation-card button {
+  appearance:none;
+  min-height:34px;
+  border:1px solid rgba(177,105,78,.32);
+  border-radius:7px;
+  color:#d2a084;
+  background:#2b1b14;
+  font-size:8px;
+  font-weight:900;
+}
+
+.pending-invasion-actions button:nth-child(2) {
+  border-color:rgba(190,137,62,.34);
+  color:#d9b56d;
+  background:#2b2113;
+}
+
+.pending-invasion-actions button:nth-child(3) {
+  border-color:rgba(87,132,117,.34);
+  color:#9fc3b2;
+  background:#14231d;
+}
+
+.retaliation-card {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:10px 11px;
+  border-color:rgba(166,113,53,.30);
+}
+
+.retaliation-card > div {
+  display:grid;
+  gap:2px;
+}
+
+.retaliation-card span {
+  color:#a27642;
+  font-size:7px;
+  font-weight:950;
+}
+
+.retaliation-card strong {
+  color:#d4b071;
+  font-size:11px;
+}
+
+.retaliation-card small {
+  color:#7f766a;
+  font-size:7px;
+}
+
+.invasion-battle-record {
+  overflow:hidden;
+}
+
+.invasion-battle-record-head {
+  display:grid;
+  gap:3px;
+  padding:9px 10px;
+  border-bottom:1px solid rgba(112,132,145,.13);
+}
+
+.invasion-battle-record-head span {
+  color:#708795;
+  font-size:7px;
+  font-weight:950;
+}
+
+.invasion-battle-record-head strong {
+  font-size:9px;
+  line-height:1.45;
+}
+
+.invasion-event-log {
+  max-height:260px;
+  overflow:auto;
+  padding:4px 0;
+}
+
+.invasion-event-log > div {
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
+  gap:7px;
+  padding:6px 9px;
+  border-bottom:1px solid rgba(112,132,145,.07);
+}
+
+.invasion-event-log > div span {
+  color:#5f7079;
+  font-size:7px;
+}
+
+.invasion-event-log > div p {
+  margin:0;
+  color:#9ba8ae;
+  font-size:8px;
+  line-height:1.5;
+}
+
+.invasion-event-log > div.enemy p {
+  color:#d5948e;
+}
+
+.invasion-event-log > div.heal p {
+  color:#93c4a0;
+}
+
+.invasion-event-log > div.special p {
+  color:#dfbd73;
+}
+
+.invasion-event-log > div.status p {
+  color:#93adca;
+}
+
+.invasion-event-log .empty {
+  padding:10px;
+  color:#727b80;
+  font-size:8px;
+}
+
+.invasion-history-details {
+  overflow:hidden;
+}
+
+.invasion-history-details > summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:38px;
+  padding:8px 10px;
+  list-style:none;
+  cursor:pointer;
+  color:#9eb0ba;
+  font-size:8px;
+  font-weight:900;
+}
+
+.invasion-history-details > summary::-webkit-details-marker {
+  display:none;
+}
+
+.invasion-history-details > summary b {
+  color:#6e7a80;
+  font-size:7px;
+}
+
+.invasion-history-list {
+  display:grid;
+  gap:5px;
+  padding:8px 10px;
+  border-top:1px solid rgba(112,132,145,.12);
+  color:#818d93;
+  font-size:8px;
+}
+
+@media (max-width:720px) {
+  .invasion-warning {
+    grid-template-columns:34px minmax(0,1fr);
+  }
+
+  .invasion-warning button {
+    grid-column:1/-1;
+  }
+
+  .defense-stance-grid,
+  .pending-invasion-actions {
+    grid-template-columns:1fr;
+  }
+
+  .retaliation-card,
+  .inn-defense-header,
+  .default-defense-heading,
+  .inn-auto-resume-panel {
+    align-items:stretch;
+    flex-direction:column;
+  }
+}

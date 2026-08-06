@@ -1,4 +1,4 @@
-const VERSION = 67;
+const VERSION = 68;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -1804,6 +1804,26 @@ const VERSION = 67;
         health:false,
         mana:false
       },
+      autoHuntRecovery: {
+        enabled:true,
+        pending:false,
+        resumeAt:0,
+        zoneId:"",
+        source:"",
+        returns:0
+      },
+      invasion: {
+        defaultStance:"defend",
+        pending:null,
+        history:[],
+        shieldUntil:0,
+        lastSpawnAt:0,
+        nextTriggerKills:8,
+        attacksDate:"",
+        attacksToday:0,
+        retaliation:null,
+        lastBattle:null
+      },
       inn: {
         visits:0,
         lastArrivalAt:0,
@@ -2134,7 +2154,12 @@ const VERSION = 67;
       manaPotionBtn: document.getElementById("manaPotionBtn"),
       autoHealthPotionToggle: document.getElementById("autoHealthPotionToggle"),
       autoManaPotionToggle: document.getElementById("autoManaPotionToggle"),
+      autoResumeAfterDefeatToggle: document.getElementById("autoResumeAfterDefeatToggle"),
       autoPotionStatus: document.getElementById("autoPotionStatus"),
+      invasionWarning: document.getElementById("invasionWarning"),
+      invasionWarningTitle: document.getElementById("invasionWarningTitle"),
+      invasionWarningTimer: document.getElementById("invasionWarningTimer"),
+      invasionOpenBtn: document.getElementById("invasionOpenBtn"),
       innVisitCount: document.getElementById("innVisitCount"),
       innArrivalMessage: document.getElementById("innArrivalMessage"),
       innHpValue: document.getElementById("innHpValue"),
@@ -2144,6 +2169,12 @@ const VERSION = 67;
       innRestBtn: document.getElementById("innRestBtn"),
       innStaminaActionLabel: document.getElementById("innStaminaActionLabel"),
       innStaminaActionHint: document.getElementById("innStaminaActionHint"),
+      innAutoResumePanel: document.getElementById("innAutoResumePanel"),
+      innAutoResumeTitle: document.getElementById("innAutoResumeTitle"),
+      innAutoResumeText: document.getElementById("innAutoResumeText"),
+      innAutoResumeCancelBtn: document.getElementById("innAutoResumeCancelBtn"),
+      innDefenseStatus: document.getElementById("innDefenseStatus"),
+      innDefenseContent: document.getElementById("innDefenseContent"),
       innRumorText: document.getElementById("innRumorText"),
       innRumorBtn: document.getElementById("innRumorBtn"),
       elixirBtn: document.getElementById("elixirBtn"),
@@ -2442,6 +2473,7 @@ const VERSION = 67;
     let activeArenaBattle = null;
     let arenaPlaybackToken = 0;
     let arenaSkipRequested = false;
+    let invasionResolutionBusy = false;
 
     function loadState() {
       try {
@@ -2527,6 +2559,15 @@ const VERSION = 67;
           consumables: { ...fresh.consumables, ...(loaded.consumables || {}) },
           fieldCare: { ...fresh.fieldCare, ...(loaded.fieldCare || {}) },
           autoPotion: { ...fresh.autoPotion, ...(loaded.autoPotion || {}) },
+          autoHuntRecovery: { ...fresh.autoHuntRecovery, ...(loaded.autoHuntRecovery || {}) },
+          invasion: {
+            ...fresh.invasion,
+            ...(loaded.invasion || {}),
+            history:Array.isArray(loaded.invasion?.history) ? loaded.invasion.history : [],
+            pending:loaded.invasion?.pending || null,
+            retaliation:loaded.invasion?.retaliation || null,
+            lastBattle:loaded.invasion?.lastBattle || null
+          },
           autoProcess: { ...fresh.autoProcess, ...(loaded.autoProcess || {}) },
           affixEssences: Array.isArray(loaded.affixEssences) ? loaded.affixEssences : [],
           collection: {
@@ -5999,7 +6040,10 @@ const VERSION = 67;
       if (!isHuntPage && els.globalCharacterCard?.open) els.globalCharacterCard.open = false;
       document.querySelectorAll(".page").forEach(el => el.classList.toggle("active", el.dataset.page === page));
       document.querySelectorAll(".top-tab").forEach(el => el.classList.toggle("active", el.dataset.pageTarget === page));
-      if (page === "inn") renderInn();
+      if (page === "inn") {
+        renderInn();
+        renderInvasion();
+      }
       if (page === "guide") renderGuide();
       if (page === "inventory") renderInventory();
       if (page === "character") renderCharacterDetails();
@@ -9397,6 +9441,387 @@ const VERSION = 67;
       renderFinaleLog();
     }
 
+
+    const invasionStances = {
+      defend:{
+        id:"defend",
+        name:"정면 방어",
+        desc:"현재 장비와 기술로 침입자를 상대합니다.",
+        risk:"균형 잡힌 전투"
+      },
+      ambush:{
+        id:"ambush",
+        name:"매복 준비",
+        desc:"침입자의 체력을 깎고 먼저 덮치지만, 실패 시 손실이 조금 커집니다.",
+        risk:"공격적 대응"
+      },
+      evacuate:{
+        id:"evacuate",
+        name:"물자 피난",
+        desc:"활력 5를 사용해 재화를 보호하고 전투를 피합니다.",
+        risk:"안전한 철수"
+      }
+    };
+
+    function invasionState() {
+      const invasion = state.invasion || (state.invasion = {
+        defaultStance:"defend",
+        pending:null,
+        history:[],
+        shieldUntil:0,
+        lastSpawnAt:0,
+        nextTriggerKills:8,
+        attacksDate:"",
+        attacksToday:0,
+        retaliation:null,
+        lastBattle:null
+      });
+
+      const today = localDateKey();
+      if (invasion.attacksDate !== today) {
+        invasion.attacksDate = today;
+        invasion.attacksToday = 0;
+      }
+
+      if (!["defend","ambush","evacuate"].includes(invasion.defaultStance)) {
+        invasion.defaultStance = "defend";
+      }
+
+      if (!Number.isFinite(invasion.nextTriggerKills) || invasion.nextTriggerKills <= 0) {
+        invasion.nextTriggerKills = Number(state.records.kills || 0)+8;
+      }
+
+      if (invasion.retaliation?.expiresAt && invasion.retaliation.expiresAt <= Date.now()) {
+        invasion.retaliation = null;
+      }
+
+      return invasion;
+    }
+
+    function createInvasionAttacker() {
+      const classIds = Object.keys(classes);
+      const ratio = .92+Math.random()*.24;
+      return {
+        id:`invader-${Date.now()}-${Math.random()}`,
+        name:randomChoice(arenaNames),
+        classId:randomChoice(classIds),
+        power:Math.max(30,Math.round(power()*ratio)),
+        ratio,
+        rating:Math.max(700,Math.round(state.arena.rating+(ratio-1)*280))
+      };
+    }
+
+    function considerInvasionAfterVictory() {
+      const invasion = invasionState();
+      const kills = Number(state.records.kills || 0);
+
+      if (
+        invasion.pending
+        || Date.now() < Number(invasion.shieldUntil || 0)
+        || invasion.attacksToday >= 2
+        || Date.now()-Number(invasion.lastSpawnAt || 0) < 15*60*1000
+        || kills < Number(invasion.nextTriggerKills || 8)
+      ) {
+        return;
+      }
+
+      const attacker = createInvasionAttacker();
+      invasion.pending = {
+        id:`pending-${Date.now()}-${Math.random()}`,
+        attacker,
+        createdAt:Date.now(),
+        attackAt:Date.now()+45000
+      };
+      invasion.lastSpawnAt = Date.now();
+      invasion.attacksToday++;
+      invasion.nextTriggerKills = kills+15+Math.floor(Math.random()*11);
+
+      log(`침입 경고 · ${attacker.name}의 잔영이 접근 중 · 45초 안에 대응 선택`,"negative");
+      toast("사냥꾼 잔영이 접근 중입니다.");
+    }
+
+    function invasionBattleEnemy(attacker,{stance="defend",retaliation=false}={}) {
+      const enemy = createArenaEnemy(attacker);
+
+      if (stance === "ambush") {
+        enemy.hp = Math.max(20,Math.round(enemy.hp*.76));
+        enemy.attack *= 1.10;
+      }
+
+      if (retaliation) {
+        enemy.hp = Math.max(20,Math.round(enemy.hp*.82));
+        enemy.attack *= .94;
+      }
+
+      enemy.name = `${attacker.name}의 침입 잔영`;
+      enemy.rank = retaliation ? "보복 대상" : "침입자";
+      return enemy;
+    }
+
+    function invasionHistoryLine(entry) {
+      const time = new Date(entry.at).toLocaleString("ko-KR",{
+        month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"
+      });
+      return `${time} · ${entry.text}`;
+    }
+
+    function resolveInvasion(stanceId,{automatic=false,retaliation=false}={}) {
+      const invasion = invasionState();
+      const source = retaliation ? invasion.retaliation : invasion.pending;
+      const stance = invasionStances[stanceId] || invasionStances.defend;
+
+      if (!source || invasionResolutionBusy) return;
+      if (isBusy) {
+        if (!automatic) toast("현재 사냥이 끝난 뒤 침입에 대응할 수 있습니다.");
+        return;
+      }
+
+      invasionResolutionBusy = true;
+      const attacker = source.attacker;
+
+      if (stance.id === "evacuate" && !retaliation) {
+        const spent = Math.min(5,Math.floor(state.stamina));
+        state.stamina = Math.max(0,state.stamina-spent);
+
+        const text = `물자 피난 성공 · ${attacker.name}의 잔영과 교전하지 않음 · 활력 -${spent}`;
+        invasion.history.unshift({at:Date.now(),text,result:"evacuate"});
+        invasion.history = invasion.history.slice(0,8);
+        invasion.lastBattle = {
+          attacker,
+          stance:stance.id,
+          result:"evacuate",
+          summary:text,
+          events:[{text:"경비대가 물자를 지하 저장고로 옮겼습니다.",cls:"battle-status"}],
+          at:Date.now()
+        };
+        invasion.pending = null;
+        invasionResolutionBusy = false;
+        log(`침입 대응 · ${text}`,"neutral");
+        saveState();
+        renderAll();
+        return;
+      }
+
+      const oldHp = state.hp;
+      const oldMp = state.mp;
+      const stats = totalStats();
+      state.hp = stats.maxHp;
+      state.mp = stats.maxMp;
+
+      const enemy = invasionBattleEnemy(attacker,{stance:stance.id,retaliation});
+      const result = simulateBattle(enemy);
+
+      state.hp = oldHp;
+      state.mp = oldMp;
+
+      let summary;
+      let resultKey;
+      let rewardText = "";
+
+      if (result.won) {
+        const goldReward = Math.round((retaliation ? 135 : 82)*Math.max(.8,attacker.ratio || 1));
+        const dustReward = retaliation ? 4 : stance.id === "ambush" ? 3 : 2;
+        state.gold += goldReward;
+        state.dust += dustReward;
+        state.records.totalGold += goldReward;
+
+        resultKey = "win";
+        rewardText = `골드 +${fmt(goldReward)} · 별가루 +${dustReward}`;
+        summary = `${retaliation ? "보복 성공" : "방어 성공"} · ${attacker.name} 격퇴 · ${rewardText}`;
+
+        if (retaliation) {
+          invasion.retaliation = null;
+        }
+      } else {
+        const lossRate = stance.id === "ambush" ? .03 : .02;
+        const goldLoss = Math.min(300,Math.floor(state.gold*lossRate));
+        state.gold = Math.max(0,state.gold-goldLoss);
+        invasion.shieldUntil = Date.now()+8*60*60*1000;
+        invasion.retaliation = {
+          attacker,
+          expiresAt:Date.now()+24*60*60*1000
+        };
+
+        resultKey = "loss";
+        rewardText = `골드 -${fmt(goldLoss)} · 8시간 보호막`;
+        summary = `방어 실패 · ${attacker.name}에게 밀려남 · ${rewardText}`;
+      }
+
+      invasion.history.unshift({at:Date.now(),text:summary,result:resultKey});
+      invasion.history = invasion.history.slice(0,8);
+      invasion.lastBattle = {
+        attacker,
+        stance:stance.id,
+        result:resultKey,
+        summary,
+        rewardText,
+        events:(result.events || []).slice(-36),
+        at:Date.now()
+      };
+
+      if (!retaliation) invasion.pending = null;
+      invasionResolutionBusy = false;
+
+      log(`침입 대응 · ${summary}`,result.won ? "positive" : "negative");
+      saveState();
+      renderAll();
+      toast(result.won ? (retaliation ? "보복에 성공했습니다." : "침입자를 격퇴했습니다.") : "방어에 실패했습니다.");
+    }
+
+    function tickInvasion() {
+      const invasion = invasionState();
+
+      if (
+        invasion.pending
+        && invasion.pending.attackAt <= Date.now()
+        && !isBusy
+        && !invasionResolutionBusy
+      ) {
+        resolveInvasion(invasion.defaultStance,{automatic:true});
+        return;
+      }
+
+      renderInvasion();
+    }
+
+    function openInvasionDesk() {
+      switchPage("inn");
+      renderInn();
+      renderInvasion();
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+
+    function renderInvasion() {
+      const invasion = invasionState();
+      const pending = invasion.pending;
+      const now = Date.now();
+
+      if (pending) {
+        const seconds = Math.max(0,Math.ceil((pending.attackAt-now)/1000));
+        els.invasionWarning.classList.remove("hidden");
+        els.invasionWarningTitle.textContent = `${pending.attacker.name}의 잔영이 접근 중`;
+        els.invasionWarningTimer.textContent = `${seconds}초 안에 대응하지 않으면 ${invasionStances[invasion.defaultStance].name}이 자동 적용됩니다.`;
+      } else {
+        els.invasionWarning.classList.add("hidden");
+      }
+
+      if (!els.innDefenseContent) return;
+
+      const shieldRemaining = Math.max(0,Number(invasion.shieldUntil || 0)-now);
+      const shieldText = shieldRemaining
+        ? `${Math.ceil(shieldRemaining/3600000)}시간 보호 중`
+        : "보호막 없음";
+
+      els.innDefenseStatus.textContent = pending
+        ? "침입 대응 필요"
+        : shieldRemaining
+          ? shieldText
+          : "경계 중";
+
+      const stanceCards = Object.values(invasionStances).map(stance => `
+        <button class="defense-stance-card ${invasion.defaultStance === stance.id ? "active" : ""}"
+          data-default-invasion-stance="${stance.id}" type="button">
+          <strong>${stance.name}</strong>
+          <span>${stance.desc}</span>
+          <small>${stance.risk}</small>
+        </button>
+      `).join("");
+
+      const pendingHtml = pending
+        ? `
+          <section class="pending-invasion-card">
+            <div class="pending-invasion-head">
+              <div>
+                <span>침입자 접근 중</span>
+                <strong>${pending.attacker.name} · ${classes[pending.attacker.classId]?.name || "사냥꾼"}</strong>
+              </div>
+              <b>${Math.max(0,Math.ceil((pending.attackAt-now)/1000))}초</b>
+            </div>
+            <p>예상 전투력 ${fmt(pending.attacker.power)} · 현재 내 전투력 ${fmt(power())}</p>
+            <div class="pending-invasion-actions">
+              <button data-invasion-response="defend">정면 방어</button>
+              <button data-invasion-response="ambush">매복 준비</button>
+              <button data-invasion-response="evacuate">물자 피난</button>
+            </div>
+          </section>`
+        : `
+          <section class="pending-invasion-card empty">
+            <strong>현재 접근 중인 침입자는 없습니다.</strong>
+            <span>${shieldText} · 오늘 피격 ${invasion.attacksToday} / 2회</span>
+          </section>`;
+
+      const retaliationHtml = invasion.retaliation
+        ? `
+          <section class="retaliation-card">
+            <div>
+              <span>보복 가능</span>
+              <strong>${invasion.retaliation.attacker.name}</strong>
+              <small>${Math.max(1,Math.ceil((invasion.retaliation.expiresAt-now)/3600000))}시간 남음 · 보복전은 선공 보정을 받습니다.</small>
+            </div>
+            <button data-invasion-retaliate type="button">보복전 시작</button>
+          </section>`
+        : "";
+
+      const battle = invasion.lastBattle;
+      const battleHtml = battle
+        ? `
+          <section class="invasion-battle-record">
+            <div class="invasion-battle-record-head">
+              <span>최근 침입 기록</span>
+              <strong class="${battle.result === "win" ? "positive" : battle.result === "loss" ? "negative" : "neutral"}">${battle.summary}</strong>
+            </div>
+            <div class="invasion-event-log">
+              ${(battle.events || []).slice(-14).map((event,index) => `
+                <div class="${arenaEventClass(event.cls || "")}">
+                  <span>${String(index+1).padStart(2,"0")}</span>
+                  <p>${event.text}</p>
+                </div>`).join("") || `<p class="empty">전투 없이 물자를 피난시켰습니다.</p>`}
+            </div>
+          </section>`
+        : "";
+
+      const historyHtml = invasion.history.length
+        ? invasion.history.slice(0,5).map(entry => `<div>${invasionHistoryLine(entry)}</div>`).join("")
+        : `<div>아직 침입 대응 기록이 없습니다.</div>`;
+
+      els.innDefenseContent.innerHTML = `
+        <section class="default-defense-section">
+          <div class="default-defense-heading">
+            <div>
+              <span>부재중 기본 대응</span>
+              <strong>${invasionStances[invasion.defaultStance].name}</strong>
+            </div>
+            <small>시간 안에 선택하지 못하면 자동 적용됩니다.</small>
+          </div>
+          <div class="defense-stance-grid">${stanceCards}</div>
+        </section>
+        ${pendingHtml}
+        ${retaliationHtml}
+        ${battleHtml}
+        <details class="invasion-history-details">
+          <summary><span>최근 침입 내역</span><b>기록 보기</b></summary>
+          <div class="invasion-history-list">${historyHtml}</div>
+        </details>
+      `;
+
+      els.innDefenseContent.querySelectorAll("[data-default-invasion-stance]").forEach(button => {
+        button.onclick = () => {
+          invasion.defaultStance = button.dataset.defaultInvasionStance;
+          saveState();
+          renderInvasion();
+          toast(`기본 방어 태세 · ${invasionStances[invasion.defaultStance].name}`);
+        };
+      });
+
+      els.innDefenseContent.querySelectorAll("[data-invasion-response]").forEach(button => {
+        button.onclick = () => resolveInvasion(button.dataset.invasionResponse);
+      });
+
+      els.innDefenseContent.querySelector("[data-invasion-retaliate]")?.addEventListener("click",() => {
+        resolveInvasion("ambush",{retaliation:true});
+      });
+    }
+
     function ensureArena() {
       const today = localDateKey();
       if (state.arena.date !== today) {
@@ -10949,6 +11374,9 @@ const VERSION = 67;
       const settings = autoPotionSettings();
       if (els.autoHealthPotionToggle) els.autoHealthPotionToggle.checked = !!settings.health;
       if (els.autoManaPotionToggle) els.autoManaPotionToggle.checked = !!settings.mana;
+      if (els.autoResumeAfterDefeatToggle) {
+        els.autoResumeAfterDefeatToggle.checked = !!autoHuntRecoveryState().enabled;
+      }
       if (els.autoPotionStatus) {
         const active = [settings.health ? "체력" : "",settings.mana ? "마나" : ""].filter(Boolean);
         els.autoPotionStatus.textContent = active.length ? `자동 ${active.join("·")} 포션 켜짐` : "자동 포션 꺼짐";
@@ -11195,6 +11623,83 @@ const VERSION = 67;
     }
 
 
+
+    function autoHuntRecoveryState() {
+      return state.autoHuntRecovery || (state.autoHuntRecovery = {
+        enabled:true,
+        pending:false,
+        resumeAt:0,
+        zoneId:"",
+        source:"",
+        returns:0
+      });
+    }
+
+    function scheduleAutoHuntReturn(source) {
+      const recovery = autoHuntRecoveryState();
+      if (!recovery.enabled || state.stamina < 1) {
+        recovery.pending = false;
+        recovery.resumeAt = 0;
+        return false;
+      }
+
+      recovery.pending = true;
+      recovery.resumeAt = Date.now()+3000;
+      recovery.zoneId = zone().id;
+      recovery.source = source;
+      recovery.returns = Number(recovery.returns || 0)+1;
+      return true;
+    }
+
+    function cancelAutoHuntReturn({announce=true}={}) {
+      const recovery = autoHuntRecoveryState();
+      if (!recovery.pending) return;
+      recovery.pending = false;
+      recovery.resumeAt = 0;
+      recovery.source = "";
+      saveState();
+      renderInn();
+      if (announce) toast("자동사냥 복귀를 취소했습니다.");
+    }
+
+    function tickAutoHuntReturn() {
+      const recovery = autoHuntRecoveryState();
+      if (!recovery.pending) return;
+
+      if (!recovery.enabled) {
+        cancelAutoHuntReturn({announce:false});
+        return;
+      }
+
+      if (state.stamina < 1) {
+        recovery.pending = false;
+        recovery.resumeAt = 0;
+        log("여관 자동 복귀 중단 · 남은 활력이 없습니다.","negative");
+        saveState();
+        renderInn();
+        return;
+      }
+
+      if (Date.now() < recovery.resumeAt || isBusy) {
+        renderInn();
+        return;
+      }
+
+      if (zones.some(zone => zone.id === recovery.zoneId)) {
+        state.currentZone = recovery.zoneId;
+      }
+
+      recovery.pending = false;
+      recovery.resumeAt = 0;
+      const source = recovery.source;
+      recovery.source = "";
+      saveState();
+
+      leaveInnForHunt();
+      startAutoHunt();
+      log(`자동 회귀 사냥 재개 · ${source || zone().name} · 남은 활력 ${fmtStamina(state.stamina)}`,"positive");
+    }
+
     const innRumors = [
       "어젯밤, 검은 장부회 사람이 객실 번호 대신 죽은 이의 이름을 적었다고 합니다.",
       "화로 교단의 순례자는 불씨가 약해진 사람일수록 더 오래 살아남는다고 속삭였습니다.",
@@ -11213,7 +11718,7 @@ const VERSION = 67;
       });
     }
 
-    function returnToInnAfterDefeat(source="전투",{switchView=true}={}) {
+    function returnToInnAfterDefeat(source="전투",{switchView=true,resumeAuto=false}={}) {
       if (autoTimer) stopAutoHunt();
       const stats = totalStats();
       const inn = innState();
@@ -11224,7 +11729,8 @@ const VERSION = 67;
       inn.lastArrivalAt = Date.now();
       inn.lastArrivalSource = source;
 
-      log(`사망 · ${source} · 회귀의 불씨가 사냥꾼을 잿빛 여관으로 되돌렸습니다. HP와 MP가 회복되었습니다.`,"negative");
+      const autoReturnScheduled = resumeAuto && scheduleAutoHuntReturn(source);
+      log(`사망 · ${source} · 회귀의 불씨가 사냥꾼을 잿빛 여관으로 되돌렸습니다. HP와 MP가 회복되었습니다.${autoReturnScheduled ? " 잠시 후 자동사냥을 재개합니다." : ""}`,"negative");
       saveState();
 
       if (switchView) setTimeout(() => {
@@ -11295,6 +11801,14 @@ const VERSION = 67;
       els.innStaminaValue.textContent = `${fmtStamina(state.stamina)} / ${STAMINA_MAX}`;
       els.innRumorText.textContent = innRumors[rumorIndex];
 
+      const recovery = autoHuntRecoveryState();
+      const recoverySeconds = Math.max(0,Math.ceil((recovery.resumeAt-Date.now())/1000));
+      els.innAutoResumePanel.classList.toggle("hidden",!recovery.pending);
+      if (recovery.pending) {
+        els.innAutoResumeTitle.textContent = `${recoverySeconds}초 후 자동사냥 복귀`;
+        els.innAutoResumeText.textContent = `${zone().name}으로 돌아가 남은 활력 ${fmtStamina(state.stamina)}부터 연속 사냥을 재개합니다.`;
+      }
+
       const staminaReady = state.stamina >= STAMINA_MAX;
       els.refillStaminaBtn.classList.toggle("ready",staminaReady);
       els.refillStaminaBtn.setAttribute("aria-label",staminaReady ? "사냥터로 출발" : "활력을 회복하고 사냥터로 출발");
@@ -11329,8 +11843,10 @@ const VERSION = 67;
       const enemyName = enemy?.name || "적";
       const turns = Math.max(0,Number(result?.turns || 0));
       els.defeatLogTitle.textContent = `${enemyName}에게 사망`;
-      els.defeatLogText.textContent = autoStopped
-        ? `${fmt(turns)}막에서 사망해 자동 사냥을 멈췄습니다. 회귀의 불씨가 잿빛 여관으로 되돌렸으며 장비와 경험치는 유지됩니다.`
+      els.defeatLogText.textContent = autoStopped && autoHuntRecoveryState().enabled
+        ? `${fmt(turns)}막에서 사망했습니다. 여관에서 회복한 뒤 같은 사냥터의 자동사냥을 재개합니다. 장비와 경험치는 유지됩니다.`
+        : autoStopped
+          ? `${fmt(turns)}막에서 사망해 자동 사냥을 멈췄습니다. 회귀의 불씨가 잿빛 여관으로 되돌렸으며 장비와 경험치는 유지됩니다.`
         : `${fmt(turns)}막에서 사망했습니다. 회귀의 불씨가 잿빛 여관으로 되돌렸으며 장비와 경험치는 유지됩니다.`;
 
       els.defeatLogBanner.classList.remove("hidden","show");
@@ -11439,6 +11955,7 @@ const VERSION = 67;
         state.records.totalGold += earnedGold;
         state.records.kills++;
         state.records.wins++;
+        considerInvasionAfterVictory();
         if (enemy.rank !== "일반") state.records.eliteKills = (state.records.eliteKills || 0)+1;
         if (enemy.specialType) {
           state.records.rareMonsterKills = (state.records.rareMonsterKills || 0)+1;
@@ -11594,12 +12111,15 @@ const VERSION = 67;
         battleFeed.reason = `내 체력이 0이 됐습니다. ${fmt(result.turns)}막 동안 최대 ${fmt(result.maxHit)} 피해를 기록했지만 적을 쓰러뜨리지 못했습니다.`;
         battleFeed.notes.push("사망 후 잿빛 여관으로 회귀했습니다.");
         const autoStopped = !!autoTimer;
-        if (autoTimer) toggleAuto();
+        if (autoTimer) stopAutoHunt();
 
         state.records.defeats++;
         state.streak = 0;
         updateCodex(enemy,result,null,null);
-        returnToInnAfterDefeat(`${enemy.name}에게 패배`,{switchView:true});
+        returnToInnAfterDefeat(`${enemy.name}에게 패배`,{
+          switchView:true,
+          resumeAuto:autoStopped && autoHuntRecoveryState().enabled
+        });
         if (feverActive) {
           state.feverBattles = Math.max(0,state.feverBattles-1);
           if (state.feverBattles === 0) {
@@ -11608,7 +12128,7 @@ const VERSION = 67;
         }
 
         defeatNotice = {enemy,result,autoStopped};
-        log(`사냥 실패 · ${enemy.name}에게 사망${autoStopped ? " · 자동 사냥 중지" : ""} · 잿빛 여관으로 회귀 · 장비와 경험치 유지`, "negative");
+        log(`사냥 실패 · ${enemy.name}에게 사망${autoStopped && autoHuntRecoveryState().enabled ? " · 여관 회복 후 자동 복귀 예정" : autoStopped ? " · 자동 사냥 중지" : ""} · 장비와 경험치 유지`, "negative");
       }
 
       if (battleFeed.outcome !== "defeat") applyAutomaticPotionsAfterBattle(battleFeed);
@@ -12385,6 +12905,7 @@ function renderBattleRewardFocus() {
       renderEquipment();
       renderZones();
       renderInn();
+      renderInvasion();
       renderGuide();
       renderBattleRewardFocus();
       renderBattleReportLog();
@@ -12500,6 +13021,8 @@ function renderBattleRewardFocus() {
     els.innRestBtn.onclick = () => restAtInn({restoreStamina:false});
     els.refillStaminaBtn.onclick = useInnStaminaAction;
     els.innRumorBtn.onclick = hearInnRumor;
+    els.innAutoResumeCancelBtn.onclick = () => cancelAutoHuntReturn({announce:true});
+    els.invasionOpenBtn.onclick = openInvasionDesk;
     els.autoHealthPotionToggle.onchange = () => {
       autoPotionSettings().health = !!els.autoHealthPotionToggle.checked;
       saveState();
@@ -12511,6 +13034,14 @@ function renderBattleRewardFocus() {
       saveState();
       renderAutoPotionControls();
       toast(`자동 마나약 ${state.autoPotion.mana ? "사용" : "해제"}`);
+    };
+    els.autoResumeAfterDefeatToggle.onchange = () => {
+      const recovery = autoHuntRecoveryState();
+      recovery.enabled = !!els.autoResumeAfterDefeatToggle.checked;
+      if (!recovery.enabled) cancelAutoHuntReturn({announce:false});
+      saveState();
+      renderAutoPotionControls();
+      toast(`사망 후 자동 복귀 ${recovery.enabled ? "사용" : "해제"}`);
     };
 
     els.huntBtn.onclick = manualHunt;
@@ -12642,6 +13173,8 @@ function renderBattleRewardFocus() {
       els.focusText.textContent = `${fmtStamina(state.stamina)} / ${STAMINA_MAX} · ${staminaRecoveryLabel()}`;
       els.focusBar.style.width = `${state.stamina / STAMINA_MAX * 100}%`;
       updateAutoButton();
+      tickAutoHuntReturn();
+      tickInvasion();
       state.hp = Math.min(state.hp, s.maxHp);
       state.mp = Math.min(state.mp, s.maxMp);
       if (updateMarket()) {
