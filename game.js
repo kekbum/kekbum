@@ -1,4 +1,4 @@
-const VERSION = 60;
+const VERSION = 61;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -2070,6 +2070,9 @@ const VERSION = 60;
       defeatLogTitle: document.getElementById("defeatLogTitle"),
       defeatLogText: document.getElementById("defeatLogText"),
       brandHomeButton: document.getElementById("brandHomeButton"),
+      globalResourceHud: document.getElementById("globalResourceHud"),
+      globalCharacterCard: document.getElementById("globalCharacterCard"),
+      globalZoneCard: document.getElementById("globalZoneCard"),
       globalStaminaCard: document.getElementById("globalStaminaCard"),
       globalStaminaValue: document.getElementById("globalStaminaValue"),
       globalStaminaHint: document.getElementById("globalStaminaHint"),
@@ -5937,6 +5940,11 @@ const VERSION = 60;
     function switchPage(page) {
       const section = navSectionByPage[page] || "hunt";
       selectNavSection(section);
+      const isHuntPage = page === "hunt";
+      els.globalResourceHud?.classList.toggle("hunt-active",isHuntPage);
+      els.globalCharacterCard?.classList.toggle("hidden",!isHuntPage);
+      els.globalZoneCard?.classList.toggle("hidden",!isHuntPage);
+      if (!isHuntPage && els.globalCharacterCard?.open) els.globalCharacterCard.open = false;
       document.querySelectorAll(".page").forEach(el => el.classList.toggle("active", el.dataset.page === page));
       document.querySelectorAll(".top-tab").forEach(el => el.classList.toggle("active", el.dataset.pageTarget === page));
       if (page === "guide") renderGuide();
@@ -11597,11 +11605,9 @@ const VERSION = 60;
 
       const current = zone();
       els.zoneSelectSummary.innerHTML = `
-        <div><span>선택 던전</span><strong>${current.name}</strong></div>
-        <div><span>권장 전투력</span><strong>${fmt(current.rec)}</strong></div>
-        <div><span>장비 기억 밀도</span><strong>Lv.${current.itemMin}~${current.itemMax}</strong></div>
-        <div><span>정예·지배자 보정</span><strong>최대 +4 · 지도 +5</strong></div>
-        <div><span>현재 과열도</span><strong>${Math.round(state.heat[current.id] || 0)}%</strong></div>
+        <span>권장 <strong>${fmt(current.rec)}</strong></span>
+        <span>기억 <strong>Lv.${current.itemMin}~${current.itemMax}</strong></span>
+        <span>과열 <strong>${Math.round(state.heat[current.id] || 0)}%</strong></span>
       `;
 
       els.zoneSelect.onchange = () => {

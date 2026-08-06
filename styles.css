@@ -13021,3 +13021,373 @@ button.purchase-warning:not(:disabled):hover {
     gap:3px;
   }
 }
+
+
+/* v61: 사냥꾼·사냥터를 상단 현황줄로 통합하고 메인 전투를 단일 열로 정리 */
+.global-resource-hud.hunt-active {
+  grid-template-columns:minmax(270px,1.28fr) minmax(190px,.86fr) minmax(190px,.86fr) minmax(260px,1.18fr);
+  align-items:start;
+}
+
+.global-resource-hud:not(.hunt-active) {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
+.character-resource-card {
+  min-width:0;
+}
+
+.character-resource-card > summary {
+  list-style:none;
+}
+
+.character-resource-card > summary::-webkit-details-marker {
+  display:none;
+}
+
+.character-resource-summary {
+  width:100%;
+}
+
+.character-resource-card[open] {
+  grid-column:1/-1;
+}
+
+.character-resource-card[open] .character-resource-summary {
+  border-color:rgba(210,149,57,.60);
+  border-radius:10px 10px 0 0;
+}
+
+.character-resource-copy strong {
+  overflow:hidden;
+  color:#f0d18b;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.character-resource-metrics {
+  display:grid;
+  grid-template-columns:repeat(3,auto);
+  gap:10px;
+  align-items:center;
+}
+
+.character-resource-metrics > span {
+  display:grid;
+  gap:1px;
+  min-width:48px;
+  text-align:right;
+}
+
+.character-resource-metrics small {
+  color:#756f65;
+  font-size:7px;
+  font-weight:900;
+}
+
+.character-resource-metrics strong {
+  color:#ddd2bd;
+  font-size:11px;
+  white-space:nowrap;
+}
+
+.character-resource-drawer {
+  display:grid;
+  gap:10px;
+  padding:11px;
+  border:1px solid rgba(210,149,57,.42);
+  border-top:0;
+  border-radius:0 0 11px 11px;
+  background:
+    radial-gradient(circle at 0 0,rgba(185,116,35,.08),transparent 34%),
+    #11100d;
+}
+
+.character-drawer-grid {
+  display:grid;
+  grid-template-columns:minmax(300px,.82fr) minmax(420px,1.18fr);
+  gap:10px;
+}
+
+.character-drawer-section,
+.character-growth-details {
+  min-width:0;
+  padding:10px;
+  border:1px solid rgba(210,149,57,.17);
+  border-radius:10px;
+  background:rgba(8,8,7,.44);
+}
+
+.character-passive-compact {
+  padding:9px 11px;
+}
+
+.character-passive-compact .class-card-top {
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  color:#b7955f;
+  font-size:9px;
+  font-weight:900;
+}
+
+.character-passive-compact .class-passive {
+  margin-top:5px;
+  color:#938a7b;
+  font-size:9px;
+  line-height:1.5;
+}
+
+.character-resource-drawer .hunt-equipment-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+
+.character-resource-drawer .hunt-equipment-head span {
+  color:#e5c77f;
+  font-size:11px;
+  font-weight:900;
+}
+
+.character-resource-drawer .hunt-equipment-head small {
+  color:#756e63;
+  font-size:8px;
+}
+
+.character-resource-drawer #equipment {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+}
+
+.character-resource-drawer .equip-row {
+  grid-template-columns:38px minmax(0,1fr) 14px;
+  min-height:38px;
+  padding:6px 7px;
+}
+
+.character-resource-drawer .equip-name {
+  overflow:hidden;
+  font-size:9px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.character-growth-details {
+  padding:0;
+  overflow:hidden;
+}
+
+.character-growth-details > summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:42px;
+  padding:9px 11px;
+  list-style:none;
+  cursor:pointer;
+  color:#e3c47b;
+  font-size:10px;
+  font-weight:900;
+}
+
+.character-growth-details > summary::-webkit-details-marker {
+  display:none;
+}
+
+.character-growth-details > summary b {
+  color:#817667;
+  font-size:8px;
+}
+
+.character-growth-details .side-detail-content {
+  display:grid;
+  gap:9px;
+  padding:0 10px 10px;
+}
+
+.character-growth-details .detail-hunt-stats {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;
+}
+
+.character-growth-details .detail-hunt-stats .stat {
+  min-height:56px;
+  padding:8px;
+}
+
+.character-growth-details .detail-hunt-stats .stat span {
+  font-size:8px;
+}
+
+.character-growth-details .detail-hunt-stats .stat strong {
+  font-size:13px;
+}
+
+.character-growth-details .attribute-box,
+.character-growth-details .stat-reset-panel {
+  padding:10px;
+}
+
+.character-growth-details .change-class-btn {
+  width:100%;
+  min-height:32px;
+  font-size:9px;
+}
+
+.zone-resource-card {
+  cursor:default;
+  border-color:rgba(107,132,166,.43);
+  background:
+    radial-gradient(circle at 0 50%,rgba(76,107,154,.13),transparent 44%),
+    #101217;
+}
+
+.zone-resource-card:hover {
+  transform:none;
+  filter:none;
+}
+
+.zone-resource-card .core-resource-icon {
+  color:#b7cee8;
+  background:rgba(75,104,148,.14);
+}
+
+.zone-resource-copy {
+  gap:4px;
+}
+
+.zone-resource-select {
+  width:100%;
+  min-width:0;
+  height:27px;
+  padding:3px 25px 3px 7px;
+  border:1px solid rgba(125,145,177,.28);
+  border-radius:6px;
+  color:#d8e0e9;
+  background:#171b22;
+  font-size:9px;
+  font-weight:850;
+}
+
+.zone-resource-summary {
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 9px;
+  color:#777f89;
+  font-size:7px;
+}
+
+.zone-resource-summary span {
+  white-space:nowrap;
+}
+
+.zone-resource-summary strong {
+  color:#aebdce;
+  font-size:8px;
+}
+
+.page[data-page="hunt"] .hunt-single-column {
+  display:block;
+}
+
+.page[data-page="hunt"] .hunt-battle-panel {
+  width:100%;
+  max-width:none;
+}
+
+.page[data-page="hunt"] .battle-head {
+  padding:13px 16px 9px;
+}
+
+.page[data-page="hunt"] .combat-stage-focused {
+  padding:12px;
+}
+
+.page[data-page="hunt"] .battle-reward-focus {
+  min-height:0;
+}
+
+.page[data-page="hunt"] .combat-log-prominent {
+  min-height:300px;
+}
+
+.hunt-render-sinks {
+  display:none !important;
+}
+
+@media (max-width:1080px) {
+  .global-resource-hud.hunt-active {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .character-resource-card[open] {
+    grid-column:1/-1;
+  }
+
+  .character-drawer-grid {
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:760px) {
+  .global-resource-hud.hunt-active,
+  .global-resource-hud:not(.hunt-active) {
+    grid-template-columns:1fr 1fr;
+  }
+
+  .character-resource-card,
+  .zone-resource-card {
+    grid-column:1/-1;
+  }
+
+  .character-resource-card[open] {
+    grid-column:1/-1;
+  }
+
+  .character-resource-metrics {
+    gap:6px;
+  }
+
+  .character-resource-metrics > span {
+    min-width:40px;
+  }
+
+  .character-resource-drawer #equipment {
+    grid-template-columns:1fr;
+  }
+
+  .character-growth-details .detail-hunt-stats {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:480px) {
+  .global-resource-hud.hunt-active,
+  .global-resource-hud:not(.hunt-active) {
+    grid-template-columns:1fr;
+  }
+
+  .character-resource-summary {
+    grid-template-columns:34px minmax(0,1fr);
+  }
+
+  .character-resource-metrics {
+    grid-column:1/-1;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    width:100%;
+    padding-top:7px;
+    border-top:1px solid rgba(255,255,255,.06);
+  }
+
+  .character-resource-metrics > span {
+    text-align:left;
+  }
+
+  .zone-resource-card {
+    grid-template-columns:34px minmax(0,1fr);
+  }
+}
