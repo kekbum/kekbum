@@ -1,4 +1,4 @@
-const VERSION = 65;
+const VERSION = 67;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -157,7 +157,7 @@ const VERSION = 65;
 
 
     const navSections = {
-      hunt:{label:"사냥",defaultPage:"hunt",pages:["hunt","quests","bounties","staminacamp"]},
+      hunt:{label:"사냥",defaultPage:"hunt",pages:["hunt","inn","quests","bounties","staminacamp"]},
       growth:{label:"성장",defaultPage:"inventory",pages:["inventory","character","skills","mercenary","market","gamble"]},
       challenge:{label:"도전",defaultPage:"arena",pages:["arena","daily","dailyboss","abyss","finale","ranking"]},
       records:{label:"기록",defaultPage:"info",pages:["guide","info","codex","collection","inquiry","attendance","savevault"]}
@@ -1153,11 +1153,6 @@ const VERSION = 65;
       { key: "amulet", label: "부적" }
     ];
 
-    const innLocation = {
-      id:"inn", name:"잿빛 여관", tier:0, rec:0, itemMin:0, itemMax:0,
-      enemies:[], mult:0, nonCombat:true
-    };
-
     const zones = [
       { id:"field", name:"버려진 들판", tier:1, rec:20, itemMin:1, itemMax:10, enemies:["굶주린 들쥐","떠돌이 약탈자","썩은 들개"], mult:1.0 },
       { id:"camp", name:"도적 야영지", tier:2, rec:65, itemMin:8, itemMax:18, enemies:["도적 척후병","도적 투사","불량 용병"], mult:1.30 },
@@ -1809,6 +1804,13 @@ const VERSION = 65;
         health:false,
         mana:false
       },
+      inn: {
+        visits:0,
+        lastArrivalAt:0,
+        lastArrivalSource:"",
+        rumorIndex:0,
+        rumorsHeard:0
+      },
       autoProcess: {
         enabled:false,
         common:"keep",
@@ -2133,7 +2135,17 @@ const VERSION = 65;
       autoHealthPotionToggle: document.getElementById("autoHealthPotionToggle"),
       autoManaPotionToggle: document.getElementById("autoManaPotionToggle"),
       autoPotionStatus: document.getElementById("autoPotionStatus"),
-      innRestPanel: document.getElementById("innRestPanel"),
+      innVisitCount: document.getElementById("innVisitCount"),
+      innArrivalMessage: document.getElementById("innArrivalMessage"),
+      innHpValue: document.getElementById("innHpValue"),
+      innMpValue: document.getElementById("innMpValue"),
+      innStaminaValue: document.getElementById("innStaminaValue"),
+      innLastArrival: document.getElementById("innLastArrival"),
+      innRestBtn: document.getElementById("innRestBtn"),
+      innStaminaActionLabel: document.getElementById("innStaminaActionLabel"),
+      innStaminaActionHint: document.getElementById("innStaminaActionHint"),
+      innRumorText: document.getElementById("innRumorText"),
+      innRumorBtn: document.getElementById("innRumorBtn"),
       elixirBtn: document.getElementById("elixirBtn"),
       staminaPotionBtn: document.getElementById("staminaPotionBtn"),
       fieldCareToggle: document.getElementById("fieldCareToggle"),
@@ -2504,6 +2516,10 @@ const VERSION = 65;
           mastery: { ...fresh.mastery, ...(loaded.mastery || {}) },
           heat: { ...fresh.heat, ...(loaded.heat || {}) },
           zonesVisited: { ...fresh.zonesVisited, ...(loaded.zonesVisited || {}) },
+          currentZone:zones.some(zone => zone.id === loaded.currentZone)
+            ? loaded.currentZone
+            : fresh.currentZone,
+          inn:{...fresh.inn,...(loaded.inn || {})},
           equipment: { ...fresh.equipment, ...(loaded.equipment || {}) },
           inventory: migratedInventory,
           inventoryCapacity:normalizeInventoryCapacity(loaded.inventoryCapacity),
@@ -4517,7 +4533,6 @@ const VERSION = 65;
     }
 
     function zone() {
-      if (state.currentZone === innLocation.id) return innLocation;
       return zones.find(z => z.id === state.currentZone) || zones[0];
     }
     function xpNeeded() { return Math.floor(180 * Math.pow(state.level, 1.55)); }
@@ -5984,6 +5999,7 @@ const VERSION = 65;
       if (!isHuntPage && els.globalCharacterCard?.open) els.globalCharacterCard.open = false;
       document.querySelectorAll(".page").forEach(el => el.classList.toggle("active", el.dataset.page === page));
       document.querySelectorAll(".top-tab").forEach(el => el.classList.toggle("active", el.dataset.pageTarget === page));
+      if (page === "inn") renderInn();
       if (page === "guide") renderGuide();
       if (page === "inventory") renderInventory();
       if (page === "character") renderCharacterDetails();
@@ -11179,33 +11195,132 @@ const VERSION = 65;
     }
 
 
+    const innRumors = [
+      "어젯밤, 검은 장부회 사람이 객실 번호 대신 죽은 이의 이름을 적었다고 합니다.",
+      "화로 교단의 순례자는 불씨가 약해진 사람일수록 더 오래 살아남는다고 속삭였습니다.",
+      "2층 복도에서는 아무도 없는 방에서 갑옷 벗는 소리가 들린다고 합니다.",
+      "왕립 잔재국의 낡은 깃발 아래에서 잠들면 잃어버린 전투를 꿈에서 다시 본다고 합니다.",
+      "여관 주인은 첫 손님이 누구였는지 묻는 사람에게 늘 빈 잔만 내어놓습니다."
+    ];
+
+    function innState() {
+      return state.inn || (state.inn = {
+        visits:0,
+        lastArrivalAt:0,
+        lastArrivalSource:"",
+        rumorIndex:0,
+        rumorsHeard:0
+      });
+    }
+
     function returnToInnAfterDefeat(source="전투",{switchView=true}={}) {
       if (autoTimer) stopAutoHunt();
       const stats = totalStats();
-      state.currentZone = innLocation.id;
-      state.zonesVisited[innLocation.id] = true;
+      const inn = innState();
+
       state.hp = stats.maxHp;
       state.mp = stats.maxMp;
+      inn.visits = Number(inn.visits || 0)+1;
+      inn.lastArrivalAt = Date.now();
+      inn.lastArrivalSource = source;
+
       log(`사망 · ${source} · 회귀의 불씨가 사냥꾼을 잿빛 여관으로 되돌렸습니다. HP와 MP가 회복되었습니다.`,"negative");
+      saveState();
+
       if (switchView) setTimeout(() => {
-        switchPage("hunt");
+        switchPage("inn");
+        renderInn();
         window.scrollTo({top:0,behavior:"smooth"});
       },0);
     }
 
-    function restAtInn({restoreStamina=false}={}) {
-      if (state.currentZone !== innLocation.id) return toast("잿빛 여관에서만 이용할 수 있습니다.");
+    function leaveInnForHunt() {
+      switchPage("hunt");
+      renderAll();
+      window.scrollTo({top:0,behavior:"smooth"});
+      toast(`${zone().name}으로 출발합니다.`);
+    }
+
+    function restAtInn({restoreStamina=false,departAfter=false}={}) {
       const stats = totalStats();
       state.hp = stats.maxHp;
       state.mp = stats.maxMp;
+
       if (restoreStamina) {
         state.stamina = STAMINA_MAX;
         state.staminaUpdatedAt = Date.now();
       }
+
       log(`잿빛 여관 휴식 · HP와 MP 회복${restoreStamina ? ` · 활력 ${STAMINA_MAX}` : ""}`,"battle-heal");
       saveState();
       renderAll();
-      toast(restoreStamina ? "활력까지 모두 회복되었습니다." : "HP와 MP가 회복되었습니다.");
+
+      if (departAfter) {
+        leaveInnForHunt();
+        return;
+      }
+
+      renderInn();
+      toast(restoreStamina ? "불씨를 가다듬어 활력을 모두 회복했습니다." : "침상에서 쉬어 체력과 마나를 회복했습니다.");
+    }
+
+    function useInnStaminaAction() {
+      recoverOffline();
+      if (state.stamina >= STAMINA_MAX) {
+        leaveInnForHunt();
+        return;
+      }
+      restAtInn({restoreStamina:true,departAfter:true});
+    }
+
+    function hearInnRumor() {
+      const inn = innState();
+      inn.rumorIndex = (Number(inn.rumorIndex || 0)+1)%innRumors.length;
+      inn.rumorsHeard = Number(inn.rumorsHeard || 0)+1;
+      log(`여관 소문 · ${innRumors[inn.rumorIndex]}`,"neutral");
+      saveState();
+      renderInn();
+    }
+
+    function renderInn() {
+      if (!els.innVisitCount) return;
+      recoverOffline();
+      const stats = totalStats();
+      const inn = innState();
+      const rumorIndex = clamp(Number(inn.rumorIndex || 0),0,innRumors.length-1);
+
+      els.innVisitCount.textContent = `${fmt(inn.visits || 0)}회`;
+      els.innHpValue.textContent = `${fmt(state.hp)} / ${fmt(stats.maxHp)}`;
+      els.innMpValue.textContent = `${fmt(state.mp)} / ${fmt(stats.maxMp)}`;
+      els.innStaminaValue.textContent = `${fmtStamina(state.stamina)} / ${STAMINA_MAX}`;
+      els.innRumorText.textContent = innRumors[rumorIndex];
+
+      const staminaReady = state.stamina >= STAMINA_MAX;
+      els.refillStaminaBtn.classList.toggle("ready",staminaReady);
+      els.refillStaminaBtn.setAttribute("aria-label",staminaReady ? "사냥터로 출발" : "활력을 회복하고 사냥터로 출발");
+      els.innStaminaActionLabel.textContent = staminaReady ? "사냥터로 출발" : "불씨 가다듬기";
+      els.innStaminaActionHint.textContent = staminaReady
+        ? `${zone().name}으로 돌아가 사냥을 계속합니다.`
+        : `활력을 ${STAMINA_MAX}까지 회복한 뒤 ${zone().name}으로 출발합니다.`;
+
+      if (inn.lastArrivalAt) {
+        const arrivalTime = new Date(inn.lastArrivalAt).toLocaleString("ko-KR", {
+          month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"
+        });
+        els.innLastArrival.textContent = arrivalTime;
+        els.innArrivalMessage.innerHTML = `
+          <span>회귀 완료</span>
+          <strong>${inn.lastArrivalSource || "전투"}에서 쓰러진 뒤 여관에서 다시 눈을 떴습니다.</strong>
+          <small>장비와 경험치는 유지되며 체력과 마나는 회복되었습니다.</small>
+        `;
+      } else {
+        els.innLastArrival.textContent = "기록 없음";
+        els.innArrivalMessage.innerHTML = `
+          <span>안전한 거점</span>
+          <strong>벽난로의 잔불이 조용히 흔들립니다.</strong>
+          <small>휴식을 취하거나 사냥터로 돌아갈 수 있습니다.</small>
+        `;
+      }
     }
 
     function showDefeatLog({enemy,result,autoStopped}) {
@@ -11231,10 +11346,6 @@ const VERSION = 65;
 
     async function hunt(inRareMap=false) {
       if (!state.classId) { showClassModal(); return; }
-      if (state.currentZone === innLocation.id) {
-        toast("여관에서는 사냥할 수 없습니다. 상단 사냥터에서 전투 지역을 선택하세요.");
-        return;
-      }
       if (state.pendingRecovery) {
         const pending = state.pendingRecovery;
         state.consumables[pending.id] = (state.consumables[pending.id] || 0)+1;
@@ -11546,10 +11657,6 @@ const VERSION = 65;
     function useElixir() { useConsumable("elixir"); }
 
     function updateAutoButton() {
-      if (state.currentZone === innLocation.id) {
-        els.autoBtn.textContent = "여관에서는 연속 사냥 불가";
-        return;
-      }
       if (!autoTimer) {
         els.autoBtn.textContent = "연속 사냥 · 5초";
         return;
@@ -11570,7 +11677,6 @@ const VERSION = 65;
 
     function startAutoHunt() {
       recoverOffline();
-      if (state.currentZone === innLocation.id) return toast("여관에서는 연속 사냥을 시작할 수 없습니다.");
       if (state.stamina < 1) return toast("활력이 부족합니다.");
 
       autoNextAt = Date.now() + AUTO_HUNT_INTERVAL_MS;
@@ -12050,42 +12156,25 @@ const VERSION = 65;
     }
 
     function renderZones() {
-      els.zoneSelect.innerHTML = [innLocation,...zones].map(z => z.nonCombat
-        ? `<option value="${z.id}">휴식 · ${z.name}</option>`
-        : `<option value="${z.id}">T${z.tier} · ${z.name} · 기억 Lv.${z.itemMin}~${z.itemMax} · 권장 ${fmt(z.rec)}</option>`
+      els.zoneSelect.innerHTML = zones.map(z =>
+        `<option value="${z.id}">T${z.tier} · ${z.name} · 기억 Lv.${z.itemMin}~${z.itemMax} · 권장 ${fmt(z.rec)}</option>`
       ).join("");
-      els.zoneSelect.value = state.currentZone;
+      els.zoneSelect.value = zone().id;
 
       const current = zone();
-      if (current.nonCombat) {
-        els.zoneSelectSummary.innerHTML = `
-          <span><strong>안전 지역</strong></span>
-          <span>HP·MP <strong>회복</strong></span>
-          <span>활력 <strong>회복 가능</strong></span>
-        `;
-      } else {
-        els.zoneSelectSummary.innerHTML = `
-          <span>권장 <strong>${fmt(current.rec)}</strong></span>
-          <span>기억 <strong>Lv.${current.itemMin}~${current.itemMax}</strong></span>
-          <span>과열 <strong>${Math.round(state.heat[current.id] || 0)}%</strong></span>
-        `;
-      }
+      els.zoneSelectSummary.innerHTML = `
+        <span>권장 <strong>${fmt(current.rec)}</strong></span>
+        <span>기억 <strong>Lv.${current.itemMin}~${current.itemMax}</strong></span>
+        <span>과열 <strong>${Math.round(state.heat[current.id] || 0)}%</strong></span>
+      `;
 
       els.zoneSelect.onchange = () => {
-        const selectedId = els.zoneSelect.value;
-        const nextZone = selectedId === innLocation.id ? innLocation : zones.find(z => z.id === selectedId);
+        const nextZone = zones.find(z => z.id === els.zoneSelect.value);
         if (!nextZone || nextZone.id === state.currentZone) return;
         if (autoTimer) stopAutoHunt();
         state.currentZone = nextZone.id;
         state.zonesVisited[state.currentZone] = true;
-        if (nextZone.nonCombat) {
-          const stats = totalStats();
-          state.hp = stats.maxHp;
-          state.mp = stats.maxMp;
-          log(`${nextZone.name}으로 이동해 HP와 MP를 회복했습니다.`,"battle-heal");
-        } else {
-          log(`${nextZone.name}으로 이동했습니다.`,"neutral");
-        }
+        log(`${nextZone.name}으로 이동했습니다.`,"neutral");
         saveState();
         renderAll();
         renderLog();
@@ -12254,8 +12343,7 @@ function renderBattleRewardFocus() {
       const maxMp = s.maxMp;
       const need = xpNeeded();
       const z = zone();
-      const atInn = !!z.nonCombat;
-      const heat = atInn ? 0 : (state.heat[z.id] || 0);
+      const heat = state.heat[z.id] || 0;
 
       els.levelBadge.textContent = `Lv.${state.level}`;
       renderClassStats();
@@ -12274,18 +12362,15 @@ function renderBattleRewardFocus() {
       renderCoreResourceEducation();
 
       els.currentZoneName.textContent = z.name;
-      els.innRestPanel?.classList.toggle("hidden",!atInn);
       if (!isBusy) {
-        els.enemyName.textContent = atInn ? "휴식 중" : "전투 대기";
+        els.enemyName.textContent = "전투 대기";
         els.enemyName.classList.remove("status-hunting");
         els.enemyName.classList.add("status-idle");
-        els.enemyMeta.textContent = atInn
-          ? "안전 지역 · 사냥터를 선택하면 다시 출발합니다."
-          : `권장 전투력 ${fmt(z.rec)} · 현재 ${fmt(power())} · 장비 기억 Lv.${z.itemMin}~${z.itemMax}`;
+        els.enemyMeta.textContent = `권장 전투력 ${fmt(z.rec)} · 현재 ${fmt(power())} · 장비 기억 Lv.${z.itemMin}~${z.itemMax}`;
       }
-      els.huntBtn.disabled = isBusy || atInn;
-      els.autoBtn.disabled = atInn;
-      els.huntBtn.textContent = atInn ? "사냥터를 선택하세요" : "사냥 1회 · 활력 1";
+      els.huntBtn.disabled = isBusy;
+      els.autoBtn.disabled = false;
+      els.huntBtn.textContent = "사냥 1회 · 활력 1";
       updateAutoButton();
 
       els.hpText.textContent = `${fmt(state.hp)} / ${fmt(maxHp)}`;
@@ -12299,6 +12384,7 @@ function renderBattleRewardFocus() {
 
       renderEquipment();
       renderZones();
+      renderInn();
       renderGuide();
       renderBattleRewardFocus();
       renderBattleReportLog();
@@ -12411,7 +12497,9 @@ function renderBattleRewardFocus() {
       btn.onclick = () => setMarketPreset("sell",btn.dataset.marketSellPreset);
     });
 
-    els.refillStaminaBtn.onclick = () => restAtInn({restoreStamina:true});
+    els.innRestBtn.onclick = () => restAtInn({restoreStamina:false});
+    els.refillStaminaBtn.onclick = useInnStaminaAction;
+    els.innRumorBtn.onclick = hearInnRumor;
     els.autoHealthPotionToggle.onchange = () => {
       autoPotionSettings().health = !!els.autoHealthPotionToggle.checked;
       saveState();

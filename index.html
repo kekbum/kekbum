@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=65">
+  <link rel="stylesheet" href="styles.css?v=67">
 
 </head>
 <body>
@@ -60,6 +60,7 @@
       <div class="top-subnav-shell">
         <div class="top-subnav active" data-nav-group="hunt">
           <button class="top-tab active" data-page-target="hunt">사냥터</button>
+          <button class="top-tab inn-nav-tab" data-page-target="inn">여관</button>
           <button class="top-tab" data-page-target="quests">의뢰 <span id="questNavCount"></span></button>
           <button class="top-tab" data-page-target="bounties">현상수배 <span id="bountyNavCount"></span></button>
           <button class="top-tab" data-page-target="staminacamp">활력 야영지 <span id="staminaCampNavMark"></span></button>
@@ -207,15 +208,6 @@
             <div class="enemy-name status-idle" id="enemyName">대기중</div>
             <div class="enemy-meta" id="enemyMeta"></div>
           </div>
-
-          <section class="inn-rest-panel hidden" id="innRestPanel">
-            <div>
-              <span>ASHEN INN</span>
-              <strong>잿빛 여관</strong>
-              <p>회귀의 불씨가 몸을 여관의 기준점으로 되돌렸습니다.</p>
-            </div>
-            <button class="primary" id="refillStaminaBtn" type="button">활력 전부 회복</button>
-          </section>
 
           <div class="combat-vitals-grid compact-control-vitals">
             <div class="meter-wrap compact-meter">
@@ -385,6 +377,94 @@
         </button>
 
       </div>
+    </section>
+
+    <section class="page inn-page" data-page="inn">
+      <section class="inn-main-panel">
+        <header class="inn-page-header">
+          <div class="inn-sign">
+            <span>ASHEN INN</span>
+            <h2>잿빛 여관</h2>
+            <p>죽은 사냥꾼이 다시 눈을 뜨는 곳. 휴식과 이야기가 쌓이는 회귀의 거점입니다.</p>
+          </div>
+          <div class="inn-visit-badge">
+            <small>여관 귀환</small>
+            <strong id="innVisitCount">0회</strong>
+          </div>
+        </header>
+
+        <div class="inn-arrival-message" id="innArrivalMessage">
+          벽난로의 잔불이 조용히 흔들립니다.
+        </div>
+
+        <div class="inn-status-grid">
+          <article>
+            <span>현재 체력</span>
+            <strong id="innHpValue">0 / 0</strong>
+          </article>
+          <article>
+            <span>현재 마나</span>
+            <strong id="innMpValue">0 / 0</strong>
+          </article>
+          <article>
+            <span>현재 활력</span>
+            <strong id="innStaminaValue">0 / 60</strong>
+          </article>
+          <article>
+            <span>마지막 귀환</span>
+            <strong id="innLastArrival">기록 없음</strong>
+          </article>
+        </div>
+
+        <div class="inn-action-grid">
+          <button class="inn-action-button rest" id="innRestBtn" type="button">
+            <span>침상에서 쉬기</span>
+            <small>체력과 마나를 모두 회복합니다.</small>
+          </button>
+          <button class="inn-action-button ember" id="refillStaminaBtn" type="button">
+            <span id="innStaminaActionLabel">불씨 가다듬기</span>
+            <small id="innStaminaActionHint">활력을 최대치까지 회복한 뒤 사냥터로 출발합니다.</small>
+          </button>
+        </div>
+      </section>
+
+      <section class="inn-story-grid">
+        <article class="inn-story-card fireplace">
+          <div class="inn-story-card-head">
+            <div>
+              <span>FIREPLACE TALES</span>
+              <h3>벽난로의 소문</h3>
+            </div>
+            <b>이야기</b>
+          </div>
+          <p id="innRumorText">불꽃이 장작 사이에서 낮은 목소리처럼 속삭입니다.</p>
+          <button class="inn-story-button" id="innRumorBtn" type="button">다른 소문 듣기</button>
+        </article>
+
+        <article class="inn-story-card locked-room">
+          <div class="inn-story-card-head">
+            <div>
+              <span>SECOND FLOOR</span>
+              <h3>잠긴 2층 객실</h3>
+            </div>
+            <b>잠김</b>
+          </div>
+          <p>복도 끝의 문에는 이름이 지워진 명패가 걸려 있습니다. 아직 이 문을 열 열쇠가 없습니다.</p>
+          <div class="inn-story-placeholder">훗날 여관 시나리오가 이어질 자리</div>
+        </article>
+
+        <article class="inn-story-card empty-seat">
+          <div class="inn-story-card-head">
+            <div>
+              <span>EMPTY TABLE</span>
+              <h3>비어 있는 손님석</h3>
+            </div>
+            <b>대기</b>
+          </div>
+          <p>주인은 늘 한 자리를 비워 둡니다. 언젠가 낯선 용병이나 기억을 잃은 손님이 이곳에 앉을지도 모릅니다.</p>
+          <div class="inn-story-placeholder">손님·대화·의뢰 콘텐츠 확장 공간</div>
+        </article>
+      </section>
     </section>
 
     <section class="page" data-page="guide">
@@ -1624,7 +1704,7 @@
   </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="game.js?v=65"></script>
+  <script src="game.js?v=67"></script>
 
 </body>
 </html>

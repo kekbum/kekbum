@@ -14249,27 +14249,6 @@ button.purchase-warning:not(:disabled):hover {
 
 
 /* v64: 사망 후 여관 복귀, 자동 포션, 한국어 정보 장식 */
-.page[data-page="hunt"] .inn-rest-panel {
-  display:grid;
-  gap:8px;
-  margin-top:8px;
-  padding:10px;
-  border:1px solid rgba(99,151,119,.34);
-  border-radius:10px;
-  background:
-    radial-gradient(circle at 0 0,rgba(63,137,90,.11),transparent 46%),
-    rgba(8,14,10,.78);
-}
-.page[data-page="hunt"] .inn-rest-panel.hidden { display:none; }
-.page[data-page="hunt"] .inn-rest-panel > div { display:grid; gap:2px; }
-.page[data-page="hunt"] .inn-rest-panel span {
-  color:#6da17c; font-size:6px; font-weight:950; letter-spacing:.13em;
-}
-.page[data-page="hunt"] .inn-rest-panel strong { color:#b9d6bf; font-size:11px; }
-.page[data-page="hunt"] .inn-rest-panel p {
-  margin:0; color:#778b7c; font-size:8px; line-height:1.45;
-}
-.page[data-page="hunt"] .inn-rest-panel button { min-height:34px; font-size:9px; }
 
 .page[data-page="hunt"] .auto-potion-controls {
   display:grid; grid-template-columns:1fr; gap:6px;
@@ -14686,5 +14665,423 @@ button.purchase-warning:not(:disabled):hover {
 
   .arena-live-result span {
     text-align:left;
+  }
+}
+
+
+/* v66: 독립된 잿빛 여관 페이지 */
+.inn-nav-tab::before {
+  content:"불";
+  display:inline-grid;
+  place-items:center;
+  width:17px;
+  height:17px;
+  margin-right:5px;
+  border:1px solid rgba(191,130,55,.34);
+  border-radius:50%;
+  color:#d3a95e;
+  background:rgba(91,55,19,.25);
+  font-size:8px;
+  font-weight:950;
+}
+
+.inn-page {
+  display:none;
+  gap:13px;
+}
+
+.inn-page.active {
+  display:grid;
+}
+
+.inn-main-panel {
+  overflow:hidden;
+  border:1px solid rgba(191,132,59,.32);
+  border-radius:15px;
+  background:
+    radial-gradient(circle at 15% 0,rgba(155,83,25,.18),transparent 37%),
+    linear-gradient(145deg,rgba(26,20,14,.97),rgba(12,11,10,.98));
+  box-shadow:0 18px 44px rgba(0,0,0,.26);
+}
+
+.inn-page-header {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  padding:22px 24px;
+  border-bottom:1px solid rgba(191,132,59,.18);
+  background:
+    linear-gradient(90deg,rgba(104,55,18,.20),transparent 58%),
+    rgba(19,15,11,.72);
+}
+
+.inn-sign {
+  display:grid;
+  gap:4px;
+}
+
+.inn-sign > span {
+  color:#9d6c38;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.18em;
+}
+
+.inn-sign h2 {
+  margin:0;
+  color:#f0ce83;
+  font-size:28px;
+  letter-spacing:-.04em;
+}
+
+.inn-sign p {
+  max-width:680px;
+  margin:0;
+  color:#938677;
+  font-size:10px;
+  line-height:1.6;
+}
+
+.inn-visit-badge {
+  display:grid;
+  gap:2px;
+  min-width:92px;
+  padding:9px 12px;
+  border:1px solid rgba(197,138,61,.26);
+  border-radius:10px;
+  text-align:right;
+  background:rgba(7,7,6,.35);
+}
+
+.inn-visit-badge small {
+  color:#83745e;
+  font-size:7px;
+}
+
+.inn-visit-badge strong {
+  color:#e2bd70;
+  font-size:14px;
+}
+
+.inn-arrival-message {
+  display:grid;
+  gap:4px;
+  margin:15px 18px 0;
+  padding:13px 15px;
+  border-left:3px solid #a76d32;
+  border-radius:7px;
+  background:rgba(78,42,16,.18);
+}
+
+.inn-arrival-message > span {
+  color:#b27a3b;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.11em;
+}
+
+.inn-arrival-message > strong {
+  color:#d9c29a;
+  font-size:11px;
+  line-height:1.5;
+}
+
+.inn-arrival-message > small {
+  color:#817668;
+  font-size:8px;
+}
+
+.inn-status-grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+  padding:15px 18px 0;
+}
+
+.inn-status-grid article {
+  display:grid;
+  gap:5px;
+  min-height:70px;
+  padding:11px 12px;
+  border:1px solid rgba(151,126,91,.17);
+  border-radius:10px;
+  background:rgba(7,7,6,.36);
+}
+
+.inn-status-grid span {
+  color:#756c60;
+  font-size:8px;
+  font-weight:850;
+}
+
+.inn-status-grid strong {
+  color:#cfc1aa;
+  font-size:14px;
+}
+
+.inn-action-grid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+  padding:15px 18px 18px;
+}
+
+.inn-action-button {
+  display:grid;
+  gap:3px;
+  min-height:72px;
+  padding:12px 14px;
+  border:1px solid rgba(169,126,72,.30);
+  border-radius:11px;
+  color:#d8c09a;
+  background:
+    linear-gradient(145deg,rgba(63,40,21,.62),rgba(22,18,14,.92));
+  text-align:left;
+  box-shadow:none;
+}
+
+.inn-action-button:hover,
+.inn-action-button:focus-visible {
+  border-color:rgba(223,164,78,.60);
+  color:#f1d28e;
+  background:
+    linear-gradient(145deg,rgba(86,51,24,.74),rgba(30,22,15,.96));
+  outline:none;
+  transform:translateY(-1px);
+}
+
+.inn-action-button.rest {
+  border-color:rgba(95,145,111,.34);
+  background:
+    linear-gradient(145deg,rgba(28,62,41,.50),rgba(15,24,18,.94));
+}
+
+.inn-action-button.ember {
+  border-color:rgba(191,116,47,.43);
+  background:
+    radial-gradient(circle at 0 0,rgba(184,86,28,.18),transparent 52%),
+    linear-gradient(145deg,rgba(75,39,20,.62),rgba(24,17,13,.95));
+}
+
+.inn-action-button.leave {
+  border-color:rgba(101,124,154,.34);
+  background:
+    linear-gradient(145deg,rgba(29,43,60,.52),rgba(16,20,26,.95));
+}
+
+.inn-action-button span {
+  font-size:12px;
+  font-weight:950;
+}
+
+.inn-action-button small {
+  color:#83796b;
+  font-size:8px;
+  line-height:1.45;
+}
+
+.inn-story-grid {
+  display:grid;
+  grid-template-columns:1.15fr .925fr .925fr;
+  gap:11px;
+}
+
+.inn-story-card {
+  display:grid;
+  align-content:start;
+  gap:12px;
+  min-height:230px;
+  padding:16px;
+  border:1px solid rgba(149,119,79,.20);
+  border-radius:13px;
+  background:
+    radial-gradient(circle at 100% 0,rgba(117,69,26,.10),transparent 36%),
+    rgba(14,13,11,.92);
+}
+
+.inn-story-card.fireplace {
+  border-color:rgba(185,120,48,.34);
+}
+
+.inn-story-card.locked-room {
+  border-color:rgba(107,103,121,.26);
+}
+
+.inn-story-card.empty-seat {
+  border-color:rgba(90,126,111,.25);
+}
+
+.inn-story-card-head {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.inn-story-card-head > div {
+  display:grid;
+  gap:3px;
+}
+
+.inn-story-card-head span {
+  color:#806344;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.13em;
+}
+
+.inn-story-card-head h3 {
+  margin:0;
+  color:#dbc08b;
+  font-size:15px;
+}
+
+.inn-story-card-head b {
+  padding:5px 7px;
+  border:1px solid rgba(147,112,67,.22);
+  border-radius:999px;
+  color:#9b805b;
+  font-size:7px;
+}
+
+.inn-story-card p {
+  margin:0;
+  color:#91877a;
+  font-size:9px;
+  line-height:1.7;
+}
+
+.inn-story-button {
+  align-self:end;
+  min-height:36px;
+  margin-top:auto;
+  border:1px solid rgba(190,129,51,.34);
+  border-radius:8px;
+  color:#d1aa69;
+  background:rgba(72,43,19,.38);
+  font-size:9px;
+}
+
+.inn-story-button:hover,
+.inn-story-button:focus-visible {
+  border-color:rgba(221,156,70,.58);
+  color:#efd092;
+  background:rgba(91,51,20,.55);
+  outline:none;
+}
+
+.inn-story-placeholder {
+  align-self:end;
+  margin-top:auto;
+  padding:9px 10px;
+  border:1px dashed rgba(129,112,89,.20);
+  border-radius:8px;
+  color:#6f685f;
+  background:rgba(5,5,5,.22);
+  font-size:8px;
+  text-align:center;
+}
+
+@media (max-width:880px) {
+  .inn-status-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .inn-story-grid {
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:680px) {
+  .inn-page-header {
+    flex-direction:column;
+    padding:18px;
+  }
+
+  .inn-visit-badge {
+    min-width:0;
+    text-align:left;
+  }
+
+  .inn-action-grid {
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:460px) {
+  .inn-status-grid {
+    grid-template-columns:1fr;
+  }
+
+  .inn-sign h2 {
+    font-size:23px;
+  }
+}
+
+
+/* v67: 여관 활력 회복 후 즉시 사냥 복귀 */
+.inn-action-grid {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
+.inn-action-button {
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  width:100%;
+  color:#d8c09a !important;
+  background-color:#21180f !important;
+  background-image:linear-gradient(145deg,rgba(63,40,21,.84),rgba(22,18,14,.98)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,222,164,.04),0 8px 20px rgba(0,0,0,.16) !important;
+}
+
+.inn-action-button.rest {
+  color:#bcd5c2 !important;
+  background-color:#122019 !important;
+  background-image:linear-gradient(145deg,rgba(28,62,41,.72),rgba(15,24,18,.98)) !important;
+}
+
+.inn-action-button.ember {
+  color:#efc479 !important;
+  border-color:rgba(210,125,48,.58) !important;
+  background-color:#2b180e !important;
+  background-image:
+    radial-gradient(circle at 12% 12%,rgba(220,105,30,.24),transparent 40%),
+    linear-gradient(145deg,rgba(83,40,18,.88),rgba(25,16,11,.99)) !important;
+}
+
+.inn-action-button.ember.ready {
+  color:#d6e2ef !important;
+  border-color:rgba(91,135,176,.58) !important;
+  background-color:#101a25 !important;
+  background-image:
+    radial-gradient(circle at 12% 12%,rgba(83,133,181,.20),transparent 42%),
+    linear-gradient(145deg,rgba(27,48,70,.88),rgba(14,19,27,.99)) !important;
+}
+
+.inn-action-button span {
+  color:inherit !important;
+  -webkit-text-fill-color:currentColor;
+}
+
+.inn-action-button small {
+  color:#9a8d79 !important;
+  -webkit-text-fill-color:#9a8d79;
+}
+
+.inn-action-button.ember.ready small {
+  color:#8e9eae !important;
+  -webkit-text-fill-color:#8e9eae;
+}
+
+.inn-action-button:disabled {
+  opacity:.58;
+  cursor:not-allowed;
+  transform:none !important;
+}
+
+@media (max-width:680px) {
+  .inn-action-grid {
+    grid-template-columns:1fr;
   }
 }
