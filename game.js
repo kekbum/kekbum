@@ -1,4 +1,4 @@
-const VERSION = 61;
+const VERSION = 62;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -2134,6 +2134,8 @@ const VERSION = 61;
       skillBookDropCard: document.getElementById("skillBookDropCard"),
       lootCard: document.getElementById("lootCard"),
       battleRewardFocus: document.getElementById("battleRewardFocus"),
+      battleReportLog: document.getElementById("battleReportLog"),
+      battleReportStatus: document.getElementById("battleReportStatus"),
       itemCompareModal: document.getElementById("itemCompareModal"),
       itemCompareBackdrop: document.getElementById("itemCompareBackdrop"),
       itemCompareContent: document.getElementById("itemCompareContent"),
@@ -10963,16 +10965,34 @@ const VERSION = 61;
         skills:0,
         loots:[],
         drops:[],
-        notes:[]
+        notes:[],
+        events:[],
+        reason:"",
+        heroHp:state.hp,
+        heroMp:state.mp,
+        maxHit:0,
+        specialCount:0
       };
-      els.enemyName.textContent = "사냥중";
+      els.enemyName.textContent = enemy.name;
       els.enemyName.classList.remove("status-idle");
       els.enemyName.classList.add("status-hunting");
+      if (els.battleReportStatus) {
+        els.battleReportStatus.textContent = `전투 중 · ${enemy.name}`;
+        els.battleReportStatus.className = "status-hunting";
+      }
       els.enemyMeta.innerHTML = `${enemy.name} · ${enemy.rank}${enemy.specialType ? ` · <span class="rare-monster-tag">${enemy.specialLabel}</span>` : ""}${enemy.mutation ? ` · <span class="mutation-badge">${enemy.mutation.name}: ${enemy.mutation.desc}</span>` : ""} · 예상 전투력 ${fmt(Math.round(enemy.attack*6 + enemy.defense*3 + enemy.hp*.2))}`;
 
       await new Promise(r => setTimeout(r, 650));
 
       const result = simulateBattle(enemy);
+      battleFeed.events = (result.events || []).slice(-28).map(event => ({
+        text:String(event?.text || ""),
+        cls:String(event?.cls || "")
+      }));
+      battleFeed.heroHp = result.heroHp;
+      battleFeed.heroMp = result.heroMp;
+      battleFeed.maxHit = result.maxHit;
+      battleFeed.specialCount = result.specialCount;
       let defeatNotice = null;
       if (state.stamina >= STAMINA_MAX) state.staminaUpdatedAt = Date.now();
       state.stamina = Math.max(0, state.stamina - cost);
@@ -10988,6 +11008,7 @@ const VERSION = 61;
         battleFeed.turns = result.turns;
         battleFeed.skills = result.skillUses;
         battleFeed.summary = `${enemy.name}을 쓰러뜨렸습니다.`;
+        battleFeed.reason = `적의 체력을 0으로 만들었습니다. ${fmt(result.turns)}막 동안 최대 ${fmt(result.maxHit)} 피해를 기록했고, 전투 종료 시 체력 ${fmt(result.heroHp)}이 남았습니다.`;
         const rareGold = inRareMap ? state.rareMap.gold : 1;
         const earnedGold = Math.max(1, Math.round(enemy.gold * .78 * rareGold * (1 + s.goldFind/100) * (feverActive ? 1.5 : 1)));
         const earnedXp = Math.max(1, Math.round(enemy.xp * .68 * (inRareMap ? 1.6 : 1) * (feverActive ? 1.2 : 1)));
@@ -11137,6 +11158,7 @@ const VERSION = 61;
         battleFeed.turns = result.turns;
         battleFeed.skills = result.skillUses;
         battleFeed.summary = `${enemy.name}이 도망쳤습니다.`;
+        battleFeed.reason = `제한 시간 안에 적의 체력을 모두 깎지 못했습니다. ${fmt(enemy.turnLimit)}막 제한에 도달해 전투가 종료됐습니다.`;
         battleFeed.notes.push(`제한 턴 ${enemy.turnLimit}을 넘겼습니다.`);
         state.records.rareMonsterEscapes = (state.records.rareMonsterEscapes || 0)+1;
         state.streak = 0;
@@ -11150,6 +11172,7 @@ const VERSION = 61;
         battleFeed.turns = result.turns;
         battleFeed.skills = result.skillUses;
         battleFeed.summary = `${enemy.name}에게 패배했습니다.`;
+        battleFeed.reason = `내 체력이 0이 됐습니다. ${fmt(result.turns)}막 동안 최대 ${fmt(result.maxHit)} 피해를 기록했지만 적을 쓰러뜨리지 못했습니다.`;
         battleFeed.notes.push("자동 사냥은 패배 시 즉시 중지됩니다.");
         const autoStopped = !!autoTimer;
         if (autoTimer) toggleAuto();
@@ -11629,10 +11652,11 @@ function renderBattleRewardFocus() {
   const feed = state.huntFeed || {};
   if (!feed.updatedAt) {
     els.battleRewardFocus.innerHTML = `
-      <div class="battle-reward-kicker">RECENT BATTLE</div>
-      <div class="battle-reward-title">최근 전투 전리품</div>
-      <div class="battle-reward-empty">사냥을 시작하면 이곳에 최근 전투 결과와 획득 전리품이 크게 정리됩니다.</div>
+      <div class="battle-reward-kicker">RECENT RESULT</div>
+      <div class="battle-reward-title">아직 전투 기록이 없습니다</div>
+      <div class="battle-reward-empty">왼쪽에서 사냥을 시작하면 승패 원인과 보상이 이곳에 정리됩니다.</div>
     `;
+    if (els.battleReportStatus) els.battleReportStatus.textContent = "전투 대기";
     return;
   }
 
@@ -11641,7 +11665,7 @@ function renderBattleRewardFocus() {
     : feed.outcome === "defeat"
       ? "패배"
       : feed.outcome === "escape"
-        ? "미처리"
+        ? "도주 허용"
         : "전투 기록";
   const outcomeClass = feed.outcome === "win"
     ? "positive"
@@ -11651,19 +11675,20 @@ function renderBattleRewardFocus() {
   const summary = feed.summary || `${feed.enemyName || "적"}와 전투했습니다.`;
   const time = new Date(feed.updatedAt).toLocaleTimeString("ko-KR", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
   const statPills = [
-    feed.gold ? `<div class="battle-reward-pill"><span>골드</span><strong>+${fmt(feed.gold)}</strong></div>` : "",
-    feed.xp ? `<div class="battle-reward-pill"><span>경험치</span><strong>+${fmt(feed.xp)}</strong></div>` : "",
-    feed.turns ? `<div class="battle-reward-pill"><span>전투 턴</span><strong>${fmt(feed.turns)}턴</strong></div>` : "",
-    Number.isFinite(feed.skills) && feed.skills > 0 ? `<div class="battle-reward-pill"><span>기술 사용</span><strong>${fmt(feed.skills)}회</strong></div>` : ""
-  ].filter(Boolean).join("");
+    `<div class="battle-reward-pill"><span>결과</span><strong class="${outcomeClass}">${outcomeLabel}</strong></div>`,
+    `<div class="battle-reward-pill"><span>전투 시간</span><strong>${fmt(feed.turns || 0)}막</strong></div>`,
+    `<div class="battle-reward-pill"><span>경험치</span><strong>${feed.xp ? `+${fmt(feed.xp)}` : "0"}</strong></div>`,
+    `<div class="battle-reward-pill"><span>골드</span><strong>${feed.gold ? `+${fmt(feed.gold)}` : "0"}</strong></div>`
+  ].join("");
 
   const renderList = (title, values, cls="") => {
     const list = (values || []).filter(Boolean);
-    if (!list.length) return "";
     return `
-      <div class="battle-reward-list ${cls}">
+      <div class="battle-reward-list ${cls} ${list.length ? "" : "empty"}">
         <div class="battle-reward-list-title">${title}</div>
-        ${list.map(value => `<div class="battle-reward-list-item">${value}</div>`).join("")}
+        ${list.length
+          ? list.map(value => `<div class="battle-reward-list-item">${value}</div>`).join("")
+          : `<div class="battle-reward-list-item muted">없음</div>`}
       </div>
     `;
   };
@@ -11677,14 +11702,68 @@ function renderBattleRewardFocus() {
       </div>
       <span class="battle-reward-result ${outcomeClass}">${outcomeLabel}</span>
     </div>
-    ${statPills ? `<div class="battle-reward-pills">${statPills}</div>` : ""}
-    <div class="battle-reward-grid">
-      ${renderList("획득 전리품", feed.loots, "loot")}
-      ${renderList("추가 획득", feed.drops, "drops")}
+    <div class="battle-result-reason ${outcomeClass}">
+      <span>판정 근거</span>
+      <strong>${feed.reason || "전투 결과를 분석 중입니다."}</strong>
+    </div>
+    <div class="battle-reward-pills">${statPills}</div>
+    <div class="battle-reward-grid report-reward-grid">
+      ${renderList("획득 장비", feed.loots, "loot")}
+      ${renderList("추가 보상", feed.drops, "drops")}
       ${renderList("특이 사항", feed.notes, "notes")}
     </div>
   `;
+
+  if (els.battleReportStatus) {
+    els.battleReportStatus.textContent = `${outcomeLabel} · ${feed.enemyName || "전투 결과"}`;
+    els.battleReportStatus.className = outcomeClass;
+  }
 }
+
+
+    function renderBattleReportLog() {
+      if (!els.battleReportLog) return;
+      const feed = state.huntFeed || {};
+      if (!feed.updatedAt) {
+        els.battleReportLog.innerHTML = `
+          <div class="battle-report-log-empty">
+            <span>전투 흐름</span>
+            <strong>사냥을 시작하면 공격, 회피, 기술, 반격과 결정적인 순간이 여기에 표시됩니다.</strong>
+          </div>`;
+        return;
+      }
+
+      const events = (feed.events || []).filter(event => event?.text);
+      const visibleEvents = events.slice(-20);
+      const outcomeClass = feed.outcome === "win" ? "positive" : feed.outcome === "defeat" ? "negative" : "neutral";
+      const vitalRows = [
+        ["남은 체력", fmt(feed.heroHp || 0)],
+        ["남은 마나", fmt(feed.heroMp || 0)],
+        ["최대 일격", fmt(feed.maxHit || 0)],
+        ["기술 / 특수 효과", `${fmt(feed.skills || 0)} / ${fmt(feed.specialCount || 0)}`]
+      ];
+
+      els.battleReportLog.innerHTML = `
+        <div class="battle-report-log-head">
+          <div>
+            <span>전투 흐름</span>
+            <strong>왜 ${feed.outcome === "win" ? "이겼는지" : feed.outcome === "defeat" ? "졌는지" : "끝내지 못했는지"} 확인</strong>
+          </div>
+          <div class="battle-report-vitals">
+            ${vitalRows.map(([label,value]) => `<div><small>${label}</small><strong>${value}</strong></div>`).join("")}
+          </div>
+        </div>
+        <div class="battle-report-event-stream">
+          ${visibleEvents.length
+            ? visibleEvents.map((event,index) => `
+                <div class="battle-report-event ${event.cls || ""}">
+                  <span>${String(index+1).padStart(2,"0")}</span>
+                  <p>${event.text}</p>
+                </div>`).join("")
+            : `<div class="battle-report-event ${outcomeClass}"><span>01</span><p>${feed.reason || feed.summary}</p></div>`}
+        </div>
+      `;
+    }
 
     function renderLoot() {
       const item = state.lastLoot?.id
@@ -11749,7 +11828,7 @@ function renderBattleRewardFocus() {
 
       els.currentZoneName.textContent = z.name;
       if (!isBusy) {
-        els.enemyName.textContent = "대기중";
+        els.enemyName.textContent = "전투 대기";
         els.enemyName.classList.remove("status-hunting");
         els.enemyName.classList.add("status-idle");
         els.enemyMeta.textContent = `권장 전투력 ${fmt(z.rec)} · 현재 ${fmt(power())} · 장비 기억 Lv.${z.itemMin}~${z.itemMax}`;
@@ -11768,6 +11847,7 @@ function renderBattleRewardFocus() {
       renderZones();
       renderGuide();
       renderBattleRewardFocus();
+      renderBattleReportLog();
       renderLoot();
       renderRareMap();
       renderRecoveryCard();

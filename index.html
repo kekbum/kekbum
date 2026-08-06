@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=61">
+  <link rel="stylesheet" href="styles.css?v=62">
 
 </head>
 <body>
@@ -207,132 +207,146 @@
     </section>
 
     <section class="page active" data-page="hunt">
-      <main class="hunt-single-column">
-        <section class="center-column panel hunt-battle-panel">
-          <div class="battle-head">
+      <main class="hunt-report-layout">
+        <aside class="panel hunt-control-panel">
+          <div class="hunt-control-target">
+            <div class="hunt-control-kicker">CURRENT ENCOUNTER</div>
             <div class="zone-name" id="currentZoneName"></div>
             <div class="enemy-name status-idle" id="enemyName">대기중</div>
             <div class="enemy-meta" id="enemyMeta"></div>
           </div>
 
-          <div class="combat-stage combat-stage-focused">
-            <div class="combat-vitals-grid">
-              <div class="meter-wrap compact-meter">
-                <div class="meter-label"><span>체력</span><span id="hpText"></span></div>
-                <div class="meter hp"><div id="hpBar"></div></div>
-              </div>
-
-              <div class="meter-wrap compact-meter">
-                <div class="meter-label"><span>마나</span><span id="mpText"></span></div>
-                <div class="meter mp"><div id="mpBar"></div></div>
-              </div>
-
-              <div class="meter-wrap compact-meter">
-                <div class="meter-label"><span>과열도</span><span id="heatText"></span></div>
-                <div class="meter heat"><div id="heatBar"></div></div>
-              </div>
-
-              <div class="meter-wrap compact-meter">
-                <div class="meter-label"><span>피버</span><span id="feverText"></span></div>
-                <div class="meter fever"><div id="feverBar"></div></div>
-              </div>
+          <div class="combat-vitals-grid compact-control-vitals">
+            <div class="meter-wrap compact-meter">
+              <div class="meter-label"><span>체력</span><span id="hpText"></span></div>
+              <div class="meter hp"><div id="hpBar"></div></div>
             </div>
 
-            <div class="primary-hunt-actions">
-              <button class="action" id="huntBtn">사냥 1회 · 활력 1</button>
-              <button class="action secondary" id="autoBtn">연속 사냥 · 5초</button>
+            <div class="meter-wrap compact-meter">
+              <div class="meter-label"><span>마나</span><span id="mpText"></span></div>
+              <div class="meter mp"><div id="mpBar"></div></div>
             </div>
 
-            <details class="combat-support-details">
-              <summary>
-                <span>
-                  <small>전투 지원</small>
-                  <strong>회복품 · 자동 정비</strong>
-                </span>
-                <b id="consumableSummary">회복품 확인 중</b>
-              </summary>
+            <div class="meter-wrap compact-meter">
+              <div class="meter-label"><span>과열</span><span id="heatText"></span></div>
+              <div class="meter heat"><div id="heatBar"></div></div>
+            </div>
 
-              <div class="combat-support-body">
-                <div class="support-action-grid">
-                  <button class="action danger" id="potionBtn">체력약 사용</button>
-                  <button class="action mana-action" id="manaPotionBtn">마나약 사용</button>
-                  <button class="action elixir-action" id="elixirBtn">혼합 영약</button>
-                  <button class="action stamina-action" id="staminaPotionBtn">활력 물약</button>
-                </div>
+            <div class="meter-wrap compact-meter">
+              <div class="meter-label"><span>피버</span><span id="feverText"></span></div>
+              <div class="meter fever"><div id="feverBar"></div></div>
+            </div>
+          </div>
 
-                <div class="inline-controls compact-support-controls">
-                  <span id="focusBonusText">일반 -1 · 희귀 지도 -3</span>
-                </div>
+          <div class="primary-hunt-actions compact-control-actions">
+            <button class="action" id="huntBtn">사냥 1회 · 활력 1</button>
+            <button class="action secondary" id="autoBtn">연속 사냥 · 5초</button>
+          </div>
 
-                <details class="field-care-details">
-                  <summary>야전 정비 계약 설정</summary>
-                  <div class="field-care-card compact-field-care">
-                    <div class="field-care-head">
-                      <div>
-                        <div class="field-care-kicker">FIELD CARE CONTRACT</div>
-                        <strong>야전 정비 계약</strong>
-                      </div>
-                      <span class="field-care-status off" id="fieldCareStatus">계약 해제</span>
+          <details class="combat-support-details compact-control-support">
+            <summary>
+              <span>
+                <small>전투 지원</small>
+                <strong>회복품 · 자동 정비</strong>
+              </span>
+              <b id="consumableSummary">확인 중</b>
+            </summary>
+
+            <div class="combat-support-body">
+              <div class="support-action-grid compact-control-support-grid">
+                <button class="action danger" id="potionBtn">체력약</button>
+                <button class="action mana-action" id="manaPotionBtn">마나약</button>
+                <button class="action elixir-action" id="elixirBtn">혼합 영약</button>
+                <button class="action stamina-action" id="staminaPotionBtn">활력 물약</button>
+              </div>
+
+              <div class="inline-controls compact-support-controls">
+                <span id="focusBonusText">일반 -1 · 희귀 지도 -3</span>
+              </div>
+
+              <details class="field-care-details">
+                <summary>야전 정비 계약</summary>
+                <div class="field-care-card compact-field-care">
+                  <div class="field-care-head">
+                    <div>
+                      <div class="field-care-kicker">FIELD CARE</div>
+                      <strong>야전 정비 계약</strong>
                     </div>
-
-                    <div class="field-care-row">
-                      <label class="field-care-toggle">
-                        <input type="checkbox" id="fieldCareToggle" />
-                        전투 종료 후 골드를 사용해 자동 회복
-                      </label>
-                    </div>
-
-                    <div class="field-care-controls">
-                      <label>
-                        <span>한 판 최대 지출</span>
-                        <input id="fieldCareBudget" type="number" min="1" max="999999" step="1" value="25" />
-                        <b>G</b>
-                      </label>
-                      <label>
-                        <span>정비 우선순위</span>
-                        <select id="fieldCarePriority">
-                          <option value="balanced">균형 회복</option>
-                          <option value="hp">체력 우선</option>
-                          <option value="mp">마나 우선</option>
-                        </select>
-                      </label>
-                    </div>
-
-                    <div class="field-care-presets">
-                      <button data-care-budget="10">10G</button>
-                      <button data-care-budget="25">25G</button>
-                      <button data-care-budget="50">50G</button>
-                      <button data-care-budget="100">100G</button>
-                    </div>
-
-                    <div class="field-care-preview" id="fieldCarePreview">
-                      계약을 켜면 전투가 끝날 때 실제로 부족한 자원만 정비한다.
-                    </div>
+                    <span class="field-care-status off" id="fieldCareStatus">계약 해제</span>
                   </div>
-                </details>
-              </div>
-            </details>
 
-            <div id="battleRewardFocus" class="battle-reward-focus"></div>
+                  <div class="field-care-row">
+                    <label class="field-care-toggle">
+                      <input type="checkbox" id="fieldCareToggle" />
+                      전투 종료 후 골드로 자동 회복
+                    </label>
+                  </div>
 
-            <div class="battle-drop-grid">
+                  <div class="field-care-controls">
+                    <label>
+                      <span>최대 지출</span>
+                      <input id="fieldCareBudget" type="number" min="1" max="999999" step="1" value="25" />
+                      <b>G</b>
+                    </label>
+                    <label>
+                      <span>우선순위</span>
+                      <select id="fieldCarePriority">
+                        <option value="balanced">균형 회복</option>
+                        <option value="hp">체력 우선</option>
+                        <option value="mp">마나 우선</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div class="field-care-presets">
+                    <button data-care-budget="10">10G</button>
+                    <button data-care-budget="25">25G</button>
+                    <button data-care-budget="50">50G</button>
+                    <button data-care-budget="100">100G</button>
+                  </div>
+
+                  <div class="field-care-preview" id="fieldCarePreview"></div>
+                </div>
+              </details>
+            </div>
+          </details>
+        </aside>
+
+        <section class="panel hunt-report-panel">
+          <header class="hunt-report-header">
+            <div>
+              <span>COMBAT REPORT</span>
+              <h2>최근 전투 보고서</h2>
+              <p>승패 원인, 전투 흐름, 보상과 전리품을 한곳에서 확인합니다.</p>
+            </div>
+            <div class="hunt-report-live-status">
+              <small>현재 상태</small>
+              <strong id="battleReportStatus">전투 대기</strong>
+            </div>
+          </header>
+
+          <div class="hunt-report-body">
+            <div id="battleRewardFocus" class="battle-reward-focus report-summary-focus"></div>
+            <div id="battleReportLog" class="battle-report-log" aria-live="polite"></div>
+
+            <div class="battle-drop-grid report-drop-grid">
               <div id="rareMapCard" class="rare-map hidden"></div>
               <div id="recoveryCard" class="recovery-card hidden"></div>
               <div id="skillBookDropCard" class="skillbook-drop-card hidden"></div>
               <div id="lootCard" class="loot-card hidden"></div>
             </div>
-          </div>
 
-          <details class="combat-chronicle-details">
-            <summary>
-              <span>
-                <small>BATTLE CHRONICLE</small>
-                <strong>전투 연대기</strong>
-              </span>
-              <b>눌러서 전체 기록 보기</b>
-            </summary>
-            <div class="log combat-log-prominent" id="combatLog"></div>
-          </details>
+            <details class="combat-chronicle-details report-chronicle-details">
+              <summary>
+                <span>
+                  <small>FULL HISTORY</small>
+                  <strong>전체 전투 연대기</strong>
+                </span>
+                <b>이전 전투까지 모두 보기</b>
+              </summary>
+              <div class="log combat-log-prominent" id="combatLog"></div>
+            </details>
+          </div>
         </section>
       </main>
 
@@ -1536,7 +1550,7 @@
   </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="game.js?v=61"></script>
+  <script src="game.js?v=62"></script>
 
 </body>
 </html>
