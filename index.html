@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=58">
+  <link rel="stylesheet" href="styles.css?v=60">
 
 </head>
 <body>
@@ -35,56 +35,62 @@
       </div>
     </div>
 
-    <nav class="top-tabs top-tabs-category-layout" id="topTabs" aria-label="게임 메뉴">
+    <div class="item-compare-modal hidden" id="itemCompareModal" role="dialog" aria-modal="true" aria-labelledby="itemCompareModalTitle">
+      <button class="item-compare-backdrop" id="itemCompareBackdrop" type="button" aria-label="장비 비교 닫기"></button>
+      <section class="item-compare-dialog">
+        <header class="item-compare-dialog-head">
+          <div>
+            <span>QUICK EQUIPMENT COMPARE</span>
+            <h2 id="itemCompareModalTitle">장비 비교</h2>
+          </div>
+          <button id="itemCompareCloseBtn" type="button" aria-label="장비 비교 닫기">×</button>
+        </header>
+        <div id="itemCompareContent"></div>
+      </section>
+    </div>
+
+    <nav class="top-tabs top-tabs-category-layout four-category-nav" id="topTabs" aria-label="게임 메뉴">
       <div class="top-section-tabs" id="topSectionTabs">
-        <button class="top-section-tab active" data-nav-section="hunt">메인</button>
-        <button class="top-section-tab" data-nav-section="info">정보</button>
-        <button class="top-section-tab" data-nav-section="board">게시판</button>
-        <button class="top-section-tab" data-nav-section="quest">퀘스트</button>
-        <button class="top-section-tab" data-nav-section="arena">도전</button>
-        <button class="top-section-tab" data-nav-section="event">이벤트</button>
+        <button class="top-section-tab active" data-nav-section="hunt">사냥</button>
+        <button class="top-section-tab" data-nav-section="growth">성장</button>
+        <button class="top-section-tab" data-nav-section="challenge">도전</button>
+        <button class="top-section-tab" data-nav-section="records">기록</button>
       </div>
 
       <div class="top-subnav-shell">
         <div class="top-subnav active" data-nav-group="hunt">
           <button class="top-tab active" data-page-target="hunt">사냥터</button>
-          <button class="top-tab" data-page-target="inventory">전리품 가방 <span id="inventoryNavCount"></span></button>
-          <button class="top-tab" data-page-target="character">능력치</button>
-          <button class="top-tab" data-page-target="skills">기술서 <span id="skillNavCount"></span></button>
-          <button class="top-tab" data-page-target="mercenary">용병단</button>
-          <button class="top-tab" data-page-target="market">암시장</button>
-          <button class="top-tab" data-page-target="gamble">도박 상점</button>
-        </div>
-
-        <div class="top-subnav" data-nav-group="info">
-          <button class="top-tab" data-page-target="guide">초보자 길잡이 <span id="guideNavMark"></span></button>
-          <button class="top-tab" data-page-target="info">정보</button>
-          <button class="top-tab" data-page-target="codex">몬스터 도감 <span id="codexNavCount"></span></button>
-          <button class="top-tab" data-page-target="collection">수집·업적 <span id="achievementNavMark"></span></button>
-          <button class="top-tab" data-page-target="savevault">세이브·기기 이전</button>
-        </div>
-
-        <div class="top-subnav" data-nav-group="board">
-          <button class="top-tab inquiry-nav-tab" data-page-target="inquiry">게시판 <span id="inquiryNavMark"></span></button>
-          <button class="top-tab online-ranking-tab" data-page-target="ranking">온라인 랭킹 <span id="rankingNavMark"></span></button>
-        </div>
-
-        <div class="top-subnav" data-nav-group="quest">
           <button class="top-tab" data-page-target="quests">의뢰 <span id="questNavCount"></span></button>
           <button class="top-tab" data-page-target="bounties">현상수배 <span id="bountyNavCount"></span></button>
           <button class="top-tab" data-page-target="staminacamp">활력 야영지 <span id="staminaCampNavMark"></span></button>
         </div>
 
-        <div class="top-subnav" data-nav-group="arena">
+        <div class="top-subnav" data-nav-group="growth">
+          <button class="top-tab" data-page-target="inventory">장비 <span id="inventoryNavCount"></span></button>
+          <button class="top-tab" data-page-target="character">능력치</button>
+          <button class="top-tab" data-page-target="skills">기술 <span id="skillNavCount"></span></button>
+          <button class="top-tab" data-page-target="mercenary">용병</button>
+          <button class="top-tab" data-page-target="market">암시장</button>
+          <button class="top-tab" data-page-target="gamble">도박</button>
+        </div>
+
+        <div class="top-subnav" data-nav-group="challenge">
           <button class="top-tab" data-page-target="arena">투기장 <span id="arenaNavCount"></span></button>
           <button class="top-tab" data-page-target="daily">오늘의 균열</button>
           <button class="top-tab" data-page-target="dailyboss">일일 보스 <span id="dailyBossNavMark"></span></button>
           <button class="top-tab" data-page-target="abyss">끝없는 심연</button>
           <button class="top-tab finale-nav-tab" data-page-target="finale">모험 최종장 <span id="finaleNavMark"></span></button>
+          <button class="top-tab online-ranking-tab" data-page-target="ranking">온라인 랭킹 <span id="rankingNavMark"></span></button>
         </div>
 
-        <div class="top-subnav" data-nav-group="event">
-          <button class="top-tab" data-page-target="attendance">출석부 <span id="attendanceNavMark"></span></button>
+        <div class="top-subnav" data-nav-group="records">
+          <button class="top-tab" data-page-target="guide">길잡이 <span id="guideNavMark"></span></button>
+          <button class="top-tab" data-page-target="info">이야기·정보</button>
+          <button class="top-tab" data-page-target="codex">도감 <span id="codexNavCount"></span></button>
+          <button class="top-tab" data-page-target="collection">수집·업적 <span id="achievementNavMark"></span></button>
+          <button class="top-tab inquiry-nav-tab" data-page-target="inquiry">게시판 <span id="inquiryNavMark"></span></button>
+          <button class="top-tab" data-page-target="attendance">출석 <span id="attendanceNavMark"></span></button>
+          <button class="top-tab" data-page-target="savevault">저장·기기 이전</button>
         </div>
       </div>
     </nav>
@@ -113,10 +119,10 @@
     </section>
 
     <section class="page active" data-page="hunt">
-    <main class="grid">
+    <main class="grid hunt-command-grid">
       <section class="left-column">
-        <div class="panel">
-          <div class="panel-title">사냥꾼 요약</div>
+        <div class="panel hunt-character-panel">
+          <div class="panel-title">사냥꾼</div>
           <div class="panel-body hunt-summary-body">
             <div class="hero-name">
               <div>
@@ -126,39 +132,47 @@
               <span class="level-badge" id="levelBadge">Lv.1</span>
             </div>
 
-            <div class="stat-grid compact-hunt-stats">
+            <div class="stat-grid core-hunt-stats">
               <div class="stat"><span>전투력</span><strong id="power">0</strong></div>
               <div class="stat"><span>골드</span><strong id="gold">0</strong></div>
-              <div class="stat"><span>물리 / 마법</span><strong id="attack">0 / 0</strong></div>
-              <div class="stat"><span>치명타</span><strong id="crit">0%</strong></div>
-              <div class="stat"><span>방어력</span><strong id="defense">0</strong></div>
-              <div class="stat"><span>연속 처치</span><strong id="streak">0</strong></div>
             </div>
 
             <div class="class-card hunt-brief-card">
-              <div class="class-card-top"><span id="classPassiveTitle">직업 패시브</span><span id="masteryText">숙련도 0</span></div>
+              <div class="class-card-top">
+                <span id="classPassiveTitle">직업 패시브</span>
+                <span id="masteryText">숙련도 0</span>
+              </div>
               <div class="class-passive" id="classPassive">직업을 선택하면 고유 효과가 적용됩니다.</div>
-              <button class="change-class-btn" id="changeClassBtn">운명의 길 다시 고르기</button>
             </div>
 
-            <div class="hunt-equipment-card">
+            <div class="hunt-equipment-card compact-equipment-card">
               <div class="hunt-equipment-head">
                 <span>장착 장비</span>
-                <small>전투 전력의 핵심 장비를 바로 확인합니다.</small>
+                <small>마우스를 올리거나 눌러 세부 정보를 확인합니다.</small>
               </div>
               <div class="equipment" id="equipment"></div>
             </div>
 
             <details class="side-detail-toggle">
-              <summary>상세 능력치 · 성장 · 배분 보기</summary>
+              <summary>
+                <span>전투 능력치 · 성장 설정</span>
+                <b>펼치기</b>
+              </summary>
               <div class="side-detail-content">
+                <div class="stat-grid detail-hunt-stats">
+                  <div class="stat"><span>물리 / 마법</span><strong id="attack">0 / 0</strong></div>
+                  <div class="stat"><span>치명타</span><strong id="crit">0%</strong></div>
+                  <div class="stat"><span>방어력</span><strong id="defense">0</strong></div>
+                  <div class="stat"><span>연속 처치</span><strong id="streak">0</strong></div>
+                </div>
+
                 <div class="meter-wrap">
                   <div class="meter-label"><span>경험치</span><span id="xpText"></span></div>
                   <div class="meter xp"><div id="xpBar"></div></div>
                 </div>
 
                 <div class="meter-wrap">
-                  <div class="meter-label"><span>활력(스태미너)</span><span id="focusText"></span></div>
+                  <div class="meter-label"><span>활력</span><span id="focusText"></span></div>
                   <div class="meter focus"><div id="focusBar"></div></div>
                 </div>
 
@@ -178,76 +192,119 @@
                   </div>
                 </div>
 
-                <div class="notice">일반 사냥은 활력 1, 희귀 지도는 활력 3을 소모합니다. 활력이 0이면 사냥할 수 없으며 10분마다 1씩 회복됩니다.</div>
+                <button class="change-class-btn" id="changeClassBtn">운명의 길 다시 고르기</button>
+                <div class="notice">일반 사냥은 활력 1, 희귀 지도는 활력 3을 소모합니다. 활력은 10분마다 1씩 회복됩니다.</div>
               </div>
             </details>
           </div>
         </div>
-
       </section>
 
-      <section class="center-column panel">
+      <section class="center-column panel hunt-battle-panel">
         <div class="battle-head">
           <div class="zone-name" id="currentZoneName"></div>
           <div class="enemy-name status-idle" id="enemyName">대기중</div>
           <div class="enemy-meta" id="enemyMeta"></div>
         </div>
 
-
-        <button class="hunt-market-hud" id="huntMarketHudBtn" type="button" aria-label="암시장 열기">
-          <div class="hunt-market-hud-title">
-            <span>BLACK COIN MARKET</span>
-            <strong>암시장 시세</strong>
-          </div>
-          <div class="hunt-market-hud-quote">
-            <strong id="huntMarketHudPrice">95 G</strong>
-            <span class="flat" id="huntMarketHudTrend">보합</span>
-          </div>
-          <div class="hunt-market-hud-position">
-            <span id="huntMarketHudTokens">보유 0개</span>
-            <strong id="huntMarketHudValue">평가 0 G</strong>
-            <small id="huntMarketHudProfit">미실현 ±0 G</small>
-          </div>
-          <span class="hunt-market-hud-link">거래소 열기 ›</span>
-        </button>
-
         <div class="combat-stage combat-stage-focused">
           <div class="combat-vitals-grid">
             <div class="meter-wrap compact-meter">
-              <div class="meter-label"><span>내 체력</span><span id="hpText"></span></div>
+              <div class="meter-label"><span>체력</span><span id="hpText"></span></div>
               <div class="meter hp"><div id="hpBar"></div></div>
             </div>
 
             <div class="meter-wrap compact-meter">
-              <div class="meter-label"><span>내 마나</span><span id="mpText"></span></div>
+              <div class="meter-label"><span>마나</span><span id="mpText"></span></div>
               <div class="meter mp"><div id="mpBar"></div></div>
             </div>
 
             <div class="meter-wrap compact-meter">
-              <div class="meter-label"><span>지역 과열도</span><span id="heatText"></span></div>
+              <div class="meter-label"><span>과열도</span><span id="heatText"></span></div>
               <div class="meter heat"><div id="heatBar"></div></div>
             </div>
 
             <div class="meter-wrap compact-meter">
-              <div class="meter-label"><span>전리품 피버</span><span id="feverText"></span></div>
+              <div class="meter-label"><span>피버</span><span id="feverText"></span></div>
               <div class="meter fever"><div id="feverBar"></div></div>
             </div>
           </div>
 
-          <div class="button-row">
+          <div class="primary-hunt-actions">
             <button class="action" id="huntBtn">사냥 1회 · 활력 1</button>
             <button class="action secondary" id="autoBtn">연속 사냥 · 5초</button>
-            <button class="action danger" id="potionBtn">체력약 사용</button>
-            <button class="action mana-action" id="manaPotionBtn">마나약 사용</button>
-            <button class="action elixir-action" id="elixirBtn">혼합 영약</button>
-            <button class="action stamina-action" id="staminaPotionBtn">활력 물약</button>
           </div>
 
-          <div class="inline-controls">
-            <span id="focusBonusText">일반 -1 · 희귀 지도 -3</span>
-            <span id="consumableSummary">회복품 확인 중</span>
-            <button class="small-control-btn" id="refillStaminaBtn">시험용 활력 회복</button>
-          </div>
+          <details class="combat-support-details">
+            <summary>
+              <span>
+                <small>전투 지원</small>
+                <strong>회복품 · 활력 · 자동 정비</strong>
+              </span>
+              <b id="consumableSummary">회복품 확인 중</b>
+            </summary>
+
+            <div class="combat-support-body">
+              <div class="support-action-grid">
+                <button class="action danger" id="potionBtn">체력약 사용</button>
+                <button class="action mana-action" id="manaPotionBtn">마나약 사용</button>
+                <button class="action elixir-action" id="elixirBtn">혼합 영약</button>
+                <button class="action stamina-action" id="staminaPotionBtn">활력 물약</button>
+              </div>
+
+              <div class="inline-controls compact-support-controls">
+                <span id="focusBonusText">일반 -1 · 희귀 지도 -3</span>
+                <button class="small-control-btn" id="refillStaminaBtn">시험용 활력 회복</button>
+              </div>
+
+              <details class="field-care-details">
+                <summary>야전 정비 계약 설정</summary>
+                <div class="field-care-card compact-field-care">
+                  <div class="field-care-head">
+                    <div>
+                      <div class="field-care-kicker">FIELD CARE CONTRACT</div>
+                      <strong>야전 정비 계약</strong>
+                    </div>
+                    <span class="field-care-status off" id="fieldCareStatus">계약 해제</span>
+                  </div>
+
+                  <div class="field-care-row">
+                    <label class="field-care-toggle">
+                      <input type="checkbox" id="fieldCareToggle" />
+                      전투 종료 후 골드를 사용해 자동 회복
+                    </label>
+                  </div>
+
+                  <div class="field-care-controls">
+                    <label>
+                      <span>한 판 최대 지출</span>
+                      <input id="fieldCareBudget" type="number" min="1" max="999999" step="1" value="25" />
+                      <b>G</b>
+                    </label>
+                    <label>
+                      <span>정비 우선순위</span>
+                      <select id="fieldCarePriority">
+                        <option value="balanced">균형 회복</option>
+                        <option value="hp">체력 우선</option>
+                        <option value="mp">마나 우선</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div class="field-care-presets">
+                    <button data-care-budget="10">10G</button>
+                    <button data-care-budget="25">25G</button>
+                    <button data-care-budget="50">50G</button>
+                    <button data-care-budget="100">100G</button>
+                  </div>
+
+                  <div class="field-care-preview" id="fieldCarePreview">
+                    계약을 켜면 전투가 끝날 때 실제로 부족한 자원만 정비한다.
+                  </div>
+                </div>
+              </details>
+            </div>
+          </details>
 
           <div id="battleRewardFocus" class="battle-reward-focus"></div>
 
@@ -257,53 +314,6 @@
             <div id="skillBookDropCard" class="skillbook-drop-card hidden"></div>
             <div id="lootCard" class="loot-card hidden"></div>
           </div>
-
-          <details class="field-care-details">
-            <summary>야전 정비 계약 · 자동 회복 설정</summary>
-            <div class="field-care-card compact-field-care">
-              <div class="field-care-head">
-                <div>
-                  <div class="field-care-kicker">FIELD CARE CONTRACT</div>
-                  <strong>야전 정비 계약</strong>
-                </div>
-                <span class="field-care-status off" id="fieldCareStatus">계약 해제</span>
-              </div>
-
-              <div class="field-care-row">
-                <label class="field-care-toggle">
-                  <input type="checkbox" id="fieldCareToggle" />
-                  전투 종료 후 골드를 사용해 자동 회복
-                </label>
-              </div>
-
-              <div class="field-care-controls">
-                <label>
-                  <span>한 판 최대 지출</span>
-                  <input id="fieldCareBudget" type="number" min="1" max="999999" step="1" value="25" />
-                  <b>G</b>
-                </label>
-                <label>
-                  <span>정비 우선순위</span>
-                  <select id="fieldCarePriority">
-                    <option value="balanced">균형 회복</option>
-                    <option value="hp">체력 우선</option>
-                    <option value="mp">마나 우선</option>
-                  </select>
-                </label>
-              </div>
-
-              <div class="field-care-presets">
-                <button data-care-budget="10">10G</button>
-                <button data-care-budget="25">25G</button>
-                <button data-care-budget="50">50G</button>
-                <button data-care-budget="100">100G</button>
-              </div>
-
-              <div class="field-care-preview" id="fieldCarePreview">
-                계약을 켜면 전투가 끝날 때 실제로 부족한 자원만 정비한다.
-              </div>
-            </div>
-          </details>
         </div>
 
         <details class="combat-chronicle-details">
@@ -318,29 +328,55 @@
         </details>
       </section>
 
-      <section class="right-column">
+      <section class="right-column hunt-right-column">
         <div class="panel dungeon-panel dungeon-panel-right">
-          <div class="panel-title">던전</div>
+          <div class="panel-title">사냥터</div>
           <div class="panel-body">
             <label class="dungeon-picker" for="zoneSelect">
-              <span>사냥할 던전 선택</span>
+              <span>던전 선택</span>
               <select class="dungeon-select" id="zoneSelect" aria-label="사냥할 던전"></select>
             </label>
             <div class="dungeon-summary" id="zoneSelectSummary"></div>
           </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-title">현재 가이드 미션</div>
+        <details class="panel right-compact-panel">
+          <summary>
+            <span>현재 가이드 미션</span>
+            <b>보기</b>
+          </summary>
           <div class="panel-body">
             <div id="guideMiniTracker"></div>
           </div>
-        </div>
-      </section>
+        </details>
 
+        <details class="panel right-compact-panel">
+          <summary>
+            <span>암시장 시세</span>
+            <b>보기</b>
+          </summary>
+          <div class="panel-body compact-utility-body">
+            <button class="hunt-market-hud compact-market-hud" id="huntMarketHudBtn" type="button" aria-label="암시장 열기">
+              <div class="hunt-market-hud-title">
+                <span>BLACK COIN MARKET</span>
+                <strong>암시장</strong>
+              </div>
+              <div class="hunt-market-hud-quote">
+                <strong id="huntMarketHudPrice">95 G</strong>
+                <span class="flat" id="huntMarketHudTrend">보합</span>
+              </div>
+              <div class="hunt-market-hud-position">
+                <span id="huntMarketHudTokens">보유 0개</span>
+                <strong id="huntMarketHudValue">평가 0 G</strong>
+                <small id="huntMarketHudProfit">미실현 ±0 G</small>
+              </div>
+              <span class="hunt-market-hud-link">거래소 열기 ›</span>
+            </button>
+          </div>
+        </details>
+      </section>
     </main>
     </section>
-
 
     <section class="page" data-page="guide">
       <div class="panel wide-panel">
@@ -438,7 +474,7 @@
             <h3>별가루는 어디에 쓰나요?</h3>
             <p>
               필요 없는 장비를 <strong>분해</strong>하면 별가루를 얻습니다.
-              일반 장비의 <strong>재련</strong>을 누르면 접두사·접미사의 종류와 기억 밀도는 유지하고, 표시된 고정 범위 안에서 수치만 다시 추첨합니다.
+              일반 장비의 <strong>재련</strong>을 누르면 접두사·접미사의 종류와 기억 밀도는 유지하고, 표시된 고정 범위 안에서 수치만 다시 추첨합니다. 장착 중인 장비도 바로 재련할 수 있습니다.
             </p>
             <div class="dust-guide-route">
               <span><b>1</b> 장비 획득</span>
@@ -453,6 +489,17 @@
           </div>
         </section>
 
+        <section class="equipped-reforge-panel" id="equippedReforgePanel">
+          <div class="equipped-reforge-head">
+            <div>
+              <span>EQUIPPED REFORGING</span>
+              <h3>장착 장비 별가루 재련</h3>
+              <p>장비를 해제하지 않고 접사 수치만 다시 추첨합니다. 잠긴 장비와 세트·유니크 장비는 재련할 수 없습니다.</p>
+            </div>
+            <strong id="equippedReforgeSummary">재련 가능 0개</strong>
+          </div>
+          <div class="equipped-reforge-grid" id="equippedReforgeGrid"></div>
+        </section>
 
         <section class="crit-cap-notice">
           <div class="crit-cap-symbol">◆</div>
@@ -1518,7 +1565,7 @@
   </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="game.js?v=58"></script>
+  <script src="game.js?v=60"></script>
 
 </body>
 </html>

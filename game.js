@@ -1,4 +1,4 @@
-const VERSION = 58;
+const VERSION = 60;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -157,12 +157,10 @@ const VERSION = 58;
 
 
     const navSections = {
-      hunt:{label:"메인",defaultPage:"hunt",pages:["hunt","inventory","character","skills","mercenary","market","gamble"]},
-      info:{label:"정보",defaultPage:"guide",pages:["guide","info","codex","collection","savevault"]},
-      board:{label:"게시판",defaultPage:"inquiry",pages:["inquiry","ranking"]},
-      quest:{label:"퀘스트",defaultPage:"quests",pages:["quests","bounties","staminacamp"]},
-      arena:{label:"도전",defaultPage:"arena",pages:["arena","daily","dailyboss","abyss","finale"]},
-      event:{label:"이벤트",defaultPage:"attendance",pages:["attendance"]}
+      hunt:{label:"사냥",defaultPage:"hunt",pages:["hunt","quests","bounties","staminacamp"]},
+      growth:{label:"성장",defaultPage:"inventory",pages:["inventory","character","skills","mercenary","market","gamble"]},
+      challenge:{label:"도전",defaultPage:"arena",pages:["arena","daily","dailyboss","abyss","finale","ranking"]},
+      records:{label:"기록",defaultPage:"info",pages:["guide","info","codex","collection","inquiry","attendance","savevault"]}
     };
 
     const navSectionByPage = Object.fromEntries(
@@ -2133,6 +2131,10 @@ const VERSION = 58;
       skillBookDropCard: document.getElementById("skillBookDropCard"),
       lootCard: document.getElementById("lootCard"),
       battleRewardFocus: document.getElementById("battleRewardFocus"),
+      itemCompareModal: document.getElementById("itemCompareModal"),
+      itemCompareBackdrop: document.getElementById("itemCompareBackdrop"),
+      itemCompareContent: document.getElementById("itemCompareContent"),
+      itemCompareCloseBtn: document.getElementById("itemCompareCloseBtn"),
       combatLog: document.getElementById("combatLog"),
       saveState: document.getElementById("saveState"),
       resetBtn: document.getElementById("resetBtn"),
@@ -2150,6 +2152,9 @@ const VERSION = 58;
       dustGuideBalance: document.getElementById("dustGuideBalance"),
       tutorialDustReforgeBtn: document.getElementById("tutorialDustReforgeBtn"),
       tutorialDustHint: document.getElementById("tutorialDustHint"),
+      equippedReforgePanel: document.getElementById("equippedReforgePanel"),
+      equippedReforgeSummary: document.getElementById("equippedReforgeSummary"),
+      equippedReforgeGrid: document.getElementById("equippedReforgeGrid"),
       tierStoneCount: document.getElementById("tierStoneCount"),
       inventoryGrid: document.getElementById("inventoryGrid"),
       consumableGrid: document.getElementById("consumableGrid"),
@@ -2390,6 +2395,7 @@ const VERSION = 58;
     };
 
     let activeInfoTab = "records";
+    let activeItemComparisonId = "";
 
     function loadState() {
       try {
@@ -2552,6 +2558,9 @@ const VERSION = 58;
         };
         normalizeAllItemMemory(restored);
         normalizeSavedSkillBookNames(restored);
+        if (restored.lastLoot?.id) {
+          restored.lastLoot = restored.inventory.find(item => item.id === restored.lastLoot.id) || null;
+        }
         return restored;
       } catch (e) {
         return defaultState();
@@ -5969,10 +5978,212 @@ const VERSION = 58;
       return state.inventory.find(item => item.id === id) || null;
     }
 
+    function findEquippedItem(id) {
+      return Object.values(state.equipment || {}).find(item => item?.id === id) || null;
+    }
+
+    function findOwnedItem(id) {
+      return findInventoryItem(id) || findEquippedItem(id);
+    }
+
     function removeInventoryItem(id) {
       const index = state.inventory.findIndex(item => item.id === id);
       if (index < 0) return null;
       return state.inventory.splice(index, 1)[0];
+    }
+
+
+    const comparisonStatDefinitions = [
+      {key:"attack",label:"공격력"},
+      {key:"magicPower",label:"마법력"},
+      {key:"defense",label:"방어력"},
+      {key:"maxHp",label:"최대 체력"},
+      {key:"maxMp",label:"최대 마나"},
+      {key:"crit",label:"치명타",percent:true},
+      {key:"str",label:"힘"},
+      {key:"vit",label:"생명"},
+      {key:"int",label:"지능"},
+      {key:"spi",label:"정신"},
+      {key:"luck",label:"행운"},
+      {key:"spd",label:"속도"},
+      {key:"dodge",label:"회피",percent:true},
+      {key:"doubleHit",label:"연속 공격",percent:true},
+      {key:"goldFind",label:"골드 발견",percent:true},
+      {key:"itemFind",label:"전리품 발견",percent:true},
+      {key:"mapFind",label:"지도 발견",percent:true}
+    ];
+
+    function comparisonStatValue(item,key) {
+      if (!item) return 0;
+      if (key === "crit") return appliedItemCrit(item);
+      return Number(item.stats?.[key] || 0);
+    }
+
+    function formatComparisonStat(value,percent=false) {
+      const number = Number(value || 0);
+      if (percent) return `${Math.abs(number-Math.round(number)) < .01 ? Math.round(number) : number.toFixed(1)}%`;
+      return fmt(Math.round(number));
+    }
+
+    function previewPowerDeltaForItem(item) {
+      if (!item?.slot) return 0;
+      const current = state.equipment[item.slot] || null;
+      if (current?.id === item.id) return 0;
+      const before = power();
+      state.equipment[item.slot] = item;
+      let after = before;
+      try {
+        after = power();
+      } finally {
+        state.equipment[item.slot] = current;
+      }
+      return Math.round(after-before);
+    }
+
+    function comparisonRowsHtml(item,current,{limit=8}={}) {
+      const rows = comparisonStatDefinitions
+        .map(def => {
+          const next = comparisonStatValue(item,def.key);
+          const before = comparisonStatValue(current,def.key);
+          return {...def,next,before,diff:next-before};
+        })
+        .filter(row => row.next !== 0 || row.before !== 0)
+        .sort((a,b) => {
+          const changed = Number(b.diff !== 0)-Number(a.diff !== 0);
+          if (changed) return changed;
+          return Math.abs(b.diff)-Math.abs(a.diff);
+        })
+        .slice(0,limit);
+
+      if (!rows.length) return `<div class="item-compare-empty-stats">비교할 추가 능력치가 없습니다.</div>`;
+
+      return rows.map(row => {
+        const diffClass = row.diff > 0 ? "positive" : row.diff < 0 ? "negative" : "neutral";
+        const diffText = row.diff === 0 ? "동일" : `${row.diff > 0 ? "+" : ""}${formatComparisonStat(row.diff,row.percent)}`;
+        return `
+          <div class="item-compare-stat-row">
+            <span>${row.label}</span>
+            <b>${formatComparisonStat(row.before,row.percent)}</b>
+            <i>→</i>
+            <strong>${formatComparisonStat(row.next,row.percent)}</strong>
+            <em class="${diffClass}">${diffText}</em>
+          </div>`;
+      }).join("");
+    }
+
+    function comparisonEquipmentCardHtml(item,{current=false}={}) {
+      if (!item) {
+        return `
+          <article class="item-compare-equipment-card empty">
+            <div class="item-compare-card-label">${current ? "현재 장착" : "새 장비"}</div>
+            <div class="item-compare-empty-equipment">장착된 장비 없음</div>
+          </article>`;
+      }
+
+      ensureItemMemoryDensity(item);
+      return `
+        <article class="item-compare-equipment-card ${itemKindClass(item)}">
+          <div class="item-compare-card-label">${current ? "현재 장착" : "새 장비"}</div>
+          <div class="item-compare-card-top">
+            <span class="rarity ${item.rarityClass}">[${item.rarityName}] ${slots.find(slot => slot.key === item.slot)?.label || item.slot}</span>
+            <strong>${fmt(item.score)}점</strong>
+          </div>
+          <h3 class="${item.rarityClass}">${item.name}</h3>
+          <div class="item-compare-memory">기억 밀도 Lv.${item.itemLevel || 1} · ${itemKind(item) === "normal" ? `접사 ${(item.affixes || []).length}개` : itemKind(item) === "set" ? "세트 전리품" : "이름 있는 유물"}</div>
+          <div class="item-compare-card-stats">
+            ${itemStatLines(item).slice(0,6).map(line => `<div>${line}</div>`).join("") || "<div>추가 능력 없음</div>"}
+          </div>
+        </article>`;
+    }
+
+    function itemComparisonHtml(item,{modal=false}={}) {
+      if (!item) return "";
+      const current = state.equipment[item.slot] || null;
+      const powerDelta = previewPowerDeltaForItem(item);
+      const scoreDelta = Number(item.score || 0)-Number(current?.score || 0);
+      return `
+        <div class="item-compare-shell ${modal ? "modal-layout" : "drop-layout"}">
+          <div class="item-compare-summary">
+            <div>
+              <span>${modal ? "선택한 전리품" : "새 전리품 도착"}</span>
+              <strong>${slots.find(slot => slot.key === item.slot)?.label || item.slot} 비교</strong>
+            </div>
+            <div class="item-compare-power ${powerDelta >= 0 ? "positive" : "negative"}">
+              <small>예상 전투력 변화</small>
+              <strong>${powerDelta >= 0 ? "+" : ""}${fmt(powerDelta)}</strong>
+              <em>장비 점수 ${scoreDelta >= 0 ? "+" : ""}${fmt(scoreDelta)}</em>
+            </div>
+          </div>
+
+          <div class="item-compare-cards">
+            ${comparisonEquipmentCardHtml(current,{current:true})}
+            <div class="item-compare-swap-arrow">⇄</div>
+            ${comparisonEquipmentCardHtml(item,{current:false})}
+          </div>
+
+          <div class="item-compare-stat-table">
+            <div class="item-compare-table-head">
+              <span>주요 옵션 변화</span>
+              <b>현재 → 새 장비</b>
+            </div>
+            ${comparisonRowsHtml(item,current,{limit:modal ? 10 : 6})}
+          </div>
+
+          <div class="item-compare-actions">
+            <button class="primary" data-compare-equip="${item.id}">${current ? "바로 교체" : "바로 장착"}</button>
+            <button data-compare-keep="${item.id}">가방 보관</button>
+            <button data-compare-sell="${item.id}">판매 +${fmt(item.sellPrice)}G</button>
+            <button data-compare-salvage="${item.id}">분해</button>
+          </div>
+        </div>`;
+    }
+
+    function closeItemComparison() {
+      activeItemComparisonId = "";
+      els.itemCompareModal?.classList.add("hidden");
+      if (els.itemCompareContent) els.itemCompareContent.innerHTML = "";
+    }
+
+    function keepComparedItem(id) {
+      if (state.lastLoot?.id === id) state.lastLoot = null;
+      closeItemComparison();
+      toast("전리품을 가방에 보관했습니다.");
+      saveState();
+      renderAll();
+    }
+
+    function bindItemComparisonActions(root) {
+      if (!root) return;
+      root.querySelectorAll("[data-compare-equip]").forEach(button => {
+        button.onclick = () => {
+          closeItemComparison();
+          equipInventoryItem(button.dataset.compareEquip);
+        };
+      });
+      root.querySelectorAll("[data-compare-keep]").forEach(button => {
+        button.onclick = () => keepComparedItem(button.dataset.compareKeep);
+      });
+      root.querySelectorAll("[data-compare-sell]").forEach(button => {
+        button.onclick = () => {
+          closeItemComparison();
+          sellInventoryItem(button.dataset.compareSell);
+        };
+      });
+      root.querySelectorAll("[data-compare-salvage]").forEach(button => {
+        button.onclick = () => {
+          closeItemComparison();
+          salvageInventoryItem(button.dataset.compareSalvage);
+        };
+      });
+    }
+
+    function openItemComparison(id) {
+      const item = findInventoryItem(id);
+      if (!item || !els.itemCompareModal || !els.itemCompareContent) return;
+      activeItemComparisonId = id;
+      els.itemCompareContent.innerHTML = itemComparisonHtml(item,{modal:true});
+      bindItemComparisonActions(els.itemCompareContent);
+      els.itemCompareModal.classList.remove("hidden");
     }
 
     function announceSpecialLoot(item) {
@@ -5998,7 +6209,7 @@ const VERSION = 58;
       item.locked = !!item.locked;
       if (autoProcessNewItem(item)) return false;
       state.inventory.unshift(item);
-      state.lastLoot = null;
+      state.lastLoot = item;
       announceSpecialLoot(item);
       if (state.inventory.length >= state.inventoryCapacity && autoTimer) {
         toggleAuto();
@@ -6121,8 +6332,10 @@ const VERSION = 58;
 
     function applyDustReforge(item,cost,{tutorial=false}={}) {
       if (!item || itemKind(item) !== "normal" || !Array.isArray(item.affixes) || !item.affixes.length) return toast("재련 가능한 일반 장비가 없습니다.");
-      if (item.locked && state.inventory.some(entry => entry.id === item.id)) return toast("잠금을 해제한 뒤 재련하세요.");
-      if (state.dust < cost) return toast(`별가루가 부족합니다. 필요 ${cost}`);
+      if (item.locked) return toast("잠금을 해제한 뒤 재련하세요.");
+      if (state.dust < cost) {
+        return toast(`별가루 부족 · 필요 ${cost} / 보유 ${state.dust} / ${cost-state.dust} 부족`);
+      }
       ensureItemMemoryDensity(item);
       const oldName = item.name;
       const identityBefore = item.affixes.map(affix => `${affix.kind}:${affix.familyId || affix.stat}`).join("|");
@@ -6137,15 +6350,19 @@ const VERSION = 58;
       rebuildStandardItemName(item);
       state.records.reforges = (state.records.reforges || 0)+1;
       if (tutorial) state.guide.dustTutorialUsed = true;
-      log(`${tutorial ? "별가루 재련 체험" : "재련"} · 기억 밀도 Lv.${item.itemLevel} · ${oldName} → ${item.name} · 별가루 -${cost} · 접두·접미사 종류 ${identityBefore === identityAfter ? "고정" : "확인 필요"} · 고정 범위 내 수치 재추첨`,"rarity-epic");
-      toast(tutorial ? "별가루로 고정 범위 재련을 체험했습니다." : `기억 밀도 Lv.${item.itemLevel} 범위에서 재련했습니다.`);
+      const equippedNow = !!findEquippedItem(item.id);
+      const refreshedStats = totalStats();
+      state.hp = Math.min(state.hp,refreshedStats.maxHp);
+      state.mp = Math.min(state.mp,refreshedStats.maxMp);
+      log(`${tutorial ? "별가루 재련 체험" : "재련"} · ${equippedNow ? "장착 장비 · " : ""}기억 밀도 Lv.${item.itemLevel} · ${oldName} → ${item.name} · 별가루 -${cost} · 접두·접미사 종류 ${identityBefore === identityAfter ? "고정" : "확인 필요"} · 고정 범위 내 수치 재추첨`,"rarity-epic");
+      toast(tutorial ? "별가루로 고정 범위 재련을 체험했습니다." : `${equippedNow ? "장착 장비를 " : ""}기억 밀도 Lv.${item.itemLevel} 범위에서 재련했습니다.`);
       saveState();
       renderAll();
       return true;
     }
 
     function reforgeInventoryItem(id) {
-      const item = findInventoryItem(id);
+      const item = findOwnedItem(id);
       if (!item || itemKind(item) !== "normal" || !Array.isArray(item.affixes) || !item.affixes.length) {
         return toast("세트와 유니크는 재련할 수 없습니다.");
       }
@@ -6231,7 +6448,8 @@ const VERSION = 58;
           </div>`
         : "";
       return `
-        <article class="inventory-card ${itemKindClass(item)} ${kind === "normal" && (item.affixes || []).length >= 6 ? "six-affix" : ""} ${item.locked ? "item-locked" : ""}">
+        <article class="inventory-card inventory-compare-card ${itemKindClass(item)} ${kind === "normal" && (item.affixes || []).length >= 6 ? "six-affix" : ""} ${item.locked ? "item-locked" : ""}"
+          data-inventory-compare-card="${item.id}" tabindex="0" aria-label="${item.name} 현재 장비와 비교">
           <div class="loot-header">
             <div>
               ${proclamation ? `<div class="loot-proclamation">${proclamation}</div>` : ""}
@@ -6289,7 +6507,7 @@ const VERSION = 58;
             : "재련 가능한 장비 필요";
 
         els.tutorialDustHint.textContent = used
-          ? "이제 각 장비 카드의 ‘재련 · 별가루 N’ 버튼으로 실제 재련을 계속할 수 있습니다."
+          ? "이제 가방 장비 카드나 ‘장착 장비 별가루 재련’ 판에서 실제 재련을 계속할 수 있습니다."
           : !candidate
             ? "사냥으로 접사가 붙은 일반 장비를 획득하면 체험할 수 있습니다."
             : state.dust < 1
@@ -6298,6 +6516,66 @@ const VERSION = 58;
       }
     }
 
+
+
+    function renderEquippedReforgePanel() {
+      if (!els.equippedReforgeGrid || !els.equippedReforgeSummary) return;
+
+      const rows = slots.map(slot => {
+        const item = state.equipment?.[slot.key] || null;
+        if (!item) {
+          return `
+            <article class="equipped-reforge-card empty">
+              <div class="equipped-reforge-slot">${slot.label}</div>
+              <div class="equipped-reforge-name">비어 있음</div>
+              <button disabled>장비 없음</button>
+            </article>`;
+        }
+
+        ensureItemMemoryDensity(item);
+        const reforgeable =
+          itemKind(item) === "normal"
+          && Array.isArray(item.affixes)
+          && item.affixes.length > 0;
+        const cost = reforgeable ? Math.max(4,rarityRank(item)*5) : 0;
+        const status = !reforgeable
+          ? "세트·유니크 재련 불가"
+          : item.locked
+            ? "잠금 해제 필요"
+            : state.dust < cost
+              ? `별가루 ${cost-state.dust} 부족`
+              : "즉시 재련 가능";
+
+        return `
+          <article class="equipped-reforge-card ${reforgeable ? "available" : "unavailable"} ${item.locked ? "locked" : ""}">
+            <div class="equipped-reforge-top">
+              <span class="equipped-reforge-slot">${slot.label}</span>
+              <strong>${fmt(item.score)}점</strong>
+            </div>
+            <div class="equipped-reforge-name ${item.rarityClass}">${item.name}</div>
+            <div class="equipped-reforge-meta">기억 Lv.${item.itemLevel} · 접사 ${(item.affixes || []).length}개</div>
+            <div class="equipped-reforge-status">${status}</div>
+            ${reforgeable
+              ? `<button class="${state.dust < cost || item.locked ? "purchase-warning" : "primary"}" data-equipped-reforge="${item.id}">
+                  재련 · 별가루 ${cost}
+                </button>`
+              : `<button disabled>재련 불가</button>`}
+          </article>`;
+      });
+
+      const available = Object.values(state.equipment || {}).filter(item =>
+        item
+        && itemKind(item) === "normal"
+        && Array.isArray(item.affixes)
+        && item.affixes.length > 0
+      ).length;
+
+      els.equippedReforgeSummary.textContent = `재련 가능 ${available}개 · 별가루 ${fmt(state.dust)}`;
+      els.equippedReforgeGrid.innerHTML = rows.join("");
+      els.equippedReforgeGrid.querySelectorAll("[data-equipped-reforge]").forEach(button => {
+        button.onclick = () => reforgeInventoryItem(button.dataset.equippedReforge);
+      });
+    }
 
     function renderInventoryExpansion() {
       if (!els.inventoryExpansionPanel) return;
@@ -6375,10 +6653,23 @@ const VERSION = 58;
       els.inventoryNavCount.textContent = `(${state.inventory.length}/${state.inventoryCapacity})`;
       renderInventoryExpansion();
       renderCoreResourceEducation();
+      renderEquippedReforgePanel();
       els.inventoryGrid.innerHTML = items.length
         ? items.map(item => inventoryCardHtml(item)).join("")
         : `<div class="inventory-empty">이 칸에는 아직 전리품이 없다.<br>균열에서 이름 있는 물건을 찾아보자.</div>`;
 
+      els.inventoryGrid.querySelectorAll("[data-inventory-compare-card]").forEach(card => {
+        card.onclick = event => {
+          if (event.target.closest("button,input,select,label")) return;
+          openItemComparison(card.dataset.inventoryCompareCard);
+        };
+        card.onkeydown = event => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openItemComparison(card.dataset.inventoryCompareCard);
+          }
+        };
+      });
       els.inventoryGrid.querySelectorAll("[data-inventory-equip]").forEach(btn => btn.onclick = () => equipInventoryItem(btn.dataset.inventoryEquip));
       els.inventoryGrid.querySelectorAll("[data-inventory-lock]").forEach(btn => btn.onclick = () => toggleItemLock(btn.dataset.inventoryLock));
       els.inventoryGrid.querySelectorAll("[data-inventory-sell]").forEach(btn => btn.onclick = () => sellInventoryItem(btn.dataset.inventorySell));
@@ -11390,10 +11681,24 @@ function renderBattleRewardFocus() {
 }
 
     function renderLoot() {
-      state.lastLoot = null;
-      els.lootCard.classList.add("hidden");
-      els.lootCard.classList.remove("unique-drop","set-drop");
-      els.lootCard.innerHTML = "";
+      const item = state.lastLoot?.id
+        ? state.inventory.find(entry => entry.id === state.lastLoot.id)
+        : null;
+
+      if (!item) {
+        state.lastLoot = null;
+        els.lootCard.classList.add("hidden");
+        els.lootCard.classList.remove("unique-drop","set-drop");
+        els.lootCard.innerHTML = "";
+        return;
+      }
+
+      state.lastLoot = item;
+      els.lootCard.classList.remove("hidden","unique-drop","set-drop");
+      if (itemKind(item) === "unique") els.lootCard.classList.add("unique-drop");
+      if (itemKind(item) === "set") els.lootCard.classList.add("set-drop");
+      els.lootCard.innerHTML = itemComparisonHtml(item,{modal:false});
+      bindItemComparisonActions(els.lootCard);
     }
 
     function renderLog() {
@@ -11492,6 +11797,8 @@ function renderBattleRewardFocus() {
     });
     document.querySelectorAll(".top-tab").forEach(btn => btn.onclick = () => switchPage(btn.dataset.pageTarget));
     els.brandHomeButton.onclick = returnToHomeScreen;
+    els.itemCompareCloseBtn.onclick = closeItemComparison;
+    els.itemCompareBackdrop.onclick = closeItemComparison;
     els.globalStaminaCard.onclick = openStaminaGuide;
     els.globalDustCard.onclick = openDustUsageGuide;
     els.guideStaminaBtn.onclick = openStaminaGuide;
@@ -11570,6 +11877,12 @@ function renderBattleRewardFocus() {
     els.huntBtn.onclick = manualHunt;
     els.autoBtn.onclick = toggleAuto;
     els.huntMarketHudBtn.onclick = () => switchPage("market");
+    document.addEventListener("keydown",event => {
+      if (event.key === "Escape" && !els.itemCompareModal?.classList.contains("hidden")) {
+        closeItemComparison();
+      }
+    });
+
     document.addEventListener("click",event => {
       if (!event.target.closest("[data-equipment-tooltip]") && !event.target.closest("#equipmentTooltip")) {
         hideEquipmentTooltip();

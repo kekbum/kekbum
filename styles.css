@@ -12013,3 +12013,1011 @@ button.purchase-warning:not(:disabled):hover {
     grid-template-columns:1fr;
   }
 }
+
+
+/* v59: 장착 장비 재련 + 전투 중심 메인 화면 간소화 */
+@media (min-width:981px) {
+  .page[data-page="hunt"] .hunt-command-grid {
+    grid-template-columns:260px minmax(0,1fr) 260px;
+    gap:13px;
+  }
+}
+
+.page[data-page="hunt"] .panel-title {
+  padding:11px 13px;
+  font-size:13px;
+}
+
+.page[data-page="hunt"] .panel-body {
+  padding:13px;
+}
+
+.page[data-page="hunt"] .hunt-summary-body {
+  gap:10px;
+}
+
+.page[data-page="hunt"] .hero-name {
+  margin-bottom:0;
+  font-size:18px;
+}
+
+.page[data-page="hunt"] .class-line {
+  margin-top:3px;
+  font-size:10px;
+}
+
+.page[data-page="hunt"] .level-badge {
+  padding:4px 7px;
+  font-size:10px;
+}
+
+.page[data-page="hunt"] .core-hunt-stats {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+
+.page[data-page="hunt"] .core-hunt-stats .stat {
+  min-height:62px;
+  padding:9px;
+}
+
+.page[data-page="hunt"] .core-hunt-stats .stat span {
+  font-size:10px;
+}
+
+.page[data-page="hunt"] .core-hunt-stats .stat strong {
+  font-size:18px;
+}
+
+.page[data-page="hunt"] .hunt-brief-card {
+  padding:9px 10px;
+}
+
+.page[data-page="hunt"] .hunt-brief-card .class-card-top {
+  font-size:9px;
+}
+
+.page[data-page="hunt"] .hunt-brief-card .class-passive {
+  margin-top:5px;
+  font-size:10px;
+  line-height:1.45;
+}
+
+.page[data-page="hunt"] .compact-equipment-card {
+  padding:9px;
+  border-radius:11px;
+}
+
+.page[data-page="hunt"] .hunt-equipment-head {
+  margin-bottom:6px;
+}
+
+.page[data-page="hunt"] .hunt-equipment-head span {
+  font-size:11px;
+}
+
+.page[data-page="hunt"] .hunt-equipment-head small {
+  display:none;
+}
+
+.page[data-page="hunt"] #equipment {
+  display:grid;
+  gap:5px;
+}
+
+.page[data-page="hunt"] .equip-row {
+  grid-template-columns:38px minmax(0,1fr) 14px;
+  min-height:38px;
+  padding:6px 7px;
+}
+
+.page[data-page="hunt"] .equip-row .slot {
+  font-size:9px;
+}
+
+.page[data-page="hunt"] .equip-name {
+  overflow:hidden;
+  font-size:10px;
+  line-height:1.3;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.page[data-page="hunt"] .equipment-info-mark {
+  width:14px;
+  height:14px;
+  font-size:8px;
+}
+
+.page[data-page="hunt"] .side-detail-toggle,
+.page[data-page="hunt"] .combat-support-details,
+.page[data-page="hunt"] .right-compact-panel {
+  border:1px solid rgba(210,148,59,.18);
+  border-radius:11px;
+  overflow:hidden;
+  background:rgba(13,12,10,.70);
+}
+
+.page[data-page="hunt"] .side-detail-toggle > summary,
+.page[data-page="hunt"] .combat-support-details > summary,
+.page[data-page="hunt"] .right-compact-panel > summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-height:42px;
+  padding:9px 11px;
+  list-style:none;
+  cursor:pointer;
+  color:#e6c77f;
+  font-size:10px;
+  font-weight:900;
+}
+
+.page[data-page="hunt"] .side-detail-toggle > summary::-webkit-details-marker,
+.page[data-page="hunt"] .combat-support-details > summary::-webkit-details-marker,
+.page[data-page="hunt"] .right-compact-panel > summary::-webkit-details-marker {
+  display:none;
+}
+
+.page[data-page="hunt"] .side-detail-toggle > summary b,
+.page[data-page="hunt"] .right-compact-panel > summary b {
+  color:#8f816c;
+  font-size:8px;
+}
+
+.page[data-page="hunt"] .side-detail-content {
+  padding:0 10px 10px;
+  gap:9px;
+}
+
+.page[data-page="hunt"] .detail-hunt-stats {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+}
+
+.page[data-page="hunt"] .detail-hunt-stats .stat {
+  min-height:58px;
+  padding:8px;
+}
+
+.page[data-page="hunt"] .detail-hunt-stats .stat span {
+  font-size:9px;
+}
+
+.page[data-page="hunt"] .detail-hunt-stats .stat strong {
+  font-size:14px;
+}
+
+.page[data-page="hunt"] .attribute-box,
+.page[data-page="hunt"] .stat-reset-panel {
+  padding:10px;
+}
+
+.page[data-page="hunt"] .change-class-btn {
+  width:100%;
+  min-height:32px;
+  font-size:9px;
+}
+
+.page[data-page="hunt"] .battle-head {
+  padding:15px 16px 10px;
+}
+
+.page[data-page="hunt"] .zone-name {
+  font-size:12px;
+}
+
+.page[data-page="hunt"] .enemy-name {
+  font-size:clamp(24px,3vw,34px);
+}
+
+.page[data-page="hunt"] .enemy-meta {
+  font-size:11px;
+}
+
+.page[data-page="hunt"] .combat-stage-focused {
+  gap:11px;
+  padding:13px;
+}
+
+.page[data-page="hunt"] .combat-vitals-grid {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:7px;
+}
+
+.page[data-page="hunt"] .compact-meter {
+  min-width:0;
+  padding:7px 8px;
+  border-radius:10px;
+}
+
+.page[data-page="hunt"] .compact-meter .meter-label {
+  gap:4px;
+  margin-bottom:4px;
+  font-size:9px;
+}
+
+.page[data-page="hunt"] .compact-meter .meter-label span:last-child {
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.page[data-page="hunt"] .compact-meter .meter {
+  height:7px;
+}
+
+.page[data-page="hunt"] .primary-hunt-actions {
+  display:grid;
+  grid-template-columns:1.15fr 1fr;
+  gap:9px;
+}
+
+.page[data-page="hunt"] .primary-hunt-actions .action {
+  min-height:58px;
+  padding:13px;
+  font-size:15px;
+  border-radius:12px;
+}
+
+.page[data-page="hunt"] .combat-support-details > summary span {
+  display:grid;
+  gap:2px;
+}
+
+.page[data-page="hunt"] .combat-support-details > summary small {
+  color:#8c7550;
+  font-size:7px;
+  letter-spacing:.12em;
+}
+
+.page[data-page="hunt"] .combat-support-details > summary strong {
+  font-size:10px;
+}
+
+.page[data-page="hunt"] .combat-support-details > summary > b {
+  overflow:hidden;
+  max-width:46%;
+  color:#988b75;
+  font-size:8px;
+  font-weight:800;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.page[data-page="hunt"] .combat-support-body {
+  display:grid;
+  gap:9px;
+  padding:0 10px 10px;
+}
+
+.page[data-page="hunt"] .support-action-grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;
+}
+
+.page[data-page="hunt"] .support-action-grid .action {
+  min-height:34px;
+  padding:7px 5px;
+  font-size:8px;
+  border-radius:8px;
+}
+
+.page[data-page="hunt"] .compact-support-controls {
+  margin:0;
+  padding:7px 8px;
+  font-size:8px;
+}
+
+.page[data-page="hunt"] .compact-support-controls .small-control-btn {
+  min-height:28px;
+  padding:5px 8px;
+  font-size:8px;
+}
+
+.page[data-page="hunt"] .field-care-details {
+  border-radius:9px;
+}
+
+.page[data-page="hunt"] .field-care-details > summary {
+  min-height:36px;
+  padding:8px 10px;
+  font-size:9px;
+}
+
+.page[data-page="hunt"] .battle-reward-focus {
+  padding:14px;
+  border-radius:14px;
+}
+
+.page[data-page="hunt"] .battle-reward-title {
+  font-size:19px;
+}
+
+.page[data-page="hunt"] .battle-reward-summary,
+.page[data-page="hunt"] .battle-reward-empty {
+  font-size:11px;
+  line-height:1.55;
+}
+
+.page[data-page="hunt"] .battle-reward-pills {
+  gap:7px;
+  margin-top:10px;
+}
+
+.page[data-page="hunt"] .battle-reward-pill {
+  padding:8px;
+  border-radius:10px;
+}
+
+.page[data-page="hunt"] .battle-reward-pill span {
+  font-size:8px;
+}
+
+.page[data-page="hunt"] .battle-reward-pill strong {
+  font-size:13px;
+}
+
+.page[data-page="hunt"] .battle-reward-grid {
+  gap:8px;
+  margin-top:10px;
+}
+
+.page[data-page="hunt"] .battle-reward-list {
+  min-height:94px;
+  padding:9px;
+  border-radius:10px;
+}
+
+.page[data-page="hunt"] .battle-reward-list-title {
+  font-size:9px;
+}
+
+.page[data-page="hunt"] .battle-reward-list-item {
+  font-size:10px;
+}
+
+.page[data-page="hunt"] .hunt-right-column {
+  display:grid;
+  gap:10px;
+}
+
+.page[data-page="hunt"] .dungeon-picker span,
+.page[data-page="hunt"] .dungeon-select,
+.page[data-page="hunt"] .dungeon-summary span {
+  font-size:9px;
+}
+
+.page[data-page="hunt"] .dungeon-summary {
+  gap:6px;
+}
+
+.page[data-page="hunt"] .dungeon-summary strong {
+  font-size:10px;
+}
+
+.page[data-page="hunt"] .right-compact-panel {
+  display:block;
+}
+
+.page[data-page="hunt"] .right-compact-panel[open] > summary {
+  border-bottom:1px solid rgba(210,148,59,.14);
+}
+
+.page[data-page="hunt"] .right-compact-panel .panel-body {
+  padding:10px;
+}
+
+.page[data-page="hunt"] .compact-utility-body {
+  padding:8px !important;
+}
+
+.page[data-page="hunt"] .compact-market-hud {
+  width:100%;
+  margin:0;
+  padding:9px;
+  border-radius:9px;
+}
+
+.page[data-page="hunt"] .combat-chronicle-details > summary {
+  min-height:50px;
+  padding:10px 14px;
+}
+
+.page[data-page="hunt"] .combat-chronicle-details > summary strong {
+  font-size:13px;
+}
+
+.page[data-page="hunt"] .combat-log-prominent {
+  min-height:360px;
+}
+
+.equipped-reforge-panel {
+  margin:16px;
+  padding:15px;
+  border:1px solid rgba(104,145,164,.34);
+  border-radius:13px;
+  background:
+    radial-gradient(circle at 0 0,rgba(75,139,164,.11),transparent 34%),
+    rgba(17,23,27,.88);
+}
+
+.equipped-reforge-head {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:12px;
+}
+
+.equipped-reforge-head span {
+  color:#78a8ba;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.14em;
+}
+
+.equipped-reforge-head h3 {
+  margin:4px 0;
+  color:#d8edf5;
+  font-size:17px;
+}
+
+.equipped-reforge-head p {
+  max-width:720px;
+  margin:0;
+  color:#879aa1;
+  font-size:10px;
+  line-height:1.55;
+}
+
+.equipped-reforge-head > strong {
+  flex:0 0 auto;
+  padding:7px 9px;
+  border:1px solid rgba(112,162,182,.30);
+  border-radius:999px;
+  color:#b9dce8;
+  background:rgba(52,104,124,.13);
+  font-size:9px;
+}
+
+.equipped-reforge-grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+}
+
+.equipped-reforge-card {
+  display:grid;
+  align-content:start;
+  gap:7px;
+  min-width:0;
+  padding:11px;
+  border:1px solid rgba(108,137,149,.20);
+  border-radius:10px;
+  background:rgba(9,13,15,.62);
+}
+
+.equipped-reforge-card.available {
+  border-color:rgba(98,157,181,.34);
+}
+
+.equipped-reforge-card.empty,
+.equipped-reforge-card.unavailable {
+  opacity:.64;
+}
+
+.equipped-reforge-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+}
+
+.equipped-reforge-top strong {
+  color:#adc2ca;
+  font-size:9px;
+}
+
+.equipped-reforge-slot {
+  color:#8fb8c7;
+  font-size:8px;
+  font-weight:950;
+}
+
+.equipped-reforge-name {
+  overflow:hidden;
+  min-height:31px;
+  font-size:12px;
+  font-weight:900;
+  line-height:1.35;
+  text-overflow:ellipsis;
+}
+
+.equipped-reforge-meta,
+.equipped-reforge-status {
+  color:#75878e;
+  font-size:8px;
+  line-height:1.45;
+}
+
+.equipped-reforge-status {
+  min-height:24px;
+}
+
+.equipped-reforge-card button {
+  width:100%;
+  min-height:32px;
+  margin-top:auto;
+  font-size:9px;
+}
+
+@media (max-width:980px) {
+  .page[data-page="hunt"] .combat-vitals-grid,
+  .page[data-page="hunt"] .support-action-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .equipped-reforge-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:720px) {
+  .page[data-page="hunt"] .primary-hunt-actions {
+    grid-template-columns:1fr 1fr;
+  }
+
+  .page[data-page="hunt"] .primary-hunt-actions .action {
+    min-height:52px;
+    font-size:13px;
+  }
+
+  .page[data-page="hunt"] .battle-reward-grid {
+    grid-template-columns:1fr;
+  }
+
+  .equipped-reforge-head {
+    flex-direction:column;
+  }
+}
+
+@media (max-width:480px) {
+  .page[data-page="hunt"] .combat-vitals-grid,
+  .page[data-page="hunt"] .primary-hunt-actions,
+  .page[data-page="hunt"] .support-action-grid,
+  .equipped-reforge-grid {
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* v60: 네 개 카테고리 메뉴 + 즉시 장비 비교 */
+.four-category-nav .top-section-tabs {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+
+.four-category-nav .top-section-tab {
+  min-height:42px;
+  font-size:13px;
+}
+
+.four-category-nav .top-subnav {
+  gap:6px;
+}
+
+.four-category-nav .top-subnav .top-tab {
+  min-height:35px;
+  padding:8px 11px;
+  font-size:10px;
+}
+
+.inventory-compare-card {
+  cursor:pointer;
+  transition:border-color .15s ease, transform .15s ease, background .15s ease;
+}
+
+.inventory-compare-card:hover,
+.inventory-compare-card:focus-visible {
+  border-color:rgba(219,159,68,.58);
+  outline:none;
+  transform:translateY(-1px);
+}
+
+.inventory-compare-card::after {
+  content:"카드 선택 · 현재 장비와 비교";
+  display:block;
+  margin-top:9px;
+  padding-top:7px;
+  border-top:1px solid rgba(208,149,63,.13);
+  color:#85745b;
+  font-size:8px;
+  font-weight:800;
+}
+
+.item-compare-modal {
+  position:fixed;
+  inset:0;
+  z-index:10000;
+  display:grid;
+  place-items:center;
+  padding:18px;
+}
+
+.item-compare-modal.hidden {
+  display:none;
+}
+
+.item-compare-backdrop {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border:0;
+  border-radius:0;
+  background:rgba(3,3,3,.82);
+  backdrop-filter:blur(5px);
+}
+
+.item-compare-dialog {
+  position:relative;
+  z-index:1;
+  width:min(980px,100%);
+  max-height:min(850px,92vh);
+  overflow:auto;
+  border:1px solid rgba(218,155,62,.42);
+  border-radius:16px;
+  background:
+    radial-gradient(circle at 50% 0,rgba(167,99,27,.12),transparent 34%),
+    #12100d;
+  box-shadow:0 28px 80px rgba(0,0,0,.64);
+}
+
+.item-compare-dialog-head {
+  position:sticky;
+  top:0;
+  z-index:3;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:14px 16px;
+  border-bottom:1px solid rgba(218,155,62,.20);
+  background:rgba(20,17,12,.96);
+}
+
+.item-compare-dialog-head span {
+  color:#9d7844;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.15em;
+}
+
+.item-compare-dialog-head h2 {
+  margin:3px 0 0;
+  color:#f0d38e;
+  font-size:18px;
+}
+
+.item-compare-dialog-head > button {
+  width:36px;
+  height:36px;
+  padding:0;
+  border-radius:50%;
+  color:#c8b186;
+  font-size:23px;
+}
+
+.item-compare-dialog #itemCompareContent {
+  padding:14px;
+}
+
+.loot-card .item-compare-shell {
+  margin:0;
+}
+
+.item-compare-shell {
+  display:grid;
+  gap:12px;
+  padding:13px;
+  border:1px solid rgba(205,146,60,.28);
+  border-radius:14px;
+  background:
+    radial-gradient(circle at 100% 0,rgba(187,112,28,.10),transparent 36%),
+    rgba(15,13,10,.92);
+}
+
+.item-compare-summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+}
+
+.item-compare-summary > div:first-child {
+  display:grid;
+  gap:3px;
+}
+
+.item-compare-summary > div:first-child span {
+  color:#a47d45;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.12em;
+}
+
+.item-compare-summary > div:first-child strong {
+  color:#efd08b;
+  font-size:16px;
+}
+
+.item-compare-power {
+  display:grid;
+  min-width:150px;
+  padding:9px 11px;
+  border:1px solid currentColor;
+  border-radius:10px;
+  text-align:right;
+  background:rgba(0,0,0,.18);
+}
+
+.item-compare-power small,
+.item-compare-power em {
+  color:#918570;
+  font-size:8px;
+  font-style:normal;
+}
+
+.item-compare-power strong {
+  margin-top:1px;
+  font-size:20px;
+}
+
+.item-compare-cards {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);
+  align-items:stretch;
+  gap:8px;
+}
+
+.item-compare-swap-arrow {
+  display:grid;
+  place-items:center;
+  color:#8f754d;
+  font-size:20px;
+}
+
+.item-compare-equipment-card {
+  min-width:0;
+  padding:11px;
+  border:1px solid rgba(139,121,90,.24);
+  border-radius:11px;
+  background:rgba(7,7,6,.48);
+}
+
+.item-compare-equipment-card.kind-set {
+  border-color:rgba(76,150,124,.42);
+}
+
+.item-compare-equipment-card.kind-unique {
+  border-color:rgba(205,136,46,.48);
+}
+
+.item-compare-equipment-card.empty {
+  display:grid;
+  align-content:center;
+  min-height:160px;
+  opacity:.62;
+}
+
+.item-compare-card-label {
+  margin-bottom:7px;
+  color:#8f7957;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.10em;
+}
+
+.item-compare-card-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.item-compare-card-top span {
+  overflow:hidden;
+  font-size:9px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.item-compare-card-top strong {
+  flex:0 0 auto;
+  color:#d7c29a;
+  font-size:10px;
+}
+
+.item-compare-equipment-card h3 {
+  margin:8px 0 3px;
+  overflow:hidden;
+  font-size:14px;
+  line-height:1.35;
+  text-overflow:ellipsis;
+}
+
+.item-compare-memory {
+  color:#837867;
+  font-size:8px;
+}
+
+.item-compare-card-stats {
+  display:grid;
+  gap:4px;
+  margin-top:9px;
+  color:#9e998f;
+  font-size:8px;
+  line-height:1.45;
+}
+
+.item-compare-card-stats .affix-memory-range,
+.item-compare-card-stats .affix-tier-tag {
+  display:none;
+}
+
+.item-compare-empty-equipment {
+  color:#807667;
+  font-size:11px;
+  text-align:center;
+}
+
+.item-compare-stat-table {
+  overflow:hidden;
+  border:1px solid rgba(132,113,79,.20);
+  border-radius:10px;
+  background:rgba(6,6,5,.34);
+}
+
+.item-compare-table-head,
+.item-compare-stat-row {
+  display:grid;
+  grid-template-columns:minmax(90px,1fr) 76px 22px 76px 72px;
+  align-items:center;
+  gap:6px;
+  padding:8px 10px;
+}
+
+.item-compare-table-head {
+  border-bottom:1px solid rgba(132,113,79,.17);
+  color:#b49a70;
+  font-size:8px;
+  font-weight:950;
+}
+
+.item-compare-table-head span {
+  grid-column:1 / 3;
+}
+
+.item-compare-table-head b {
+  grid-column:3 / 6;
+  text-align:right;
+}
+
+.item-compare-stat-row {
+  border-bottom:1px solid rgba(132,113,79,.10);
+  color:#8f897e;
+  font-size:9px;
+}
+
+.item-compare-stat-row:last-child {
+  border-bottom:0;
+}
+
+.item-compare-stat-row > span {
+  color:#aaa08e;
+  font-weight:850;
+}
+
+.item-compare-stat-row > b,
+.item-compare-stat-row > strong,
+.item-compare-stat-row > em {
+  text-align:right;
+}
+
+.item-compare-stat-row > i {
+  color:#6d6252;
+  font-style:normal;
+  text-align:center;
+}
+
+.item-compare-stat-row > em {
+  font-size:8px;
+  font-style:normal;
+  font-weight:950;
+}
+
+.item-compare-empty-stats {
+  padding:12px;
+  color:#7d7467;
+  font-size:9px;
+  text-align:center;
+}
+
+.item-compare-actions {
+  display:grid;
+  grid-template-columns:1.25fr 1fr 1fr 1fr;
+  gap:7px;
+}
+
+.item-compare-actions button {
+  min-height:38px;
+  padding:8px;
+  font-size:9px;
+}
+
+@media (max-width:760px) {
+  .four-category-nav .top-section-tabs {
+    grid-template-columns:repeat(4,minmax(72px,1fr));
+  }
+
+  .four-category-nav .top-subnav {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .item-compare-modal {
+    padding:7px;
+  }
+
+  .item-compare-dialog {
+    max-height:96vh;
+    border-radius:12px;
+  }
+
+  .item-compare-cards {
+    grid-template-columns:1fr;
+  }
+
+  .item-compare-swap-arrow {
+    height:20px;
+    transform:rotate(90deg);
+  }
+
+  .item-compare-summary {
+    align-items:stretch;
+    flex-direction:column;
+  }
+
+  .item-compare-power {
+    min-width:0;
+    text-align:left;
+  }
+
+  .item-compare-table-head,
+  .item-compare-stat-row {
+    grid-template-columns:minmax(72px,1fr) 58px 16px 58px 58px;
+    padding:7px;
+    font-size:8px;
+  }
+
+  .item-compare-actions {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:420px) {
+  .four-category-nav .top-section-tabs {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .four-category-nav .top-subnav {
+    grid-template-columns:1fr;
+  }
+
+  .item-compare-table-head,
+  .item-compare-stat-row {
+    grid-template-columns:minmax(68px,1fr) 50px 12px 50px 50px;
+    gap:3px;
+  }
+}
