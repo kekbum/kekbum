@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=62">
+  <link rel="stylesheet" href="styles.css?v=63">
 
 </head>
 <body>
@@ -121,15 +121,7 @@
             <div class="class-passive" id="classPassive">직업을 선택하면 고유 효과가 적용됩니다.</div>
           </div>
 
-          <div class="character-drawer-grid">
-            <section class="character-drawer-section">
-              <div class="hunt-equipment-head">
-                <span>현재 장착 장비</span>
-                <small>장비를 누르면 상세 옵션을 확인합니다.</small>
-              </div>
-              <div class="equipment" id="equipment"></div>
-            </section>
-
+          <div class="character-drawer-single">
             <details class="side-detail-toggle character-growth-details">
               <summary>
                 <span>전투 능력치 · 성장 설정</span>
@@ -243,6 +235,17 @@
             <button class="action secondary" id="autoBtn">연속 사냥 · 5초</button>
           </div>
 
+          <section class="hunt-equipped-panel">
+            <header>
+              <div>
+                <span>EQUIPPED</span>
+                <strong>착용 장비</strong>
+              </div>
+              <small>장비를 눌러 교체</small>
+            </header>
+            <div class="equipment hunt-equipped-list" id="equipment"></div>
+          </section>
+
           <details class="combat-support-details compact-control-support">
             <summary>
               <span>
@@ -317,7 +320,7 @@
             <div>
               <span>COMBAT REPORT</span>
               <h2>최근 전투 보고서</h2>
-              <p>승패 원인, 전투 흐름, 보상과 전리품을 한곳에서 확인합니다.</p>
+              <p>최근 전투의 행동 기록, 경험치, 골드와 전리품을 확인합니다.</p>
             </div>
             <div class="hunt-report-live-status">
               <small>현재 상태</small>
@@ -1550,7 +1553,7 @@
   </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="game.js?v=62"></script>
+  <script src="game.js?v=63"></script>
 
 </body>
 </html>

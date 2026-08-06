@@ -1,4 +1,4 @@
-const VERSION = 62;
+const VERSION = 63;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -11151,8 +11151,6 @@ const VERSION = 62;
           state.rareMap = null;
         }
 
-        if (!battleFeed.loots.length) battleFeed.loots.push("장비 획득 없음");
-        if (!battleFeed.drops.length) battleFeed.drops.push("골드와 경험치만 회수했습니다.");
       } else if (result.escaped) {
         battleFeed.outcome = "escape";
         battleFeed.turns = result.turns;
@@ -11602,22 +11600,138 @@ const VERSION = 62;
       });
     }
 
+
+    function equipmentCandidatesForSlot(slotKey) {
+      return state.inventory
+        .filter(item => item?.slot === slotKey)
+        .sort((a,b) => {
+          const powerDiff = previewPowerDeltaForItem(b)-previewPowerDeltaForItem(a);
+          if (powerDiff) return powerDiff;
+          return Number(b.score || 0)-Number(a.score || 0);
+        });
+    }
+
+    function equipmentCandidateStats(item) {
+      const lines = itemStatLines(item)
+        .map(line => String(line).replace(/<[^>]+>/g,"").trim())
+        .filter(Boolean)
+        .slice(0,3);
+      return lines.length ? lines.join(" · ") : "추가 능력 없음";
+    }
+
+    function equipmentSlotPickerHtml(slotKey) {
+      const slot = slots.find(entry => entry.key === slotKey);
+      const current = state.equipment[slotKey] || null;
+      const candidates = equipmentCandidatesForSlot(slotKey);
+
+      return `
+        <div class="equipment-picker-shell">
+          <div class="equipment-picker-heading">
+            <div>
+              <span>QUICK EQUIP</span>
+              <h3>${slot?.label || slotKey} 교체</h3>
+              <p>가방에 보관 중인 같은 부위 장비만 표시됩니다.</p>
+            </div>
+            <strong>${candidates.length}개 후보</strong>
+          </div>
+
+          <div class="equipment-picker-current">
+            <span>현재 착용</span>
+            ${current
+              ? `<strong class="${current.rarityClass}">${current.name}</strong>
+                 <small>기억 Lv.${ensureItemMemoryDensity(current).itemLevel} · ${fmt(current.score)}점</small>`
+              : `<strong class="neutral">비어 있음</strong>
+                 <small>장착된 장비가 없습니다.</small>`}
+          </div>
+
+          <div class="equipment-picker-list">
+            ${candidates.length
+              ? candidates.map(item => {
+                  const delta = previewPowerDeltaForItem(item);
+                  return `
+                    <article class="equipment-picker-item ${itemKindClass(item)}">
+                      <div class="equipment-picker-item-main">
+                        <span class="rarity ${item.rarityClass}">[${item.rarityName}] 기억 Lv.${ensureItemMemoryDensity(item).itemLevel}</span>
+                        <strong class="${item.rarityClass}">${item.name}</strong>
+                        <small>${equipmentCandidateStats(item)}</small>
+                      </div>
+                      <div class="equipment-picker-item-score">
+                        <span>${fmt(item.score)}점</span>
+                        <strong class="${delta >= 0 ? "positive" : "negative"}">${delta >= 0 ? "+" : ""}${fmt(delta)} 전투력</strong>
+                      </div>
+                      <div class="equipment-picker-item-actions">
+                        <button data-equipment-picker-compare="${item.id}">비교</button>
+                        <button class="primary" data-equipment-picker-equip="${item.id}">착용</button>
+                      </div>
+                    </article>`;
+                }).join("")
+              : `<div class="equipment-picker-empty">
+                   <strong>교체할 수 있는 장비가 없습니다.</strong>
+                   <span>같은 부위의 장비를 획득하면 이곳에서 바로 착용할 수 있습니다.</span>
+                 </div>`}
+          </div>
+
+          <div class="equipment-picker-footer">
+            <button data-equipment-picker-inventory="${slotKey}">장비 가방 열기</button>
+          </div>
+        </div>`;
+    }
+
+    function bindEquipmentPickerActions(root) {
+      if (!root) return;
+
+      root.querySelectorAll("[data-equipment-picker-equip]").forEach(button => {
+        button.onclick = () => {
+          closeItemComparison();
+          equipInventoryItem(button.dataset.equipmentPickerEquip);
+        };
+      });
+
+      root.querySelectorAll("[data-equipment-picker-compare]").forEach(button => {
+        button.onclick = () => openItemComparison(button.dataset.equipmentPickerCompare);
+      });
+
+      root.querySelectorAll("[data-equipment-picker-inventory]").forEach(button => {
+        button.onclick = () => {
+          closeItemComparison();
+          switchPage("inventory");
+        };
+      });
+    }
+
+    function openEquipmentSlotPicker(slotKey) {
+      if (!slots.some(slot => slot.key === slotKey) || !els.itemCompareModal || !els.itemCompareContent) return;
+      activeItemComparisonId = "";
+      els.itemCompareContent.innerHTML = equipmentSlotPickerHtml(slotKey);
+      bindEquipmentPickerActions(els.itemCompareContent);
+      els.itemCompareModal.classList.remove("hidden");
+    }
+
     function renderEquipment() {
       hideEquipmentTooltip();
       els.equipment.innerHTML = slots.map(slot => {
         const item = state.equipment[slot.key];
+        const candidateCount = equipmentCandidatesForSlot(slot.key).length;
         return `
-          <div class="equip-row ${item ? "has-equipment-tooltip" : ""}"
-            ${item ? `data-equipment-tooltip="${slot.key}" tabindex="0" aria-label="${slot.label} 장비 정보 보기"` : ""}>
-            <div class="slot">${slot.label}</div>
-            <div class="equip-name ${item ? item.rarityClass : "neutral"}">
-              ${item ? `${itemKind(item)==="unique" ? "◆ " : itemKind(item)==="set" ? "◇ " : ""}${item.name} · 기억 Lv.${ensureItemMemoryDensity(item).itemLevel} · ${fmt(item.score)}` : "비어 있음"}
-            </div>
-            ${item ? `<span class="equipment-info-mark">i</span>` : ""}
-          </div>
+          <button class="equip-row quick-equipment-row ${item ? "equipped" : "empty"}"
+            type="button" data-equipment-swap="${slot.key}"
+            aria-label="${slot.label} 장비 교체 후보 ${candidateCount}개 보기">
+            <span class="slot">${slot.label}</span>
+            <span class="equip-name ${item ? item.rarityClass : "neutral"}">
+              ${item
+                ? `${itemKind(item)==="unique" ? "◆ " : itemKind(item)==="set" ? "◇ " : ""}${item.name}`
+                : "비어 있음"}
+            </span>
+            <span class="equipment-swap-count ${candidateCount ? "available" : ""}">
+              ${candidateCount ? `${candidateCount}개` : "없음"}
+            </span>
+          </button>
         `;
       }).join("");
-      bindEquipmentTooltips();
+
+      els.equipment.querySelectorAll("[data-equipment-swap]").forEach(button => {
+        button.onclick = () => openEquipmentSlotPicker(button.dataset.equipmentSwap);
+      });
     }
 
     function renderZones() {
@@ -11654,7 +11768,7 @@ function renderBattleRewardFocus() {
     els.battleRewardFocus.innerHTML = `
       <div class="battle-reward-kicker">RECENT RESULT</div>
       <div class="battle-reward-title">아직 전투 기록이 없습니다</div>
-      <div class="battle-reward-empty">왼쪽에서 사냥을 시작하면 승패 원인과 보상이 이곳에 정리됩니다.</div>
+      <div class="battle-reward-empty">왼쪽에서 사냥을 시작하면 경험치, 골드와 전리품이 이곳에 표시됩니다.</div>
     `;
     if (els.battleReportStatus) els.battleReportStatus.textContent = "전투 대기";
     return;
@@ -11674,11 +11788,12 @@ function renderBattleRewardFocus() {
       : "neutral";
   const summary = feed.summary || `${feed.enemyName || "적"}와 전투했습니다.`;
   const time = new Date(feed.updatedAt).toLocaleTimeString("ko-KR", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
+  const equipmentDropCount = (feed.loots || []).filter(Boolean).length;
+
   const statPills = [
-    `<div class="battle-reward-pill"><span>결과</span><strong class="${outcomeClass}">${outcomeLabel}</strong></div>`,
-    `<div class="battle-reward-pill"><span>전투 시간</span><strong>${fmt(feed.turns || 0)}막</strong></div>`,
     `<div class="battle-reward-pill"><span>경험치</span><strong>${feed.xp ? `+${fmt(feed.xp)}` : "0"}</strong></div>`,
-    `<div class="battle-reward-pill"><span>골드</span><strong>${feed.gold ? `+${fmt(feed.gold)}` : "0"}</strong></div>`
+    `<div class="battle-reward-pill"><span>골드</span><strong>${feed.gold ? `+${fmt(feed.gold)}` : "0"}</strong></div>`,
+    `<div class="battle-reward-pill"><span>장비 드롭</span><strong>${fmt(equipmentDropCount)}개</strong></div>`
   ].join("");
 
   const renderList = (title, values, cls="") => {
@@ -11693,6 +11808,8 @@ function renderBattleRewardFocus() {
     `;
   };
 
+  const notes = (feed.notes || []).filter(Boolean);
+
   els.battleRewardFocus.innerHTML = `
     <div class="battle-reward-kicker">${feed.zoneName || "사냥 기록"} · ${time}</div>
     <div class="battle-reward-head">
@@ -11702,16 +11819,14 @@ function renderBattleRewardFocus() {
       </div>
       <span class="battle-reward-result ${outcomeClass}">${outcomeLabel}</span>
     </div>
-    <div class="battle-result-reason ${outcomeClass}">
-      <span>판정 근거</span>
-      <strong>${feed.reason || "전투 결과를 분석 중입니다."}</strong>
-    </div>
     <div class="battle-reward-pills">${statPills}</div>
     <div class="battle-reward-grid report-reward-grid">
       ${renderList("획득 장비", feed.loots, "loot")}
       ${renderList("추가 보상", feed.drops, "drops")}
-      ${renderList("특이 사항", feed.notes, "notes")}
     </div>
+    ${notes.length
+      ? `<div class="battle-report-notes"><span>특이 사항</span>${notes.map(note => `<p>${note}</p>`).join("")}</div>`
+      : ""}
   `;
 
   if (els.battleReportStatus) {
@@ -11727,8 +11842,8 @@ function renderBattleRewardFocus() {
       if (!feed.updatedAt) {
         els.battleReportLog.innerHTML = `
           <div class="battle-report-log-empty">
-            <span>전투 흐름</span>
-            <strong>사냥을 시작하면 공격, 회피, 기술, 반격과 결정적인 순간이 여기에 표시됩니다.</strong>
+            <span>전투 로그</span>
+            <strong>사냥을 시작하면 공격, 피해, 기술, 회피와 반격 기록이 여기에 표시됩니다.</strong>
           </div>`;
         return;
       }
@@ -11746,8 +11861,7 @@ function renderBattleRewardFocus() {
       els.battleReportLog.innerHTML = `
         <div class="battle-report-log-head">
           <div>
-            <span>전투 흐름</span>
-            <strong>왜 ${feed.outcome === "win" ? "이겼는지" : feed.outcome === "defeat" ? "졌는지" : "끝내지 못했는지"} 확인</strong>
+            <strong>전투 로그</strong>
           </div>
           <div class="battle-report-vitals">
             ${vitalRows.map(([label,value]) => `<div><small>${label}</small><strong>${value}</strong></div>`).join("")}
@@ -11760,7 +11874,7 @@ function renderBattleRewardFocus() {
                   <span>${String(index+1).padStart(2,"0")}</span>
                   <p>${event.text}</p>
                 </div>`).join("")
-            : `<div class="battle-report-event ${outcomeClass}"><span>01</span><p>${feed.reason || feed.summary}</p></div>`}
+            : `<div class="battle-report-event ${outcomeClass}"><span>01</span><p>${feed.summary || "전투 기록이 없습니다."}</p></div>`}
         </div>
       `;
     }
