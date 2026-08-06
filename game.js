@@ -1,4 +1,4 @@
-const VERSION = 63;
+const VERSION = 65;
     const SAVE_KEY = "ash_hunter_demo_v1";
     const SAVE_SLOT_PREFIX = "ash_loot_manual_slot_";
     const SAVE_EXPORT_FORMAT = "ash-loot-save";
@@ -652,9 +652,9 @@ const VERSION = 63;
     ];
 
     const dailyRiftRunes = [
-      {id:"ash",label:"재",mark:"灰",desc:"모든 죽음 뒤에 남는 것"},
-      {id:"ember",label:"불씨",mark:"火",desc:"회귀자를 다시 일으키는 열"},
-      {id:"name",label:"이름",mark:"名",desc:"균열이 가장 먼저 빼앗는 기억"}
+      {id:"ash",label:"잿가루",mark:"잿",desc:"모든 죽음 뒤에 남는 흔적"},
+      {id:"ember",label:"불씨",mark:"불",desc:"회귀자를 다시 일으키는 열"},
+      {id:"name",label:"넋",mark:"넋",desc:"이름과 기억을 품은 마음의 흔적"}
     ];
 
     const finaleMemoryQuestions = [
@@ -1153,6 +1153,11 @@ const VERSION = 63;
       { key: "amulet", label: "부적" }
     ];
 
+    const innLocation = {
+      id:"inn", name:"잿빛 여관", tier:0, rec:0, itemMin:0, itemMax:0,
+      enemies:[], mult:0, nonCombat:true
+    };
+
     const zones = [
       { id:"field", name:"버려진 들판", tier:1, rec:20, itemMin:1, itemMax:10, enemies:["굶주린 들쥐","떠돌이 약탈자","썩은 들개"], mult:1.0 },
       { id:"camp", name:"도적 야영지", tier:2, rec:65, itemMin:8, itemMax:18, enemies:["도적 척후병","도적 투사","불량 용병"], mult:1.30 },
@@ -1620,7 +1625,7 @@ const VERSION = 63;
     const factionDefinitions = [
       {
         id:"camp",
-        mark:"燼",
+        mark:"숨",
         name:"잿빛 야영지",
         type:"생존자 거점",
         leader:"기록관 라우나",
@@ -1632,7 +1637,7 @@ const VERSION = 63;
       },
       {
         id:"cult",
-        mark:"火",
+        mark:"불",
         name:"화로 교단",
         type:"종말 신앙",
         leader:"대사제 세르마",
@@ -1644,7 +1649,7 @@ const VERSION = 63;
       },
       {
         id:"remnant",
-        mark:"冠",
+        mark:"깃",
         name:"왕립 잔재국",
         type:"멸망 왕국의 후계 세력",
         leader:"봉쇄군 사령관 카시안",
@@ -1656,7 +1661,7 @@ const VERSION = 63;
       },
       {
         id:"ledger",
-        mark:"帳",
+        mark:"셈",
         name:"검은 장부회",
         type:"암시장 연합",
         leader:"중개인 마르칸",
@@ -1800,6 +1805,10 @@ const VERSION = 63;
         budget:25,
         priority:"balanced"
       },
+      autoPotion: {
+        health:false,
+        mana:false
+      },
       autoProcess: {
         enabled:false,
         common:"keep",
@@ -1897,7 +1906,7 @@ const VERSION = 63;
         localFirstClear:null,
         rewardClaimed:false
       },
-      arena: { date:"", tickets:5, rating:1000, wins:0, losses:0, opponents:[], history:[] },
+      arena: { date:"", tickets:5, rating:1000, wins:0, losses:0, opponents:[], history:[], lastBattle:null },
       market: {
         tokens: 0,
         price: 95,
@@ -2121,6 +2130,10 @@ const VERSION = 63;
       huntMarketHudProfit: document.getElementById("huntMarketHudProfit"),
       potionBtn: document.getElementById("potionBtn"),
       manaPotionBtn: document.getElementById("manaPotionBtn"),
+      autoHealthPotionToggle: document.getElementById("autoHealthPotionToggle"),
+      autoManaPotionToggle: document.getElementById("autoManaPotionToggle"),
+      autoPotionStatus: document.getElementById("autoPotionStatus"),
+      innRestPanel: document.getElementById("innRestPanel"),
       elixirBtn: document.getElementById("elixirBtn"),
       staminaPotionBtn: document.getElementById("staminaPotionBtn"),
       fieldCareToggle: document.getElementById("fieldCareToggle"),
@@ -2318,6 +2331,19 @@ const VERSION = 63;
       arenaSummary: document.getElementById("arenaSummary"),
       arenaGrid: document.getElementById("arenaGrid"),
       arenaLog: document.getElementById("arenaLog"),
+      arenaBattleStage: document.getElementById("arenaBattleStage"),
+      arenaBattleStatus: document.getElementById("arenaBattleStatus"),
+      arenaSkipBtn: document.getElementById("arenaSkipBtn"),
+      arenaDuelBoard: document.getElementById("arenaDuelBoard"),
+      arenaHeroName: document.getElementById("arenaHeroName"),
+      arenaHeroClass: document.getElementById("arenaHeroClass"),
+      arenaHeroHpBar: document.getElementById("arenaHeroHpBar"),
+      arenaHeroHpText: document.getElementById("arenaHeroHpText"),
+      arenaOpponentName: document.getElementById("arenaOpponentName"),
+      arenaOpponentClass: document.getElementById("arenaOpponentClass"),
+      arenaOpponentHpBar: document.getElementById("arenaOpponentHpBar"),
+      arenaOpponentHpText: document.getElementById("arenaOpponentHpText"),
+      arenaLiveLog: document.getElementById("arenaLiveLog"),
       rankingNavMark: document.getElementById("rankingNavMark"),
       rankingOwnershipNotice: document.getElementById("rankingOwnershipNotice"),
       rankingOwnershipTitle: document.getElementById("rankingOwnershipTitle"),
@@ -2401,6 +2427,9 @@ const VERSION = 63;
 
     let activeInfoTab = "records";
     let activeItemComparisonId = "";
+    let activeArenaBattle = null;
+    let arenaPlaybackToken = 0;
+    let arenaSkipRequested = false;
 
     function loadState() {
       try {
@@ -2481,6 +2510,7 @@ const VERSION = 63;
           mp: Number.isFinite(loaded.mp) ? loaded.mp : fresh.mp,
           consumables: { ...fresh.consumables, ...(loaded.consumables || {}) },
           fieldCare: { ...fresh.fieldCare, ...(loaded.fieldCare || {}) },
+          autoPotion: { ...fresh.autoPotion, ...(loaded.autoPotion || {}) },
           autoProcess: { ...fresh.autoProcess, ...(loaded.autoProcess || {}) },
           affixEssences: Array.isArray(loaded.affixEssences) ? loaded.affixEssences : [],
           collection: {
@@ -4071,7 +4101,7 @@ const VERSION = 63;
       els.infoContent.innerHTML = `
         <div class="story-archive-hero">
           <div class="story-archive-identity">
-            <div class="story-archive-mark" aria-hidden="true">記</div>
+            <div class="story-archive-mark" aria-hidden="true">기록</div>
             <div>
               <span>THE ASHEN CHRONICLE</span>
               <h3>${state.nickname || "무명의 사냥꾼"}의 잃어버린 연대기</h3>
@@ -4486,7 +4516,10 @@ const VERSION = 63;
       return Math.max(0,Math.round((saved.level || 1)*18 + equipmentScore*.55));
     }
 
-    function zone() { return zones.find(z => z.id === state.currentZone); }
+    function zone() {
+      if (state.currentZone === innLocation.id) return innLocation;
+      return zones.find(z => z.id === state.currentZone) || zones[0];
+    }
     function xpNeeded() { return Math.floor(180 * Math.pow(state.level, 1.55)); }
 
     function currentClass() { return state.classId ? classes[state.classId] : null; }
@@ -5780,9 +5813,10 @@ const VERSION = 63;
         state.abyss.history.unshift(`${floor}층 돌파 · ${result.turns}막 · 골드 +${fmt(gold)}${boss ? " · 보스 전리품 획득" : ""}`);
         state.abyss.floor++;
       } else {
-        state.abyss.history.unshift(`${floor}층에서 원정 종료 · 최고 ${state.abyss.bestFloor}층`);
+        state.abyss.history.unshift(`${floor}층에서 사망 · 잿빛 여관으로 회귀 · 최고 ${state.abyss.bestFloor}층`);
         state.abyss.active = false;
-        toast("심연 원정 종료");
+        returnToInnAfterDefeat(`끝없는 심연 ${floor}층`,{switchView:true});
+        toast("사망 후 잿빛 여관으로 돌아왔습니다.");
       }
       state.abyss.history = state.abyss.history.slice(0,20);
       saveState();
@@ -5862,8 +5896,9 @@ const VERSION = 63;
         );
         toast(bossBook ? "토벌 성공 · 왕의 기술서 발견" : "일일 보스 토벌 성공");
       } else {
-        state.dailyBoss.history.unshift(`${boss.name} ${difficulty.name} 패배 · 다음 도전은 내일`);
-        toast("일일 보스 도전 종료");
+        state.dailyBoss.history.unshift(`${boss.name} ${difficulty.name} 패배 · 잿빛 여관으로 회귀 · 다음 도전은 내일`);
+        returnToInnAfterDefeat(`일일 보스 ${boss.name}`,{switchView:true});
+        toast("사망 후 잿빛 여관으로 돌아왔습니다.");
       }
       state.dailyBoss.history = state.dailyBoss.history.slice(0,14);
       saveState();
@@ -8165,7 +8200,7 @@ const VERSION = 63;
       if (!result.won) {
         dungeon.running = false;
         isBusy = false;
-        finishDailyDungeonFailure(`${stage.name}의 수호자에게 패배`,stageNumber,result.turns);
+        finishDailyDungeonFailure(`${stage.name}의 수호자에게 패배`,stageNumber,result.turns,{died:true});
         return;
       }
 
@@ -8213,7 +8248,7 @@ const VERSION = 63;
       finishDailyDungeonFailure("원정대가 자진 후퇴",Math.max(1,dungeon.currentWave || 1),0);
     }
 
-    function finishDailyDungeonFailure(reason,wave,turns=0) {
+    function finishDailyDungeonFailure(reason,wave,turns=0,{died=false}={}) {
       const dungeon = state.dailyDungeon;
       const stage = dailyRiftStages[Math.max(0,wave-1)] || dailyRiftStages[0];
       dungeon.activeRun = false;
@@ -8232,6 +8267,7 @@ const VERSION = 63;
       dungeon.history.unshift(line);
       dungeon.history = dungeon.history.slice(0,5);
       log(`[오늘의 균열] ${line}`,"negative");
+      if (died) returnToInnAfterDefeat(`오늘의 균열 ${stage.name}`,{switchView:true});
       isBusy = false;
       saveState();
       renderAll();
@@ -8869,7 +8905,7 @@ const VERSION = 63;
       renderAll();
     }
 
-    function failFinaleRun(reason,enemyName="회백의 왕",turns=0) {
+    function failFinaleRun(reason,enemyName="회백의 왕",turns=0,{died=true}={}) {
       const finale = state.finale;
       finale.active = false;
       finale.failures = (finale.failures || 0)+1;
@@ -8883,11 +8919,14 @@ const VERSION = 63;
       finale.archive = finale.archive.slice(0,10);
       pushFinaleLog(`[왕좌 원정 실패] ${reason} · 다음 도전은 이름 없는 군대부터 다시 시작한다.`,"negative");
       log(`[모험 최종장] 실패 · ${reason}`,"negative");
-      showDefeatLog({
-        enemy:{name:enemyName},
-        result:{turns:turns || finale.totalTurns},
-        autoStopped:false
-      });
+      if (died) {
+        showDefeatLog({
+          enemy:{name:enemyName},
+          result:{turns:turns || finale.totalTurns},
+          autoStopped:false
+        });
+        returnToInnAfterDefeat(`모험 최종장 · ${enemyName}`,{switchView:true});
+      }
       isBusy = false;
       saveState();
       renderAll();
@@ -8895,7 +8934,7 @@ const VERSION = 63;
 
     function abandonFinaleRun() {
       if (!state.finale.active || isBusy) return;
-      failFinaleRun("사냥꾼이 왕좌 원정을 포기","재의 왕좌",state.finale.totalTurns);
+      failFinaleRun("사냥꾼이 왕좌 원정을 포기","재의 왕좌",state.finale.totalTurns,{died:false});
     }
 
     function completeFinaleRun() {
@@ -9297,7 +9336,7 @@ const VERSION = 63;
       if (!finale.active) {
         els.finaleContent.innerHTML = `
           <div class="finale-entry-card ${ready ? "ready" : "locked"}">
-            <div class="finale-entry-symbol">王</div>
+            <div class="finale-entry-symbol">왕</div>
             <div>
               <span>${finale.completed ? "THRONE CONQUERED" : ready ? "THE THRONE IS OPEN" : "THE THRONE IS SEALED"}</span>
               <h3>${finale.completed ? "회백의 왕을 쓰러뜨린 기록" : "회백의 왕, 모든 이름의 무덤"}</h3>
@@ -9367,6 +9406,7 @@ const VERSION = 63;
 
     function refreshArenaOpponents() {
       ensureArena();
+      if (isBusy) return toast("대결이 끝난 뒤 상대를 갱신할 수 있습니다.");
       if (state.gold < 60) return toast("상대 갱신에 필요한 골드가 부족합니다.");
       state.gold -= 60;
       generateArenaOpponents();
@@ -9392,48 +9432,225 @@ const VERSION = 63;
       };
     }
 
-    function challengeArena(opponentId) {
+    function arenaNumberFromText(value) {
+      return Number(String(value || "0").replace(/,/g,"")) || 0;
+    }
+
+    function arenaBattleDisplayData() {
+      return activeArenaBattle || state.arena.lastBattle || null;
+    }
+
+    function applyArenaEventSnapshot(battle,event) {
+      const text = String(event?.text || "");
+      const enemyExact = text.match(/적 ([\d,]+)\/([\d,]+)/);
+      const heroExact = text.match(/내 HP ([\d,]+)\/([\d,]+)/);
+      const revive = text.match(/HP ([\d,]+)로 부활/);
+      const heal = text.match(/HP \+([\d,]+)/);
+      const damage = text.match(/→ ([\d,]+) 피해/);
+
+      if (enemyExact) {
+        battle.enemyHp = arenaNumberFromText(enemyExact[1]);
+        battle.enemyMaxHp = Math.max(1,arenaNumberFromText(enemyExact[2]));
+      } else if (
+        damage
+        && !String(event?.cls || "").includes("battle-enemy")
+        && !text.includes("내 HP")
+      ) {
+        battle.enemyHp = Math.max(0,battle.enemyHp-arenaNumberFromText(damage[1]));
+      }
+
+      if (heroExact) {
+        battle.heroHp = arenaNumberFromText(heroExact[1]);
+        battle.heroMaxHp = Math.max(1,arenaNumberFromText(heroExact[2]));
+      } else if (revive) {
+        battle.heroHp = arenaNumberFromText(revive[1]);
+      } else if (heal) {
+        battle.heroHp = Math.min(battle.heroMaxHp,battle.heroHp+arenaNumberFromText(heal[1]));
+      }
+    }
+
+    function arenaEventClass(cls="") {
+      if (cls.includes("battle-enemy") || cls.includes("negative")) return "enemy";
+      if (cls.includes("battle-heal")) return "heal";
+      if (cls.includes("battle-counter") || cls.includes("rarity-legendary") || cls.includes("rarity-unique")) return "special";
+      if (cls.includes("battle-status") || cls.includes("battle-effect")) return "status";
+      return "hero";
+    }
+
+    function renderArenaBattleStage() {
+      if (!els.arenaLiveLog) return;
+      const battle = arenaBattleDisplayData();
+
+      if (!battle) {
+        els.arenaBattleStatus.textContent = "상대 선택 대기";
+        els.arenaBattleStatus.className = "";
+        els.arenaSkipBtn.classList.add("hidden");
+        els.arenaHeroName.textContent = state.nickname || "무명의 사냥꾼";
+        els.arenaHeroClass.textContent = currentClass()?.name || "직업 미선택";
+        els.arenaHeroHpBar.style.width = "0%";
+        els.arenaHeroHpText.textContent = "대결 전";
+        els.arenaOpponentName.textContent = "상대를 선택하세요";
+        els.arenaOpponentClass.textContent = "잔영 정보";
+        els.arenaOpponentHpBar.style.width = "0%";
+        els.arenaOpponentHpText.textContent = "대결 전";
+        els.arenaLiveLog.innerHTML = `<div class="arena-live-log-empty">상대의 잔영을 선택하면 전투가 시작됩니다.</div>`;
+        return;
+      }
+
+      const heroRate = clamp(battle.heroHp/Math.max(1,battle.heroMaxHp)*100,0,100);
+      const enemyRate = clamp(battle.enemyHp/Math.max(1,battle.enemyMaxHp)*100,0,100);
+      const isPlaying = battle.status === "playing";
+      const resultClass = battle.won === true ? "positive" : battle.won === false ? "negative" : "";
+
+      els.arenaBattleStatus.textContent = isPlaying
+        ? `${fmt(battle.visibleEvents.length)}번째 행동 재생 중`
+        : battle.resultText || "대결 기록";
+      els.arenaBattleStatus.className = isPlaying ? "playing" : resultClass;
+      els.arenaSkipBtn.classList.toggle("hidden",!isPlaying);
+
+      els.arenaHeroName.textContent = battle.heroName;
+      els.arenaHeroClass.textContent = battle.heroClass;
+      els.arenaHeroHpBar.style.width = `${heroRate}%`;
+      els.arenaHeroHpText.textContent = `${fmt(battle.heroHp)} / ${fmt(battle.heroMaxHp)}`;
+
+      els.arenaOpponentName.textContent = battle.opponentName;
+      els.arenaOpponentClass.textContent = battle.opponentClass;
+      els.arenaOpponentHpBar.style.width = `${enemyRate}%`;
+      els.arenaOpponentHpText.textContent = `${fmt(battle.enemyHp)} / ${fmt(battle.enemyMaxHp)}`;
+
+      const events = battle.visibleEvents || battle.events || [];
+      const resultHtml = !isPlaying && battle.resultText
+        ? `<div class="arena-live-result ${resultClass}">
+            <strong>${battle.resultText}</strong>
+            <span>${battle.rewardText || ""}</span>
+          </div>`
+        : "";
+
+      els.arenaLiveLog.innerHTML = events.length
+        ? `${events.map((event,index) => `
+            <div class="arena-live-event ${arenaEventClass(event.cls)}">
+              <span>${String(index+1).padStart(2,"0")}</span>
+              <p>${event.text}</p>
+            </div>`).join("")}${resultHtml}`
+        : `<div class="arena-live-log-empty">투기장 문이 열리고 있습니다.</div>`;
+
+      els.arenaLiveLog.scrollTop = els.arenaLiveLog.scrollHeight;
+    }
+
+    async function challengeArena(opponentId) {
       ensureArena();
       if (state.arena.tickets <= 0) return toast("오늘의 아레나 입장권을 모두 사용했습니다.");
       const opponent = state.arena.opponents.find(o => o.id === opponentId);
       if (!opponent || isBusy) return;
 
       isBusy = true;
+      arenaSkipRequested = false;
+      const playbackToken = ++arenaPlaybackToken;
       state.arena.tickets--;
+
       const oldHp = state.hp;
       const oldMp = state.mp;
       const s = totalStats();
       state.hp = s.maxHp;
       state.mp = s.maxMp;
-      const result = simulateBattle(createArenaEnemy(opponent));
+
+      const enemy = createArenaEnemy(opponent);
+      const result = simulateBattle(enemy);
+
       state.hp = oldHp;
       state.mp = oldMp;
-      result.events.forEach(event => log(`[아레나] ${event.text}`, event.cls));
+
+      activeArenaBattle = {
+        status:"playing",
+        heroName:state.nickname || "무명의 사냥꾼",
+        heroClass:currentClass()?.name || "사냥꾼",
+        heroHp:s.maxHp,
+        heroMaxHp:s.maxHp,
+        opponentName:opponent.name,
+        opponentClass:classes[opponent.classId]?.name || "결투 상대",
+        enemyHp:enemy.hp,
+        enemyMaxHp:enemy.hp,
+        visibleEvents:[],
+        won:null,
+        resultText:"",
+        rewardText:""
+      };
+
+      renderArena();
+      saveState();
+
+      const events = result.events || [];
+      const delay = Math.max(70,Math.min(190,Math.round(4600/Math.max(1,events.length))));
+
+      for (const event of events) {
+        if (playbackToken !== arenaPlaybackToken) return;
+        activeArenaBattle.visibleEvents.push({
+          text:String(event?.text || ""),
+          cls:String(event?.cls || "")
+        });
+        applyArenaEventSnapshot(activeArenaBattle,event);
+        renderArenaBattleStage();
+
+        if (!arenaSkipRequested) {
+          await new Promise(resolve => setTimeout(resolve,delay));
+        }
+      }
+
+      if (playbackToken !== arenaPlaybackToken) return;
+
+      activeArenaBattle.heroHp = result.heroHp;
+      activeArenaBattle.heroMaxHp = s.maxHp;
+      activeArenaBattle.enemyHp = result.won ? 0 : Math.max(0,activeArenaBattle.enemyHp);
+      activeArenaBattle.enemyMaxHp = enemy.hp;
 
       let ratingChange;
+      let resultText;
+      let rewardText;
+
       if (result.won) {
         ratingChange = Math.max(9,Math.round(17 + (opponent.rating-state.arena.rating)/35));
         state.arena.rating += ratingChange;
         state.arena.wins++;
         state.records.arenaWins = (state.records.arenaWins || 0) + 1;
+
         const goldReward = Math.round(42 * opponent.ratio);
         const dustReward = opponent.ratio >= 1.1 ? 3 : 1;
         state.gold += goldReward;
         state.dust += dustReward;
         state.records.totalGold += goldReward;
-        state.arena.history.unshift(`승리 vs ${opponent.name} · 레이팅 +${ratingChange} · 골드 +${goldReward} · 별가루 +${dustReward}`);
-        log(`[아레나] ${opponent.name}에게 승리 · 레이팅 +${ratingChange}`, "positive");
-        toast("아레나 승리!");
+
+        resultText = `승리 · ${opponent.name}`;
+        rewardText = `레이팅 +${ratingChange} · 골드 +${goldReward} · 별가루 +${dustReward}`;
+        state.arena.history.unshift(`${resultText} · ${rewardText}`);
+        log(`[투기장] ${opponent.name}에게 승리 · 레이팅 +${ratingChange}`, "positive");
+        toast("투기장 승리!");
       } else {
         ratingChange = Math.max(7,Math.round(13 + (state.arena.rating-opponent.rating)/45));
         state.arena.rating = Math.max(500,state.arena.rating-ratingChange);
         state.arena.losses++;
         state.records.arenaLosses = (state.records.arenaLosses || 0) + 1;
-        state.arena.history.unshift(`패배 vs ${opponent.name} · 레이팅 -${ratingChange}`);
-        log(`[아레나] ${opponent.name}에게 패배 · 레이팅 -${ratingChange}`, "negative");
-        toast("아레나 패배");
+
+        resultText = `패배 · ${opponent.name}`;
+        rewardText = `레이팅 -${ratingChange}`;
+        state.arena.history.unshift(`${resultText} · ${rewardText}`);
+        log(`[투기장] ${opponent.name}에게 패배 · 레이팅 -${ratingChange}`, "negative");
+        toast("투기장 패배");
       }
+
       state.arena.history = state.arena.history.slice(0,8);
+      activeArenaBattle.status = "complete";
+      activeArenaBattle.won = !!result.won;
+      activeArenaBattle.resultText = resultText;
+      activeArenaBattle.rewardText = rewardText;
+
+      state.arena.lastBattle = {
+        ...activeArenaBattle,
+        visibleEvents:activeArenaBattle.visibleEvents.slice(-48),
+        events:activeArenaBattle.visibleEvents.slice(-48),
+        completedAt:Date.now()
+      };
+
+      activeArenaBattle = null;
       generateArenaOpponents();
       isBusy = false;
       saveState();
@@ -9450,6 +9667,9 @@ const VERSION = 63;
         ["승리 / 패배", `${fmt(state.arena.wins)} / ${fmt(state.arena.losses)}`],
         ["내 전투력", fmt(power())]
       ].map(([k,v]) => `<div class="stat"><span>${k}</span><strong>${v}</strong></div>`).join("");
+
+      renderArenaBattleStage();
+
       els.arenaGrid.innerHTML = state.arena.opponents.map((opponent,index) => {
         const cls = classes[opponent.classId];
         const delta = opponent.power-power();
@@ -9462,14 +9682,24 @@ const VERSION = 63;
             </div>
             <div class="arena-reward">${index===0 ? "안전한 상대" : index===1 ? "비슷한 상대" : "고보상 강적"}</div>
             <div class="mini-buttons">
-              <button class="primary" data-arena-fight="${opponent.id}" ${state.arena.tickets<=0 ? "disabled" : ""}>대결하기</button>
+              <button class="primary" data-arena-fight="${opponent.id}" ${state.arena.tickets<=0 || isBusy ? "disabled" : ""}>
+                ${isBusy ? "대결 진행 중" : "대결하기"}
+              </button>
             </div>
           </article>`;
       }).join("");
-      els.arenaGrid.querySelectorAll("[data-arena-fight]").forEach(btn => btn.onclick = () => challengeArena(btn.dataset.arenaFight));
+
+      els.arenaGrid.querySelectorAll("[data-arena-fight]").forEach(btn => {
+        btn.onclick = () => challengeArena(btn.dataset.arenaFight);
+      });
+
       els.arenaLog.innerHTML = state.arena.history.length
-        ? `<strong>최근 결과</strong><br>${state.arena.history.map(x => `• ${x}`).join("<br>")}`
-        : "아직 아레나 대전 기록이 없습니다.";
+        ? state.arena.history.map((entry,index) => `
+            <div class="arena-history-row">
+              <span>${String(index+1).padStart(2,"0")}</span>
+              <p>${entry}</p>
+            </div>`).join("")
+        : `<div class="arena-history-empty">아직 투기장 대전 기록이 없습니다.</div>`;
     }
 
     const gambleSlotConfig = {
@@ -10665,6 +10895,51 @@ const VERSION = 63;
       renderAll();
     }
 
+
+    function autoPotionSettings() {
+      return state.autoPotion || (state.autoPotion = {health:false,mana:false});
+    }
+
+    function applyAutomaticPotionsAfterBattle(battleFeed=null) {
+      const settings = autoPotionSettings();
+      const stats = totalStats();
+      let healthUsed = 0;
+      let manaUsed = 0;
+
+      if (settings.health) {
+        while (state.hp < stats.maxHp && (state.consumables.health || 0) > 0) {
+          state.consumables.health--;
+          applyRecovery(recoveryItems.health);
+          healthUsed++;
+        }
+      }
+
+      if (settings.mana) {
+        while (state.mp < stats.maxMp && (state.consumables.mana || 0) > 0) {
+          state.consumables.mana--;
+          applyRecovery(recoveryItems.mana);
+          manaUsed++;
+        }
+      }
+
+      const notes = [];
+      if (healthUsed) notes.push(`자동 체력약 ${healthUsed}개`);
+      if (manaUsed) notes.push(`자동 마나약 ${manaUsed}개`);
+      if (notes.length && battleFeed) battleFeed.notes.push(notes.join(" · "));
+      return {healthUsed,manaUsed};
+    }
+
+    function renderAutoPotionControls() {
+      const settings = autoPotionSettings();
+      if (els.autoHealthPotionToggle) els.autoHealthPotionToggle.checked = !!settings.health;
+      if (els.autoManaPotionToggle) els.autoManaPotionToggle.checked = !!settings.mana;
+      if (els.autoPotionStatus) {
+        const active = [settings.health ? "체력" : "",settings.mana ? "마나" : ""].filter(Boolean);
+        els.autoPotionStatus.textContent = active.length ? `자동 ${active.join("·")} 포션 켜짐` : "자동 포션 꺼짐";
+        els.autoPotionStatus.classList.toggle("active",active.length > 0);
+      }
+    }
+
     function updateCodex(enemy, result, item=null, recovery=null) {
       const key = `${enemy.zoneId}:${enemy.baseName}`;
       const old = state.codex[key] || {
@@ -10719,6 +10994,7 @@ const VERSION = 63;
       els.consumableGrid.querySelectorAll("[data-use-consumable]").forEach(btn => {
         btn.onclick = () => useConsumable(btn.dataset.useConsumable);
       });
+      renderAutoPotionControls();
     }
 
     function renderCodex() {
@@ -10902,15 +11178,45 @@ const VERSION = 63;
         : `계약을 켜면 전투 후 최대 ${fmt(care.budget)}G 안에서 필요한 만큼만 사용한다. 골드가 부족하면 보유액까지만 정비한다.`;
     }
 
+
+    function returnToInnAfterDefeat(source="전투",{switchView=true}={}) {
+      if (autoTimer) stopAutoHunt();
+      const stats = totalStats();
+      state.currentZone = innLocation.id;
+      state.zonesVisited[innLocation.id] = true;
+      state.hp = stats.maxHp;
+      state.mp = stats.maxMp;
+      log(`사망 · ${source} · 회귀의 불씨가 사냥꾼을 잿빛 여관으로 되돌렸습니다. HP와 MP가 회복되었습니다.`,"negative");
+      if (switchView) setTimeout(() => {
+        switchPage("hunt");
+        window.scrollTo({top:0,behavior:"smooth"});
+      },0);
+    }
+
+    function restAtInn({restoreStamina=false}={}) {
+      if (state.currentZone !== innLocation.id) return toast("잿빛 여관에서만 이용할 수 있습니다.");
+      const stats = totalStats();
+      state.hp = stats.maxHp;
+      state.mp = stats.maxMp;
+      if (restoreStamina) {
+        state.stamina = STAMINA_MAX;
+        state.staminaUpdatedAt = Date.now();
+      }
+      log(`잿빛 여관 휴식 · HP와 MP 회복${restoreStamina ? ` · 활력 ${STAMINA_MAX}` : ""}`,"battle-heal");
+      saveState();
+      renderAll();
+      toast(restoreStamina ? "활력까지 모두 회복되었습니다." : "HP와 MP가 회복되었습니다.");
+    }
+
     function showDefeatLog({enemy,result,autoStopped}) {
       if (!els.defeatLogBanner) return;
 
       const enemyName = enemy?.name || "적";
       const turns = Math.max(0,Number(result?.turns || 0));
-      els.defeatLogTitle.textContent = `${enemyName}에게 패배`;
+      els.defeatLogTitle.textContent = `${enemyName}에게 사망`;
       els.defeatLogText.textContent = autoStopped
-        ? `${fmt(turns)}막에서 전투가 종료되어 자동 사냥을 멈췄습니다. 장비와 경험치는 유지됩니다.`
-        : `${fmt(turns)}막에서 전투가 종료되었습니다. 장비와 경험치는 유지됩니다.`;
+        ? `${fmt(turns)}막에서 사망해 자동 사냥을 멈췄습니다. 회귀의 불씨가 잿빛 여관으로 되돌렸으며 장비와 경험치는 유지됩니다.`
+        : `${fmt(turns)}막에서 사망했습니다. 회귀의 불씨가 잿빛 여관으로 되돌렸으며 장비와 경험치는 유지됩니다.`;
 
       els.defeatLogBanner.classList.remove("hidden","show");
       void els.defeatLogBanner.offsetWidth;
@@ -10925,6 +11231,10 @@ const VERSION = 63;
 
     async function hunt(inRareMap=false) {
       if (!state.classId) { showClassModal(); return; }
+      if (state.currentZone === innLocation.id) {
+        toast("여관에서는 사냥할 수 없습니다. 상단 사냥터에서 전투 지역을 선택하세요.");
+        return;
+      }
       if (state.pendingRecovery) {
         const pending = state.pendingRecovery;
         state.consumables[pending.id] = (state.consumables[pending.id] || 0)+1;
@@ -11171,15 +11481,14 @@ const VERSION = 63;
         battleFeed.skills = result.skillUses;
         battleFeed.summary = `${enemy.name}에게 패배했습니다.`;
         battleFeed.reason = `내 체력이 0이 됐습니다. ${fmt(result.turns)}막 동안 최대 ${fmt(result.maxHit)} 피해를 기록했지만 적을 쓰러뜨리지 못했습니다.`;
-        battleFeed.notes.push("자동 사냥은 패배 시 즉시 중지됩니다.");
+        battleFeed.notes.push("사망 후 잿빛 여관으로 회귀했습니다.");
         const autoStopped = !!autoTimer;
         if (autoTimer) toggleAuto();
 
         state.records.defeats++;
         state.streak = 0;
-        state.hp = Math.max(1,Math.round(s.maxHp*.45));
-        state.mp = Math.max(0,Math.round(s.maxMp*.25));
         updateCodex(enemy,result,null,null);
+        returnToInnAfterDefeat(`${enemy.name}에게 패배`,{switchView:true});
         if (feverActive) {
           state.feverBattles = Math.max(0,state.feverBattles-1);
           if (state.feverBattles === 0) {
@@ -11188,9 +11497,10 @@ const VERSION = 63;
         }
 
         defeatNotice = {enemy,result,autoStopped};
-        log(`사냥 실패 · ${enemy.name}에게 패배${autoStopped ? " · 자동 사냥 중지" : ""} · 장비와 경험치 유지`, "negative");
+        log(`사냥 실패 · ${enemy.name}에게 사망${autoStopped ? " · 자동 사냥 중지" : ""} · 잿빛 여관으로 회귀 · 장비와 경험치 유지`, "negative");
       }
 
+      if (battleFeed.outcome !== "defeat") applyAutomaticPotionsAfterBattle(battleFeed);
       state.huntFeed = battleFeed;
       applyFieldCare();
       if (defeatNotice) showDefeatLog(defeatNotice);
@@ -11236,6 +11546,10 @@ const VERSION = 63;
     function useElixir() { useConsumable("elixir"); }
 
     function updateAutoButton() {
+      if (state.currentZone === innLocation.id) {
+        els.autoBtn.textContent = "여관에서는 연속 사냥 불가";
+        return;
+      }
       if (!autoTimer) {
         els.autoBtn.textContent = "연속 사냥 · 5초";
         return;
@@ -11256,6 +11570,7 @@ const VERSION = 63;
 
     function startAutoHunt() {
       recoverOffline();
+      if (state.currentZone === innLocation.id) return toast("여관에서는 연속 사냥을 시작할 수 없습니다.");
       if (state.stamina < 1) return toast("활력이 부족합니다.");
 
       autoNextAt = Date.now() + AUTO_HUNT_INTERVAL_MS;
@@ -11735,27 +12050,44 @@ const VERSION = 63;
     }
 
     function renderZones() {
-      els.zoneSelect.innerHTML = zones.map(z => `
-        <option value="${z.id}">T${z.tier} · ${z.name} · 기억 Lv.${z.itemMin}~${z.itemMax} · 권장 ${fmt(z.rec)}</option>
-      `).join("");
+      els.zoneSelect.innerHTML = [innLocation,...zones].map(z => z.nonCombat
+        ? `<option value="${z.id}">휴식 · ${z.name}</option>`
+        : `<option value="${z.id}">T${z.tier} · ${z.name} · 기억 Lv.${z.itemMin}~${z.itemMax} · 권장 ${fmt(z.rec)}</option>`
+      ).join("");
       els.zoneSelect.value = state.currentZone;
 
       const current = zone();
-      els.zoneSelectSummary.innerHTML = `
-        <span>권장 <strong>${fmt(current.rec)}</strong></span>
-        <span>기억 <strong>Lv.${current.itemMin}~${current.itemMax}</strong></span>
-        <span>과열 <strong>${Math.round(state.heat[current.id] || 0)}%</strong></span>
-      `;
+      if (current.nonCombat) {
+        els.zoneSelectSummary.innerHTML = `
+          <span><strong>안전 지역</strong></span>
+          <span>HP·MP <strong>회복</strong></span>
+          <span>활력 <strong>회복 가능</strong></span>
+        `;
+      } else {
+        els.zoneSelectSummary.innerHTML = `
+          <span>권장 <strong>${fmt(current.rec)}</strong></span>
+          <span>기억 <strong>Lv.${current.itemMin}~${current.itemMax}</strong></span>
+          <span>과열 <strong>${Math.round(state.heat[current.id] || 0)}%</strong></span>
+        `;
+      }
 
       els.zoneSelect.onchange = () => {
-        const nextZone = zones.find(z => z.id === els.zoneSelect.value);
+        const selectedId = els.zoneSelect.value;
+        const nextZone = selectedId === innLocation.id ? innLocation : zones.find(z => z.id === selectedId);
         if (!nextZone || nextZone.id === state.currentZone) return;
-        if (autoTimer) toggleAuto();
+        if (autoTimer) stopAutoHunt();
         state.currentZone = nextZone.id;
         state.zonesVisited[state.currentZone] = true;
+        if (nextZone.nonCombat) {
+          const stats = totalStats();
+          state.hp = stats.maxHp;
+          state.mp = stats.maxMp;
+          log(`${nextZone.name}으로 이동해 HP와 MP를 회복했습니다.`,"battle-heal");
+        } else {
+          log(`${nextZone.name}으로 이동했습니다.`,"neutral");
+        }
         saveState();
         renderAll();
-        log(`${nextZone.name}으로 이동했습니다.`, "neutral");
         renderLog();
       };
     }
@@ -11922,7 +12254,8 @@ function renderBattleRewardFocus() {
       const maxMp = s.maxMp;
       const need = xpNeeded();
       const z = zone();
-      const heat = state.heat[z.id] || 0;
+      const atInn = !!z.nonCombat;
+      const heat = atInn ? 0 : (state.heat[z.id] || 0);
 
       els.levelBadge.textContent = `Lv.${state.level}`;
       renderClassStats();
@@ -11941,12 +12274,19 @@ function renderBattleRewardFocus() {
       renderCoreResourceEducation();
 
       els.currentZoneName.textContent = z.name;
+      els.innRestPanel?.classList.toggle("hidden",!atInn);
       if (!isBusy) {
-        els.enemyName.textContent = "전투 대기";
+        els.enemyName.textContent = atInn ? "휴식 중" : "전투 대기";
         els.enemyName.classList.remove("status-hunting");
         els.enemyName.classList.add("status-idle");
-        els.enemyMeta.textContent = `권장 전투력 ${fmt(z.rec)} · 현재 ${fmt(power())} · 장비 기억 Lv.${z.itemMin}~${z.itemMax}`;
+        els.enemyMeta.textContent = atInn
+          ? "안전 지역 · 사냥터를 선택하면 다시 출발합니다."
+          : `권장 전투력 ${fmt(z.rec)} · 현재 ${fmt(power())} · 장비 기억 Lv.${z.itemMin}~${z.itemMax}`;
       }
+      els.huntBtn.disabled = isBusy || atInn;
+      els.autoBtn.disabled = atInn;
+      els.huntBtn.textContent = atInn ? "사냥터를 선택하세요" : "사냥 1회 · 활력 1";
+      updateAutoButton();
 
       els.hpText.textContent = `${fmt(state.hp)} / ${fmt(maxHp)}`;
       els.hpBar.style.width = `${clamp(state.hp / maxHp * 100, 0, 100)}%`;
@@ -12042,6 +12382,12 @@ function renderBattleRewardFocus() {
     els.attendanceClaimBtn.onclick = claimAttendance;
     els.dailyResetBtn.onclick = resetDailyDungeonDemo;
     els.arenaRefreshBtn.onclick = refreshArenaOpponents;
+    els.arenaSkipBtn.onclick = () => {
+      if (!activeArenaBattle) return;
+      arenaSkipRequested = true;
+      els.arenaSkipBtn.disabled = true;
+      els.arenaSkipBtn.textContent = "결과 계산 중";
+    };
     els.sellJunkBtn.onclick = bulkSellJunk;
     [
       els.autoProcessEnabled,els.autoProcessCommon,els.autoProcessUncommon,
@@ -12065,13 +12411,18 @@ function renderBattleRewardFocus() {
       btn.onclick = () => setMarketPreset("sell",btn.dataset.marketSellPreset);
     });
 
-    els.refillStaminaBtn.onclick = () => {
-      state.stamina = STAMINA_MAX;
-      state.staminaUpdatedAt = Date.now();
-      log("시험용 활력 회복 · 활력 60", "positive");
+    els.refillStaminaBtn.onclick = () => restAtInn({restoreStamina:true});
+    els.autoHealthPotionToggle.onchange = () => {
+      autoPotionSettings().health = !!els.autoHealthPotionToggle.checked;
       saveState();
-      renderAll();
-      toast("활력이 모두 회복되었습니다.");
+      renderAutoPotionControls();
+      toast(`자동 체력약 ${state.autoPotion.health ? "사용" : "해제"}`);
+    };
+    els.autoManaPotionToggle.onchange = () => {
+      autoPotionSettings().mana = !!els.autoManaPotionToggle.checked;
+      saveState();
+      renderAutoPotionControls();
+      toast(`자동 마나약 ${state.autoPotion.mana ? "사용" : "해제"}`);
     };
 
     els.huntBtn.onclick = manualHunt;

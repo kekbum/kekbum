@@ -7976,12 +7976,12 @@
   font:900 10px/1 Georgia,serif;
 }
 
-.info-tab[data-info-target="records"]::before { content:"記"; }
-.info-tab[data-info-target="story"]::before { content:"史"; }
-.info-tab[data-info-target="factions"]::before { content:"勢"; }
-.info-tab[data-info-target="zones"]::before { content:"門"; }
-.info-tab[data-info-target="classes"]::before { content:"職"; }
-.info-tab[data-info-target="drops"]::before { content:"宝"; }
+.info-tab[data-info-target="records"]::before { content:"글"; }
+.info-tab[data-info-target="story"]::before { content:"말"; }
+.info-tab[data-info-target="factions"]::before { content:"편"; }
+.info-tab[data-info-target="zones"]::before { content:"터"; }
+.info-tab[data-info-target="classes"]::before { content:"길"; }
+.info-tab[data-info-target="drops"]::before { content:"품"; }
 
 .info-tab:hover {
   border-color:#67546f;
@@ -14244,5 +14244,447 @@ button.purchase-warning:not(:disabled):hover {
 
   .equipment-picker-heading {
     flex-direction:column;
+  }
+}
+
+
+/* v64: 사망 후 여관 복귀, 자동 포션, 한국어 정보 장식 */
+.page[data-page="hunt"] .inn-rest-panel {
+  display:grid;
+  gap:8px;
+  margin-top:8px;
+  padding:10px;
+  border:1px solid rgba(99,151,119,.34);
+  border-radius:10px;
+  background:
+    radial-gradient(circle at 0 0,rgba(63,137,90,.11),transparent 46%),
+    rgba(8,14,10,.78);
+}
+.page[data-page="hunt"] .inn-rest-panel.hidden { display:none; }
+.page[data-page="hunt"] .inn-rest-panel > div { display:grid; gap:2px; }
+.page[data-page="hunt"] .inn-rest-panel span {
+  color:#6da17c; font-size:6px; font-weight:950; letter-spacing:.13em;
+}
+.page[data-page="hunt"] .inn-rest-panel strong { color:#b9d6bf; font-size:11px; }
+.page[data-page="hunt"] .inn-rest-panel p {
+  margin:0; color:#778b7c; font-size:8px; line-height:1.45;
+}
+.page[data-page="hunt"] .inn-rest-panel button { min-height:34px; font-size:9px; }
+
+.page[data-page="hunt"] .auto-potion-controls {
+  display:grid; grid-template-columns:1fr; gap:6px;
+}
+.page[data-page="hunt"] .auto-potion-controls label {
+  display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:7px;
+  padding:7px 8px; border:1px solid rgba(100,132,145,.18); border-radius:7px;
+  background:rgba(7,10,11,.44); cursor:pointer;
+}
+.page[data-page="hunt"] .auto-potion-controls input {
+  width:15px; height:15px; margin:0; accent-color:#739dab;
+}
+.page[data-page="hunt"] .auto-potion-controls label > span { display:grid; gap:1px; }
+.page[data-page="hunt"] .auto-potion-controls strong { color:#adc1c9; font-size:8px; }
+.page[data-page="hunt"] .auto-potion-controls small {
+  color:#68767b; font-size:6px; line-height:1.35;
+}
+.page[data-page="hunt"] #autoPotionStatus { color:#716b62; font-size:7px; font-weight:850; }
+.page[data-page="hunt"] #autoPotionStatus.active { color:#8fb8c7; }
+
+.info-page-seal span,.story-archive-mark {
+  font-family:inherit !important; letter-spacing:0 !important;
+}
+.info-page-seal span { font-size:10px !important; }
+.story-archive-mark {
+  width:auto !important; min-width:52px; padding:0 8px; font-size:10px !important;
+}
+@media (max-width:680px) {
+  .page[data-page="hunt"] .auto-potion-controls { grid-template-columns:1fr 1fr; }
+}
+@media (max-width:460px) {
+  .page[data-page="hunt"] .auto-potion-controls { grid-template-columns:1fr; }
+}
+
+
+/* v65: 한글 낙인과 재생형 투기장 전투 로그 */
+.faction-card-top > b {
+  font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif !important;
+  font-size:20px !important;
+  letter-spacing:-.08em;
+}
+
+.finale-rune-grid button > b,
+.daily-rune-card b,
+.daily-seal-rune b {
+  font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif !important;
+  letter-spacing:-.08em;
+}
+
+.info-tab::before {
+  font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif !important;
+}
+
+.arena-battle-stage {
+  margin:14px 16px 0;
+  overflow:hidden;
+  border:1px solid rgba(115,153,177,.30);
+  border-radius:14px;
+  background:
+    radial-gradient(circle at 50% 0,rgba(69,116,143,.12),transparent 38%),
+    rgba(8,11,14,.92);
+}
+
+.arena-battle-stage-head {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  padding:13px 15px;
+  border-bottom:1px solid rgba(115,153,177,.18);
+  background:rgba(12,16,20,.88);
+}
+
+.arena-battle-stage-head > div:first-child {
+  display:grid;
+  gap:2px;
+}
+
+.arena-battle-stage-head span {
+  color:#7195a7;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.14em;
+}
+
+.arena-battle-stage-head h3 {
+  margin:0;
+  color:#c7dbe4;
+  font-size:17px;
+}
+
+.arena-battle-stage-head p {
+  margin:0;
+  color:#718087;
+  font-size:8px;
+}
+
+.arena-battle-stage-actions {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.arena-battle-stage-actions strong {
+  padding:7px 9px;
+  border:1px solid rgba(113,146,164,.23);
+  border-radius:999px;
+  color:#9baeb7;
+  background:rgba(13,19,23,.72);
+  font-size:8px;
+  white-space:nowrap;
+}
+
+.arena-battle-stage-actions strong.playing {
+  color:#e5bd6b;
+  border-color:rgba(212,155,63,.34);
+}
+
+.arena-battle-stage-actions strong.positive {
+  color:#91c7a0;
+  border-color:rgba(95,166,113,.35);
+}
+
+.arena-battle-stage-actions strong.negative {
+  color:#d99691;
+  border-color:rgba(181,92,87,.35);
+}
+
+.arena-battle-stage-actions button {
+  min-height:31px;
+  padding:6px 9px;
+  font-size:8px;
+}
+
+.arena-battle-stage-actions button.hidden {
+  display:none;
+}
+
+.arena-duel-board {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 52px minmax(0,1fr);
+  align-items:center;
+  gap:12px;
+  padding:13px 15px;
+  border-bottom:1px solid rgba(115,153,177,.14);
+}
+
+.arena-duelist {
+  display:grid;
+  gap:4px;
+  min-width:0;
+  padding:10px 11px;
+  border:1px solid rgba(126,143,151,.18);
+  border-radius:10px;
+  background:rgba(5,7,9,.50);
+}
+
+.arena-duelist.hero {
+  border-color:rgba(78,148,119,.28);
+}
+
+.arena-duelist.opponent {
+  border-color:rgba(170,95,91,.28);
+  text-align:right;
+}
+
+.arena-duelist > span {
+  color:#6f7c81;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.08em;
+}
+
+.arena-duelist > strong {
+  overflow:hidden;
+  color:#d0dbe0;
+  font-size:13px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.arena-duelist > small {
+  color:#78848a;
+  font-size:8px;
+}
+
+.arena-versus {
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  border:1px solid rgba(206,145,58,.32);
+  border-radius:50%;
+  color:#e2b866;
+  background:rgba(78,48,17,.22);
+  font-size:12px;
+  font-weight:950;
+}
+
+.arena-hp-line {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  margin-top:4px;
+}
+
+.arena-hp-line > div {
+  height:8px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:999px;
+  background:#15191c;
+}
+
+.arena-hp-line i {
+  display:block;
+  width:0;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#4e9a68,#79c991);
+  transition:width .16s ease;
+}
+
+.arena-duelist.opponent .arena-hp-line i {
+  margin-left:auto;
+  background:linear-gradient(90deg,#a6534f,#d57a72);
+}
+
+.arena-hp-line b {
+  color:#89969b;
+  font-size:7px;
+  white-space:nowrap;
+}
+
+.arena-live-log {
+  max-height:410px;
+  min-height:190px;
+  overflow:auto;
+  padding:6px 0;
+}
+
+.arena-live-log-empty {
+  display:grid;
+  min-height:178px;
+  place-content:center;
+  padding:20px;
+  color:#738087;
+  font-size:9px;
+  text-align:center;
+}
+
+.arena-live-event {
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr);
+  gap:8px;
+  padding:7px 12px;
+  border-bottom:1px solid rgba(110,134,146,.08);
+}
+
+.arena-live-event:last-child {
+  border-bottom:0;
+}
+
+.arena-live-event > span {
+  color:#5d7079;
+  font-size:7px;
+  font-weight:900;
+}
+
+.arena-live-event p {
+  margin:0;
+  color:#a7b1b5;
+  font-size:9px;
+  line-height:1.5;
+}
+
+.arena-live-event.enemy p {
+  color:#d4948e;
+}
+
+.arena-live-event.heal p {
+  color:#91c4a0;
+}
+
+.arena-live-event.special p {
+  color:#e0bd71;
+}
+
+.arena-live-event.status p {
+  color:#91adcb;
+}
+
+.arena-live-result {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:8px 10px 4px;
+  padding:10px 12px;
+  border:1px solid currentColor;
+  border-radius:9px;
+  background:rgba(0,0,0,.20);
+}
+
+.arena-live-result strong {
+  font-size:12px;
+}
+
+.arena-live-result span {
+  color:#9a9183;
+  font-size:8px;
+  text-align:right;
+}
+
+.arena-live-result.positive {
+  color:#8ec49c;
+}
+
+.arena-live-result.negative {
+  color:#d48d88;
+}
+
+.arena-history-details {
+  margin:0 16px 16px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#101218;
+}
+
+.arena-history-details > summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:42px;
+  padding:9px 12px;
+  list-style:none;
+  cursor:pointer;
+  color:#b7a888;
+  font-size:9px;
+  font-weight:900;
+}
+
+.arena-history-details > summary::-webkit-details-marker {
+  display:none;
+}
+
+.arena-history-details > summary b {
+  color:#776f63;
+  font-size:8px;
+}
+
+.arena-history-details .arena-log {
+  margin:0;
+  border:0;
+  border-top:1px solid var(--line);
+  border-radius:0;
+}
+
+.arena-history-row {
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
+  gap:7px;
+  padding:6px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+.arena-history-row:last-child {
+  border-bottom:0;
+}
+
+.arena-history-row span {
+  color:#655f57;
+  font-size:7px;
+}
+
+.arena-history-row p {
+  margin:0;
+  color:#999287;
+  font-size:9px;
+  line-height:1.5;
+}
+
+.arena-history-empty {
+  color:#756f66;
+  font-size:9px;
+}
+
+@media (max-width:720px) {
+  .arena-battle-stage-head,
+  .arena-live-result {
+    align-items:stretch;
+    flex-direction:column;
+  }
+
+  .arena-battle-stage-actions {
+    justify-content:space-between;
+  }
+
+  .arena-duel-board {
+    grid-template-columns:1fr;
+  }
+
+  .arena-versus {
+    width:36px;
+    height:36px;
+    justify-self:center;
+  }
+
+  .arena-duelist.opponent {
+    text-align:left;
+  }
+
+  .arena-live-result span {
+    text-align:left;
   }
 }

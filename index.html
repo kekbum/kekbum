@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>잿빛 전리품 - 일반 확률 테스트판</title>
-  <link rel="stylesheet" href="styles.css?v=63">
+  <link rel="stylesheet" href="styles.css?v=65">
 
 </head>
 <body>
@@ -208,6 +208,15 @@
             <div class="enemy-meta" id="enemyMeta"></div>
           </div>
 
+          <section class="inn-rest-panel hidden" id="innRestPanel">
+            <div>
+              <span>ASHEN INN</span>
+              <strong>잿빛 여관</strong>
+              <p>회귀의 불씨가 몸을 여관의 기준점으로 되돌렸습니다.</p>
+            </div>
+            <button class="primary" id="refillStaminaBtn" type="button">활력 전부 회복</button>
+          </section>
+
           <div class="combat-vitals-grid compact-control-vitals">
             <div class="meter-wrap compact-meter">
               <div class="meter-label"><span>체력</span><span id="hpText"></span></div>
@@ -263,8 +272,20 @@
                 <button class="action stamina-action" id="staminaPotionBtn">활력 물약</button>
               </div>
 
+              <div class="auto-potion-controls">
+                <label>
+                  <input type="checkbox" id="autoHealthPotionToggle" />
+                  <span><strong>자동 체력약</strong><small>전투 후 체력이 가득 찰 때까지 사용</small></span>
+                </label>
+                <label>
+                  <input type="checkbox" id="autoManaPotionToggle" />
+                  <span><strong>자동 마나약</strong><small>전투 후 마나가 가득 찰 때까지 사용</small></span>
+                </label>
+              </div>
+
               <div class="inline-controls compact-support-controls">
                 <span id="focusBonusText">일반 -1 · 희귀 지도 -3</span>
+                <b id="autoPotionStatus">자동 포션 꺼짐</b>
               </div>
 
               <details class="field-care-details">
@@ -362,7 +383,7 @@
           <strong id="huntMarketHudValue">평가 0 G</strong>
           <small id="huntMarketHudProfit">미실현 ±0 G</small>
         </button>
-        <button id="refillStaminaBtn" type="button">활력 회복</button>
+
       </div>
     </section>
 
@@ -581,7 +602,7 @@
             <p>사냥꾼의 전투 기록과 잿빛 세계에서 되찾은 기억을 분류해 보관합니다.</p>
           </div>
           <div class="info-page-seal" aria-hidden="true">
-            <span>灰</span>
+            <span>기록</span>
             <small>기록국</small>
           </div>
         </div>
@@ -932,8 +953,58 @@
           </div>
         </div>
         <div class="arena-summary" id="arenaSummary"></div>
+
+        <section class="arena-battle-stage" id="arenaBattleStage">
+          <header class="arena-battle-stage-head">
+            <div>
+              <span>ARENA BATTLE</span>
+              <h3>투기장 전투 로그</h3>
+              <p>대결을 시작하면 공격과 기술이 순서대로 재생됩니다.</p>
+            </div>
+            <div class="arena-battle-stage-actions">
+              <strong id="arenaBattleStatus">상대 선택 대기</strong>
+              <button class="hidden" id="arenaSkipBtn" type="button">결과까지 빠르게</button>
+            </div>
+          </header>
+
+          <div class="arena-duel-board" id="arenaDuelBoard">
+            <article class="arena-duelist hero">
+              <span>내 사냥꾼</span>
+              <strong id="arenaHeroName">대기 중</strong>
+              <small id="arenaHeroClass">직업 정보</small>
+              <div class="arena-hp-line">
+                <div><i id="arenaHeroHpBar"></i></div>
+                <b id="arenaHeroHpText">0 / 0</b>
+              </div>
+            </article>
+
+            <div class="arena-versus">VS</div>
+
+            <article class="arena-duelist opponent">
+              <span>결투 상대</span>
+              <strong id="arenaOpponentName">상대를 선택하세요</strong>
+              <small id="arenaOpponentClass">잔영 정보</small>
+              <div class="arena-hp-line">
+                <div><i id="arenaOpponentHpBar"></i></div>
+                <b id="arenaOpponentHpText">0 / 0</b>
+              </div>
+            </article>
+          </div>
+
+          <div class="arena-live-log" id="arenaLiveLog">
+            <div class="arena-live-log-empty">대결 기록이 아직 없습니다.</div>
+          </div>
+        </section>
+
         <div class="arena-grid" id="arenaGrid"></div>
-        <div class="arena-log" id="arenaLog"></div>
+
+        <details class="arena-history-details">
+          <summary>
+            <span>최근 대결 결과</span>
+            <b>기록 보기</b>
+          </summary>
+          <div class="arena-log" id="arenaLog"></div>
+        </details>
       </div>
     </section>
 
@@ -1553,7 +1624,7 @@
   </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="game.js?v=63"></script>
+  <script src="game.js?v=65"></script>
 
 </body>
 </html>
